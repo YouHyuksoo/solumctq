@@ -6,15 +6,17 @@
 import { useState, useEffect, useCallback } from "react";
 import type { MaterialResponse } from "../types";
 
-export function useMaterial(intervalMs: number) {
+export function useMaterial(intervalMs: number, selectedLines: string[] = []) {
   const [data, setData] = useState<MaterialResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const linesParam = selectedLines.length > 0 ? `?lines=${selectedLines.join(",")}` : "";
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/ctq/material");
+      const res = await fetch(`/api/ctq/material${linesParam}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: MaterialResponse = await res.json();
       setData(json);
@@ -24,7 +26,7 @@ export function useMaterial(intervalMs: number) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [linesParam]);
 
   useEffect(() => {
     fetchData();

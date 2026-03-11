@@ -12,7 +12,9 @@
  */
 
 import { NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import { executeQuery } from "@/lib/oracle";
+import { parseLines, buildLineInClause } from "@/lib/line-filter";
 import type {
   MaterialDefectItem,
   MaterialLineCardData,
@@ -83,7 +85,9 @@ async function getLineNames(lineCodes: string[]): Promise<Map<string, string>> {
   return map;
 }
 
-async function fetchFromDB(): Promise<CachedResult> {
+async function fetchFromDB(
+  lineFilter: { clause: string; params: Record<string, string> } = { clause: "", params: {} }
+): Promise<CachedResult> {
   const times = getTimeRanges();
 
   const sql = `
@@ -97,6 +101,7 @@ async function fetchFromDB(): Promise<CachedResult> {
       AND t.LINE_CODE IS NOT NULL
       AND t.LINE_CODE <> '*'
       AND t.DEFECT_ITEM_CODE IS NOT NULL
+      ${lineFilter.clause}
     GROUP BY t.LINE_CODE, t.DEFECT_ITEM_CODE
   `;
 
@@ -104,6 +109,7 @@ async function fetchFromDB(): Promise<CachedResult> {
     ts90: times.start90,
     tsEnd: times.dayEnd,
     dayStart: times.dayStart,
+    ...lineFilter.params,
   });
 
   /* 라인별 그룹핑 */
@@ -181,8 +187,18 @@ function refreshCacheInBackground() {
     .finally(() => { isFetching = false; });
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const lines = parseLines(request);
+    const lineFilter = buildLineInClause(lines, "t", "ln");
+
+    /* 라인 필터가 있으면 캐시 사용하지 않고 직접 조회 */
+    if (lines.length > 0) {
+      const result = await fetchFromDB(lineFilter);
+      return NextResponse.json(result);
+    }
+
+    /* 기존 캐시 로직 (필터 없을 때만) */
     if (cache) {
       const age = Date.now() - new Date(cache.lastUpdated).getTime();
       if (age > CACHE_TTL_MS) {

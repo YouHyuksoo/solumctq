@@ -12,6 +12,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLineFilter } from "./contexts/LineFilterContext";
 import { useMonitoring } from "./hooks/useMonitoring";
 import { useAutoRolling } from "./hooks/useAutoRolling";
 import LineCard from "./components/LineCard";
@@ -24,7 +25,8 @@ export default function MonitoringPage() {
   const [rollingInterval, setRollingInterval] = useState(10000);
   const [rollingEnabled, setRollingEnabled] = useState(true);
 
-  const { data, error, loading } = useMonitoring(monitorInterval);
+  const { selectedLines } = useLineFilter();
+  const { data, error, loading } = useMonitoring(monitorInterval, selectedLines);
 
   const totalItems = data?.lines.length ?? 0;
   const { currentPage, totalPages, startIdx, endIdx, progress, setCurrentPage } =

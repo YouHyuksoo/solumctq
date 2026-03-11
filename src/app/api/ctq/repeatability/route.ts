@@ -19,7 +19,9 @@
  */
 
 import { NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import { executeQuery } from "@/lib/oracle";
+import { parseLines, buildLineInClause } from "@/lib/line-filter";
 import type {
   RepeatProcessType,
   RepeatProcessStatus,
@@ -139,7 +141,8 @@ function buildDateCondition(config: ProcessConfig, alias: string): {
 /** 공정별 LINE 요약 집계 (JOIN 없이 단순 GROUP BY → 고속) */
 async function getLineSummary(
   config: ProcessConfig,
-  timeRange: { startStr: string; endStr: string }
+  timeRange: { startStr: string; endStr: string },
+  lineFilter: { clause: string; params: Record<string, string> }
 ): Promise<LineSummaryRow[]> {
   const { condition } = buildDateCondition(config, "t");
   const lastInspectExpr =
@@ -157,11 +160,13 @@ async function getLineSummary(
       AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK')
       AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')
       AND t.LINE_CODE IS NOT NULL
+      ${lineFilter.clause}
     GROUP BY t.LINE_CODE
   `;
   return executeQuery<LineSummaryRow>(sql, {
     tsStart: timeRange.startStr,
     tsEnd: timeRange.endStr,
+    ...lineFilter.params,
   });
 }
 
@@ -173,7 +178,8 @@ async function getLineSummary(
  */
 async function getRepeatLocations(
   config: ProcessConfig,
-  timeRange: { startStr: string; endStr: string }
+  timeRange: { startStr: string; endStr: string },
+  lineFilter: { clause: string; params: Record<string, string> }
 ): Promise<RepeatLocationRow[]> {
   const { condition } = buildDateCondition(config, "t");
 
@@ -196,6 +202,7 @@ async function getRepeatLocations(
           AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK')
           AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')
           AND t.LINE_CODE IS NOT NULL
+          ${lineFilter.clause}
       )
       WHERE LOCATION_CODE = PREV_LOC
     )
@@ -204,6 +211,7 @@ async function getRepeatLocations(
   return executeQuery<RepeatLocationRow>(sql, {
     tsStart: timeRange.startStr,
     tsEnd: timeRange.endStr,
+    ...lineFilter.params,
   });
 }
 
@@ -226,14 +234,16 @@ async function getLineNames(lineCodes: string[]): Promise<Map<string, string>> {
   return map;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const lines = parseLines(request);
+    const lineFilter = buildLineInClause(lines, "t", "ln");
     const timeRange = getTimeRange();
 
     /* 1. 4공정 × 2쿼리 = 8개 쿼리 병렬 실행 (요약 + 반복Location) */
     const [summaries, repeatLocs] = await Promise.all([
-      Promise.all(PROCESS_TYPES.map((pt) => getLineSummary(PROCESS_CONFIG[pt], timeRange))),
-      Promise.all(PROCESS_TYPES.map((pt) => getRepeatLocations(PROCESS_CONFIG[pt], timeRange))),
+      Promise.all(PROCESS_TYPES.map((pt) => getLineSummary(PROCESS_CONFIG[pt], timeRange, lineFilter))),
+      Promise.all(PROCESS_TYPES.map((pt) => getRepeatLocations(PROCESS_CONFIG[pt], timeRange, lineFilter))),
     ]);
 
     /* 2. 공정별 요약 및 반복Location → Map 변환 */
@@ -299,7 +309,7 @@ export async function GET() {
 
     /* NG 라인 상단 정렬 */
     lineCards.sort((a, b) => {
-      const order: Record<RepeatGrade, number> = { A: 0, OK: 1 };
+      const order: Record<RepeatGrade, number> = { A: 0, B: 1, OK: 2 };
       return order[a.overallGrade] - order[b.overallGrade];
     });
 

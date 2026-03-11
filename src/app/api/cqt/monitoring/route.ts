@@ -10,8 +10,9 @@
  * 5. **주의**: INSPECT_DATE는 인덱스 컬럼이므로 절대 변형하지 않음 (문자열 비교)
  */
 
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/lib/oracle";
+import { parseLines, buildLineInClause } from "@/lib/line-filter";
 import type {
   ProcessType,
   ProcessStatus,
@@ -69,8 +70,30 @@ interface LocationRow {
 }
 
 /** 당일 데이터가 있는 SMPS/3IN1 라인만 조회 (INSPECT_DATE 인덱스 활용) */
-async function getActiveLines(todayStart: string): Promise<LineRow[]> {
-  const sql = `
+async function getActiveLines(
+  todayStart: string,
+  lineFilter: { clause: string; params: Record<string, string> }
+): Promise<LineRow[]> {
+  const lineClause = lineFilter.clause.replace(/AND t\./g, "AND ");
+
+  const sql = lineFilter.clause
+    ? `
+    SELECT d.LINE_CODE, NVL(l.LINE_NAME, d.LINE_CODE) AS LINE_NAME
+    FROM (
+      SELECT DISTINCT LINE_CODE FROM IQ_MACHINE_ICT_SERVER_DATA_RAW WHERE INSPECT_DATE >= :ts AND LINE_CODE IS NOT NULL ${lineClause}
+      UNION
+      SELECT DISTINCT LINE_CODE FROM IQ_MACHINE_HIPOT_POWER_DATA_RAW WHERE INSPECT_DATE >= :ts AND LINE_CODE IS NOT NULL ${lineClause}
+      UNION
+      SELECT DISTINCT LINE_CODE FROM IQ_MACHINE_FT1_SMPS_DATA_RAW WHERE INSPECT_DATE >= :ts AND LINE_CODE IS NOT NULL ${lineClause}
+      UNION
+      SELECT DISTINCT LINE_CODE FROM IQ_MACHINE_BURNIN_SMPS_DATA_RAW WHERE INSPECT_DATE >= :ts AND LINE_CODE IS NOT NULL ${lineClause}
+      UNION
+      SELECT DISTINCT LINE_CODE FROM IQ_MACHINE_ATE_SERVER_DATA_RAW WHERE INSPECT_DATE >= :ts AND LINE_CODE IS NOT NULL ${lineClause}
+    ) d
+    LEFT JOIN IP_PRODUCT_LINE l ON d.LINE_CODE = l.LINE_CODE
+    ORDER BY d.LINE_CODE
+  `
+    : `
     SELECT d.LINE_CODE, NVL(l.LINE_NAME, d.LINE_CODE) AS LINE_NAME
     FROM (
       SELECT DISTINCT LINE_CODE FROM IQ_MACHINE_ICT_SERVER_DATA_RAW WHERE INSPECT_DATE >= :ts AND LINE_CODE IS NOT NULL
@@ -87,13 +110,14 @@ async function getActiveLines(todayStart: string): Promise<LineRow[]> {
       AND l.LINE_PRODUCT_DIVISION IN ('SMPS', '3IN1')
     ORDER BY d.LINE_CODE
   `;
-  return executeQuery<LineRow>(sql, { ts: todayStart });
+  return executeQuery<LineRow>(sql, { ts: todayStart, ...lineFilter.params });
 }
 
 /** 공정별 당일 NG 전체 벌크 조회 (인덱스 컬럼 INSPECT_DATE 변형 없음) */
 async function getBulkNgRecords(
   tableName: string,
-  todayStart: string
+  todayStart: string,
+  lineFilter: { clause: string; params: Record<string, string> }
 ): Promise<NgRecord[]> {
   const sql = `
     SELECT PID, INSPECT_DATE, LINE_CODE
@@ -101,9 +125,10 @@ async function getBulkNgRecords(
     WHERE INSPECT_DATE >= :todayStart
       AND INSPECT_RESULT NOT IN ('PASS', 'GOOD', 'OK')
       AND (QC_CONFIRM_YN IS NULL OR QC_CONFIRM_YN != 'Y')
+      ${lineFilter.clause.replace(/t\./g, "")}
     ORDER BY LINE_CODE, INSPECT_DATE DESC
   `;
-  return executeQuery<NgRecord>(sql, { todayStart });
+  return executeQuery<NgRecord>(sql, { todayStart, ...lineFilter.params });
 }
 
 /** REPAIR 테이블에서 Location 벌크 조회 */
@@ -243,15 +268,17 @@ function worseGrade(a: AlertGrade, b: AlertGrade): AlertGrade {
   return order[a] <= order[b] ? a : b;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const todayStart = getTodayStart();
+    const lines = parseLines(request);
+    const lineFilter = buildLineInClause(lines, "", "ln");
 
     /* 1. 5개 공정 NG 벌크 조회 + 당일 활성 라인 (병렬) */
-    const [lines, ...bulkNgResults] = await Promise.all([
-      getActiveLines(todayStart),
+    const [lines2, ...bulkNgResults] = await Promise.all([
+      getActiveLines(todayStart, lineFilter),
       ...PROCESS_TYPES.map((pt) =>
-        getBulkNgRecords(PROCESS_TABLE_MAP[pt], todayStart)
+        getBulkNgRecords(PROCESS_TABLE_MAP[pt], todayStart, lineFilter)
       ),
     ]);
 
@@ -274,7 +301,7 @@ export async function GET() {
     /* 4. 라인별 카드 데이터 생성 (당일 데이터 있는 라인만) */
     const lineCards: LineCardData[] = [];
 
-    for (const { LINE_CODE: lineCode, LINE_NAME: lineName } of lines) {
+    for (const { LINE_CODE: lineCode, LINE_NAME: lineName } of lines2) {
       const processes: ProcessStatus[] = [];
       let overallGrade: AlertGrade = "OK";
 

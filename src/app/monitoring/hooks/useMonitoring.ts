@@ -8,14 +8,16 @@
 import { useState, useEffect, useCallback } from "react";
 import type { MonitoringResponse } from "../types";
 
-export function useMonitoring(intervalMs = 10000) {
+export function useMonitoring(intervalMs = 10000, selectedLines: string[] = []) {
   const [data, setData] = useState<MonitoringResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const linesParam = selectedLines.length > 0 ? `?lines=${selectedLines.join(",")}` : "";
+
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch("/api/cqt/monitoring", { cache: "no-store" });
+      const res = await fetch(`/api/cqt/monitoring${linesParam}`, { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: MonitoringResponse = await res.json();
       setData(json);
@@ -25,7 +27,7 @@ export function useMonitoring(intervalMs = 10000) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [linesParam]);
 
   useEffect(() => {
     fetchData();

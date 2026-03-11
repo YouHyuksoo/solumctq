@@ -6,15 +6,17 @@
 import { useState, useEffect, useCallback } from "react";
 import type { RepeatabilityResponse } from "@/app/monitoring/repeatability/types";
 
-export function useNonConsecutive(intervalMs: number) {
+export function useNonConsecutive(intervalMs: number, selectedLines: string[] = []) {
   const [data, setData] = useState<RepeatabilityResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const linesParam = selectedLines.length > 0 ? `?lines=${selectedLines.join(",")}` : "";
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/ctq/non-consecutive");
+      const res = await fetch(`/api/ctq/non-consecutive${linesParam}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: RepeatabilityResponse = await res.json();
       setData(json);
@@ -24,7 +26,7 @@ export function useNonConsecutive(intervalMs: number) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [linesParam]);
 
   useEffect(() => {
     fetchData();

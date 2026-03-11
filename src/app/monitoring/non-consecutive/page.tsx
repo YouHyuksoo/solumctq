@@ -11,6 +11,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLineFilter } from "../contexts/LineFilterContext";
 import { useNonConsecutive } from "./hooks/useNonConsecutive";
 import { useAutoRolling } from "../hooks/useAutoRolling";
 import RepeatLineCard from "../repeatability/components/RepeatLineCard";
@@ -24,7 +25,8 @@ export default function NonConsecutivePage() {
   const [rollingInterval, setRollingInterval] = useState(10000);
   const [rollingEnabled, setRollingEnabled] = useState(true);
 
-  const { data, error, loading } = useNonConsecutive(monitorInterval);
+  const { selectedLines } = useLineFilter();
+  const { data, error, loading } = useNonConsecutive(monitorInterval, selectedLines);
 
   const totalItems = data?.lines.length ?? 0;
   const { currentPage, totalPages, startIdx, endIdx, progress, setCurrentPage } =

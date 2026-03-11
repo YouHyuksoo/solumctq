@@ -11,6 +11,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLineFilter } from "../contexts/LineFilterContext";
 import { useOpenShort } from "./hooks/useOpenShort";
 import { useAutoRolling } from "../hooks/useAutoRolling";
 import OpenShortLineCard from "./components/OpenShortLineCard";
@@ -24,7 +25,8 @@ export default function OpenShortPage() {
   const [rollingInterval, setRollingInterval] = useState(10000);
   const [rollingEnabled, setRollingEnabled] = useState(true);
 
-  const { data, error, loading } = useOpenShort(monitorInterval);
+  const { selectedLines } = useLineFilter();
+  const { data, error, loading } = useOpenShort(monitorInterval, selectedLines);
 
   const totalItems = data?.lines.length ?? 0;
   const { currentPage, totalPages, startIdx, endIdx, progress, setCurrentPage } =

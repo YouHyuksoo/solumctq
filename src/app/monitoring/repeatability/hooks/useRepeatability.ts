@@ -8,14 +8,16 @@
 import { useState, useEffect, useCallback } from "react";
 import type { RepeatabilityResponse } from "../types";
 
-export function useRepeatability(intervalMs = 30000) {
+export function useRepeatability(intervalMs = 30000, selectedLines: string[] = []) {
   const [data, setData] = useState<RepeatabilityResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const linesParam = selectedLines.length > 0 ? `?lines=${selectedLines.join(",")}` : "";
+
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch("/api/ctq/repeatability", { cache: "no-store" });
+      const res = await fetch(`/api/ctq/repeatability${linesParam}`, { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: RepeatabilityResponse = await res.json();
       setData(json);
@@ -25,7 +27,7 @@ export function useRepeatability(intervalMs = 30000) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [linesParam]);
 
   useEffect(() => {
     fetchData();

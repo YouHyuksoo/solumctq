@@ -12,7 +12,9 @@
  */
 
 import { NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import { executeQuery } from "@/lib/oracle";
+import { parseLines, buildLineInClause } from "@/lib/line-filter";
 import type {
   AccidentProcessType,
   AccidentProcessStatus,
@@ -105,7 +107,8 @@ interface LineNameRow {
 /** LINE별 NG 건수 집계 */
 async function getLineSummary(
   config: ProcessConfig,
-  timeRange: { startStr: string; endStr: string }
+  timeRange: { startStr: string; endStr: string },
+  lineFilter: { clause: string; params: Record<string, string> }
 ): Promise<LineSummaryRow[]> {
   const col = `t.${config.dateCol}`;
   const condition = `${col} >= :tsStart AND ${col} < :tsEnd`;
@@ -119,11 +122,13 @@ async function getLineSummary(
       AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK')
       AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN <> 'Y')
       AND t.LINE_CODE IS NOT NULL
+      ${lineFilter.clause}
     GROUP BY t.LINE_CODE
   `;
   return executeQuery<LineSummaryRow>(sql, {
     tsStart: timeRange.startStr,
     tsEnd: timeRange.endStr,
+    ...lineFilter.params,
   });
 }
 
@@ -153,13 +158,15 @@ function determineGrade(ngCount: number, config: ProcessConfig): AccidentGrade {
   return "OK";
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const lines = parseLines(request);
+    const lineFilter = buildLineInClause(lines, "t", "ln");
     const timeRange = getTimeRange();
 
     /* 1. 3공정 병렬 쿼리 */
     const summaries = await Promise.all(
-      PROCESS_TYPES.map((pt) => getLineSummary(PROCESS_CONFIG[pt], timeRange))
+      PROCESS_TYPES.map((pt) => getLineSummary(PROCESS_CONFIG[pt], timeRange, lineFilter))
     );
 
     /* 2. Map 변환 */

@@ -13,6 +13,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLineFilter } from "../contexts/LineFilterContext";
 import { useAccident } from "./hooks/useAccident";
 import { useAutoRolling } from "../hooks/useAutoRolling";
 import AccidentLineCard from "./components/AccidentLineCard";
@@ -26,7 +27,8 @@ export default function AccidentPage() {
   const [rollingInterval, setRollingInterval] = useState(10000);
   const [rollingEnabled, setRollingEnabled] = useState(true);
 
-  const { data, error, loading } = useAccident(monitorInterval);
+  const { selectedLines } = useLineFilter();
+  const { data, error, loading } = useAccident(monitorInterval, selectedLines);
 
   const totalItems = data?.lines.length ?? 0;
   const { currentPage, totalPages, startIdx, endIdx, progress, setCurrentPage } =

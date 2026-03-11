@@ -10,7 +10,9 @@
  */
 
 import { NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 import { executeQuery } from "@/lib/oracle";
+import { parseLines, buildLineInClause } from "@/lib/line-filter";
 import type {
   OpenShortDefectType,
   OpenShortDefectItem,
@@ -67,8 +69,10 @@ async function getLineNames(lineCodes: string[]): Promise<Map<string, string>> {
   return map;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const lines = parseLines(request);
+    const lineFilter = buildLineInClause(lines, "t", "ln");
     const { dayStart } = getDayRange();
 
     const sql = `
@@ -79,10 +83,11 @@ export async function GET() {
       WHERE t.QC_DATE >= TO_DATE(:dayStart, 'YYYY/MM/DD HH24:MI:SS')
         AND t.BAD_REASON_CODE IN ('B2020', 'B2030')
         AND t.LINE_CODE IS NOT NULL
+        ${lineFilter.clause}
       GROUP BY t.LINE_CODE, t.BAD_REASON_CODE
     `;
 
-    const rows = await executeQuery<DefectRow>(sql, { dayStart });
+    const rows = await executeQuery<DefectRow>(sql, { dayStart, ...lineFilter.params });
 
     const allLineCodes = new Set<string>();
     const lineDataMap = new Map<string, DefectRow[]>();

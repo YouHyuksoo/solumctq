@@ -6,15 +6,17 @@
 import { useState, useEffect, useCallback } from "react";
 import type { OpenShortResponse } from "../types";
 
-export function useOpenShort(intervalMs: number) {
+export function useOpenShort(intervalMs: number, selectedLines: string[] = []) {
   const [data, setData] = useState<OpenShortResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const linesParam = selectedLines.length > 0 ? `?lines=${selectedLines.join(",")}` : "";
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/ctq/open-short");
+      const res = await fetch(`/api/ctq/open-short${linesParam}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: OpenShortResponse = await res.json();
       setData(json);
@@ -24,7 +26,7 @@ export function useOpenShort(intervalMs: number) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [linesParam]);
 
   useEffect(() => {
     fetchData();
