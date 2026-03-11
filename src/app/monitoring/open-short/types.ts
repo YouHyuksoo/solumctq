@@ -23,6 +23,7 @@ export interface OpenShortDefectItem {
   defectType: OpenShortDefectType;
   badReasonCode: string;
   count: number;
+  lastInspectTime: string;
   ngDetails: NgDetailRecord[];
 }
 

@@ -13,11 +13,11 @@ import { useLocale, translateDetail } from "@/i18n";
 
 const GRADE_STYLES: Record<AccidentGrade, { card: string; badge: string }> = {
   A: {
-    card: "border-red-500 bg-red-950/30",
+    card: "border-gray-700 bg-gray-900/50",
     badge: "bg-red-600 text-white",
   },
   B: {
-    card: "border-yellow-500 bg-yellow-950/30",
+    card: "border-gray-700 bg-gray-900/50",
     badge: "bg-yellow-600 text-white",
   },
   OK: {
@@ -66,10 +66,10 @@ export default function AccidentLineCard({ line }: { line: AccidentLineCardData 
       <div className="flex items-center justify-between px-4 py-2 bg-black/40">
         <div>
           <span className="text-sm text-gray-400">Line: </span>
-          <span className="font-bold text-white">{line.lineName}</span>
+          <span className="font-bold text-white text-base">{line.lineName}</span>
           <span className="ml-2 text-xs text-gray-500">({line.lineCode})</span>
         </div>
-        <span className={`px-3 py-1 rounded text-xs font-bold ${style.badge}`}>
+        <span className={`px-3 py-1 rounded text-sm font-bold ${style.badge}`}>
           {GRADE_TEXT[line.overallGrade]}
         </span>
       </div>
@@ -77,12 +77,12 @@ export default function AccidentLineCard({ line }: { line: AccidentLineCardData 
       {/* 공정 테이블 */}
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-black/30 text-gray-400 text-xs">
-            <th className="text-left px-3 py-1.5 w-24">{t("table.process") as string}</th>
-            <th className="text-left px-3 py-1.5 w-32">{t("table.status") as string}</th>
-            <th className="text-left px-3 py-1.5 w-28">{t("table.lastInspect") as string}</th>
-            <th className="text-center px-3 py-1.5 w-14">NG</th>
-            <th className="text-center px-3 py-1.5 w-20">{t("table.gradeCol") as string}</th>
+          <tr className="bg-gray-600/50 text-gray-400 text-xs">
+            <th className="text-left px-4 py-2 w-24">{t("table.process") as string}</th>
+            <th className="text-left px-4 py-2 w-32">{t("table.status") as string}</th>
+            <th className="text-left px-4 py-2 w-28">{t("table.lastInspect") as string}</th>
+            <th className="text-center px-4 py-2 w-14">NG</th>
+            <th className="text-center px-4 py-2 w-20">{t("table.gradeCol") as string}</th>
           </tr>
         </thead>
         <tbody>
@@ -91,25 +91,23 @@ export default function AccidentLineCard({ line }: { line: AccidentLineCardData 
               key={p.process}
               className={`border-t border-gray-800 ${ROW_GRADE_STYLES[p.grade]}`}
             >
-              <td className="px-3 py-1.5 font-medium text-gray-200 whitespace-nowrap">
+              <td className="px-4 py-2 font-medium text-gray-200 whitespace-nowrap bg-gray-600/50">
                 {p.processLabel}
               </td>
-              <td className="px-3 py-1.5">
+              <td className="px-4 py-2">
                 {p.detail ? (
                   <span className={`font-bold text-xs ${p.grade === "A" ? "text-red-400" : "text-yellow-400"}`}>
                     {translateDetail(p.detail, t)}
                   </span>
-                ) : p.ngCount > 0 ? (
-                  <span className="text-yellow-400">NG</span>
                 ) : (
                   <span className="text-green-400">OK</span>
                 )}
               </td>
-              <td className="px-3 py-1.5 text-gray-400 text-xs font-mono whitespace-nowrap">
+              <td className="px-4 py-2 text-gray-400 text-xs font-mono whitespace-nowrap">
                 {p.lastInspectDate ? formatShortDate(p.lastInspectDate) : "-"}
               </td>
               <td
-                className="px-3 py-1.5 text-center"
+                className="px-4 py-2 text-center"
                 onMouseEnter={(e) => p.ngCount > 0 && p.ngDetails?.length > 0 && handleMouseEnter(p.process, e)}
                 onMouseLeave={() => setTooltip(null)}
                 onClick={() => p.ngCount > 0 && setModal({ process: p.process, label: p.processLabel })}
@@ -120,7 +118,7 @@ export default function AccidentLineCard({ line }: { line: AccidentLineCardData 
                   <span className="text-gray-600">0</span>
                 )}
               </td>
-              <td className="px-3 py-1.5 text-center whitespace-nowrap">
+              <td className="px-4 py-2 text-center whitespace-nowrap">
                 {p.grade === "A" && (
                   <span className={`px-2 py-0.5 rounded text-xs font-bold whitespace-nowrap ${GRADE_STYLES.A.badge}`}>
                     {t("grade.a") as string}

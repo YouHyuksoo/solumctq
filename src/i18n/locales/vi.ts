@@ -17,6 +17,7 @@ const vi: TranslationKeys = {
     dataLoading: "Đang tải dữ liệu...",
     dataError: "Lỗi truy xuất dữ liệu",
     noActiveLines: "Không có line hoạt động.",
+    noMatchingData: "Không có dữ liệu lỗi phù hợp với tiêu chí hiện tại.",
     refresh: "Cập nhật",
     line: "Line",
   },
@@ -43,6 +44,7 @@ const vi: TranslationKeys = {
     material: "Vật liệu",
     openShort: "Open/Short",
     indicator: "Chỉ số",
+    equipment: "Thiết bị",
   },
 
   navTooltip: {
@@ -117,6 +119,17 @@ const vi: TranslationKeys = {
       "Xanh: Dưới 100% so với tuần trước (giảm)",
       "Xám: Không có lỗi (0→0)",
     ],
+    equipment: [
+      "Đối tượng: Thời gian dừng thiết bị theo line/công đoạn",
+      "Bảng: IP_LINE_DAILY_OPERATION_HIST",
+      "Tiêu chí: Dừng 60 phút+ trong ngày → Cấp C",
+      "Thời gian: Trong ngày (F_GET_WORK_ACTUAL_DATE)",
+    ],
+    equipmentStatus: [
+      "Đỏ: Dừng 60 phút+ (Cấp C - Cần cải thiện)",
+      "Vàng: Có dừng (dưới 60 phút)",
+      "Xám: Không dừng",
+    ],
   },
 
   table: {
@@ -131,6 +144,10 @@ const vi: TranslationKeys = {
     count: "Số lượng",
     dailyNg: "NG ngày",
     cumNg: "NG 90 ngày",
+    consecutiveNg: "NG liên tiếp cùng vị trí",
+    sameLocationNg: "NG không liên tiếp cùng vị trí",
+    sameComponent: "Cùng linh kiện",
+    sameBadCode: "Cùng mã lỗi",
     noDefectsToday: "Không có lỗi hôm nay",
     noDefects: "Không có lỗi",
     consecutive: "Liên tiếp",
@@ -148,6 +165,7 @@ const vi: TranslationKeys = {
     defectPart: "Linh kiện lỗi",
     repair: "Sửa chữa",
     handling: "Xử lý",
+    badReason: "Mã lỗi",
     inspectResult: "Kết quả",
     receipt: "Nhập kho",
     repairLabel: "Sửa chữa",
@@ -169,6 +187,7 @@ const vi: TranslationKeys = {
       materialDesc: "Kiểm tra vật liệu định kỳ 6 công đoạn. Ngày 3+ → Cấp A, 90 ngày 3+ → Cấp C.",
       openShortDesc: "Lỗi Open/Short linh kiện chung ICT. Cùng linh kiện ngày 2+ → Cấp B tạm dừng XK.",
       indicatorDesc: "Chỉ số tỷ lệ NG hàng tuần theo model/công đoạn. So sánh tuần trước.",
+      equipmentDesc: "Giám sát thời gian dừng thiết bị theo line/công đoạn. Dừng 60 phút+ → Cấp C.",
     },
     monitoring: {
       title: "Giám sát CTQ",
@@ -178,7 +197,7 @@ const vi: TranslationKeys = {
       okLabel: "Bình thường",
     },
     accident: {
-      title: "Giám sát sự cố CTQ",
+      title: "Giám sát bất thường",
       gradeALabel: "Cấp A (Dừng Line)",
       gradeBLabel: "Cấp B (Cảnh báo)",
     },
@@ -212,6 +231,14 @@ const vi: TranslationKeys = {
       noData: "Không có dữ liệu lỗi trong kỳ.",
       newDefect: "Mới",
       refreshBtn: "Làm mới",
+    },
+    equipment: {
+      title: "Giám sát thiết bị CTQ",
+      noData: "Không có dữ liệu bất thường thiết bị phù hợp với tiêu chí hiện tại.",
+      minuteUnit: "phút",
+      gradeDesc: "Dừng 60 phút+ trong ngày → Cần cải thiện",
+      tableDesc: "Bảng: IP_LINE_DAILY_OPERATION_HIST",
+      periodDesc: "Thời gian: Trong ngày (F_GET_WORK_ACTUAL_DATE)",
     },
   },
 

@@ -41,6 +41,8 @@ interface NgRow {
   QC_INSPECT_HANDLING: string;
   DEFECT_ITEM_CODE: string;
   INSPECT_RESULT: string;
+  BAD_REASON_CODE: string;
+  BAD_REASON_NAME: string;
 }
 
 /** 오늘 08:00 기준 시작/종료 */
@@ -97,7 +99,9 @@ export async function GET(request: NextRequest) {
                NVL(t.REPAIR_RESULT_CODE, '-') AS REPAIR_RESULT_CODE,
                NVL(t.QC_INSPECT_HANDLING, '-') AS QC_INSPECT_HANDLING,
                NVL(t.DEFECT_ITEM_CODE, '-') AS DEFECT_ITEM_CODE,
-               '-' AS INSPECT_RESULT
+               '-' AS INSPECT_RESULT,
+               NVL(t.BAD_REASON_CODE, '-') AS BAD_REASON_CODE,
+               NVL(F_GET_CODE_MASTER('WQC BAD REASON CODE', t.BAD_REASON_CODE, 'C', 1), '-') AS BAD_REASON_NAME
         FROM IP_PRODUCT_WORK_QC t
         WHERE t.QC_DATE >= TO_DATE(:tsStart, 'YYYY/MM/DD HH24:MI:SS')
           AND t.QC_DATE < TO_DATE(:tsEnd, 'YYYY/MM/DD HH24:MI:SS')
@@ -123,7 +127,9 @@ export async function GET(request: NextRequest) {
                NVL(t.REPAIR_RESULT_CODE, '-') AS REPAIR_RESULT_CODE,
                NVL(t.QC_INSPECT_HANDLING, '-') AS QC_INSPECT_HANDLING,
                NVL(t.DEFECT_ITEM_CODE, '-') AS DEFECT_ITEM_CODE,
-               '-' AS INSPECT_RESULT
+               '-' AS INSPECT_RESULT,
+               NVL(t.BAD_REASON_CODE, '-') AS BAD_REASON_CODE,
+               NVL(F_GET_CODE_MASTER('WQC BAD REASON CODE', t.BAD_REASON_CODE, 'C', 1), '-') AS BAD_REASON_NAME
         FROM IP_PRODUCT_WORK_QC t
         WHERE t.QC_DATE >= TO_DATE(:tsStart, 'YYYY/MM/DD HH24:MI:SS')
           AND t.BAD_REASON_CODE = :badReasonCode
@@ -152,13 +158,15 @@ export async function GET(request: NextRequest) {
       const sql = `
         SELECT ${timeExpr} AS INSPECT_TIME,
                t.${config.pidCol} AS PID,
-               NVL(r.MODEL_NAME, '-') AS MODEL_NAME,
+               NVL(F_GET_MODEL_NAME_BY_PID(t.${config.pidCol}), NVL(r.MODEL_NAME, '-')) AS MODEL_NAME,
                NVL(r.RECEIPT_DEFICIT, '-') AS RECEIPT_DEFICIT,
                NVL(r.LOCATION_CODE, '-') AS LOCATION_CODE,
                NVL(r.REPAIR_RESULT_CODE, '-') AS REPAIR_RESULT_CODE,
                NVL(r.QC_INSPECT_HANDLING, '-') AS QC_INSPECT_HANDLING,
                NVL(r.DEFECT_ITEM_CODE, '-') AS DEFECT_ITEM_CODE,
-               t.${config.resultCol} AS INSPECT_RESULT
+               t.${config.resultCol} AS INSPECT_RESULT,
+               NVL(r.BAD_REASON_CODE, '-') AS BAD_REASON_CODE,
+               NVL(F_GET_CODE_MASTER('WQC BAD REASON CODE', r.BAD_REASON_CODE, 'C', 1), '-') AS BAD_REASON_NAME
         FROM ${config.table} t
         LEFT JOIN IP_PRODUCT_WORK_QC r
           ON r.SERIAL_NO = t.${config.pidCol}
@@ -188,6 +196,8 @@ export async function GET(request: NextRequest) {
         qcHandling: r.QC_INSPECT_HANDLING,
         defectItem: r.DEFECT_ITEM_CODE,
         inspectResult: r.INSPECT_RESULT,
+        badReasonCode: r.BAD_REASON_CODE,
+        badReasonName: r.BAD_REASON_NAME,
       })),
       total: rows.length,
     });

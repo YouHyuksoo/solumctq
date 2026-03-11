@@ -45,12 +45,26 @@ export default function RepeatabilityPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      <header className="sticky top-0 z-10 bg-gray-950/95 backdrop-blur border-b border-gray-800 px-6 py-3">
+      <div className="bg-gray-900 border-b border-gray-700 px-6 py-4">
+        <div className="flex items-center justify-between max-w-[1920px] mx-auto">
+          <h1
+            className="text-4xl font-bold bg-clip-text text-transparent"
+            style={{ backgroundImage: "linear-gradient(to right, #f87171, #facc15, #4ade80, #60a5fa, #a78bfa, #f472b6)" }}
+          >
+            {t("pages.accident.title") as string}
+          </h1>
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex items-center gap-4 text-xs text-gray-400">
+              <span>{t("table.process") as string}: FT#1, ATE, IMAGE, SET</span>
+              <span><span className="text-red-400 font-bold">{t("grade.a") as string}</span>: {t("pages.repeatability.title") as string} — {t("table.consecutiveNg") as string}</span>
+            </div>
+            <span className="text-xs text-gray-500">Solum Vietnam</span>
+          </div>
+        </div>
+      </div>
+      <header className="sticky top-0 z-10 bg-gray-800 border-b border-gray-700 px-6 py-3">
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
           <div className="flex items-center gap-4">
-            <h1 className="text-lg font-bold">
-              {t("pages.repeatability.title") as string}
-            </h1>
             <MonitoringNav />
           </div>
           <div className="flex items-center gap-4">
@@ -99,7 +113,8 @@ export default function RepeatabilityPage() {
           </div>
         )}
         {loading && !data && (
-          <div className="flex items-center justify-center h-64 text-gray-500">
+          <div className="flex flex-col items-center justify-center h-64 text-gray-500 gap-3">
+            <span className="w-8 h-8 border-4 border-gray-700 border-t-blue-400 rounded-full animate-spin" />
             {t("common.dataLoading") as string}
           </div>
         )}

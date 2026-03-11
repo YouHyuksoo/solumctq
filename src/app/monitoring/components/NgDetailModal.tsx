@@ -24,6 +24,8 @@ interface NgRecord {
   qcHandling: string;
   defectItem: string;
   inspectResult: string;
+  badReasonCode: string;
+  badReasonName: string;
 }
 
 interface NgDetailModalProps {
@@ -75,7 +77,7 @@ export default function NgDetailModal({ open, title, fetchUrl, onClose }: NgDeta
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       onClick={handleBackdropClick}
     >
-      <div className="w-full max-w-4xl max-h-[80vh] bg-gray-900 border border-gray-700 rounded-xl shadow-2xl flex flex-col">
+      <div className="w-full max-w-5xl max-h-[80vh] bg-gray-900 border border-gray-700 rounded-xl shadow-2xl flex flex-col">
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 shrink-0">
           <div>
@@ -121,6 +123,7 @@ export default function NgDetailModal({ open, title, fetchUrl, onClose }: NgDeta
                   <th className="text-left pb-2 pr-2">{t("table.defectPart") as string}</th>
                   <th className="text-left pb-2 pr-2">{t("table.repair") as string}</th>
                   <th className="text-left pb-2 pr-2">{t("table.handling") as string}</th>
+                  <th className="text-left pb-2 pr-2">{t("table.badReason") as string}</th>
                   <th className="text-left pb-2">{t("table.inspectResult") as string}</th>
                 </tr>
               </thead>
@@ -131,13 +134,16 @@ export default function NgDetailModal({ open, title, fetchUrl, onClose }: NgDeta
                     <td className="py-1.5 pr-2 font-mono whitespace-nowrap">
                       {r.time?.length > 10 ? r.time.slice(5, 16) : r.time}
                     </td>
-                    <td className="py-1.5 pr-2 whitespace-nowrap max-w-[100px] truncate">{r.model}</td>
+                    <td className="py-1.5 pr-2 whitespace-nowrap ">{r.model}</td>
                     <td className="py-1.5 pr-2 font-mono text-gray-400 whitespace-nowrap">{r.pid}</td>
                     <td className="py-1.5 pr-2 whitespace-nowrap">{rdLabel(r.receiptDeficit)}</td>
-                    <td className="py-1.5 pr-2 whitespace-nowrap text-blue-300 max-w-[70px] truncate">{r.locationCode || "-"}</td>
-                    <td className="py-1.5 pr-2 whitespace-nowrap max-w-[80px] truncate">{r.defectItem || "-"}</td>
+                    <td className="py-1.5 pr-2 whitespace-nowrap text-blue-300 ">{r.locationCode || "-"}</td>
+                    <td className="py-1.5 pr-2 whitespace-nowrap ">{r.defectItem || "-"}</td>
                     <td className="py-1.5 pr-2 whitespace-nowrap">{r.repairResult || "-"}</td>
                     <td className="py-1.5 pr-2 whitespace-nowrap">{r.qcHandling || "-"}</td>
+                    <td className="py-1.5 pr-2 whitespace-nowrap ">
+                      {r.badReasonName && r.badReasonName !== "-" ? r.badReasonName : r.badReasonCode || "-"}
+                    </td>
                     <td className="py-1.5 whitespace-nowrap">
                       {r.inspectResult && r.inspectResult !== "-" ? (
                         <span className="text-red-400 font-medium">{r.inspectResult}</span>

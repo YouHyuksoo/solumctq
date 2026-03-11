@@ -76,11 +76,11 @@ export default function NgTooltip({ details, title, totalCount, position }: NgTo
                 <td className="py-0.5 pr-2 font-mono whitespace-nowrap">
                   {d.time.length > 10 ? d.time.slice(5, 16) : d.time}
                 </td>
-                <td className="py-0.5 pr-2 whitespace-nowrap max-w-[80px] truncate">{d.model}</td>
-                <td className="py-0.5 pr-2 font-mono text-gray-400 whitespace-nowrap max-w-[80px] truncate">{d.pid}</td>
+                <td className="py-0.5 pr-2 whitespace-nowrap ">{d.model}</td>
+                <td className="py-0.5 pr-2 font-mono text-gray-400 whitespace-nowrap ">{d.pid}</td>
                 <td className="py-0.5 pr-2 whitespace-nowrap">{rdLabel(d.receiptDeficit)}</td>
-                <td className="py-0.5 pr-2 whitespace-nowrap text-blue-300 max-w-[60px] truncate">{d.locationCode || "-"}</td>
-                <td className="py-0.5 pr-2 whitespace-nowrap max-w-[70px] truncate">{d.defectItem || "-"}</td>
+                <td className="py-0.5 pr-2 whitespace-nowrap text-blue-300 ">{d.locationCode || "-"}</td>
+                <td className="py-0.5 pr-2 whitespace-nowrap ">{d.defectItem || "-"}</td>
                 <td className="py-0.5 pr-2 whitespace-nowrap">{d.repairResult || "-"}</td>
                 <td className="py-0.5 whitespace-nowrap">{d.qcHandling || "-"}</td>
               </tr>

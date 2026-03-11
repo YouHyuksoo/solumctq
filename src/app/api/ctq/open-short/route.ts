@@ -46,6 +46,7 @@ interface DefectRow {
   LINE_CODE: string;
   BAD_REASON_CODE: string;
   CNT: number;
+  LAST_TIME: string;
 }
 
 interface NgDetailRow {
@@ -91,7 +92,8 @@ export async function GET(request: NextRequest) {
     const sql = `
       SELECT t.LINE_CODE,
              t.BAD_REASON_CODE,
-             COUNT(*) AS CNT
+             COUNT(*) AS CNT,
+             TO_CHAR(MAX(t.QC_DATE), 'YYYY/MM/DD HH24:MI:SS') AS LAST_TIME
       FROM IP_PRODUCT_WORK_QC t
       WHERE t.QC_DATE >= TO_DATE(:dayStart, 'YYYY/MM/DD HH24:MI:SS')
         AND t.BAD_REASON_CODE IN ('B2020', 'B2030')
@@ -167,6 +169,7 @@ export async function GET(request: NextRequest) {
           defectType,
           badReasonCode: row.BAD_REASON_CODE,
           count: row.CNT,
+          lastInspectTime: row.LAST_TIME,
           ngDetails: dets.map((d) => ({
             time: d.QC_TIME,
             pid: d.SERIAL_NO,

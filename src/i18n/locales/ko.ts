@@ -16,6 +16,7 @@ const ko = {
     dataLoading: "데이터 로딩 중...",
     dataError: "데이터 조회 오류",
     noActiveLines: "활성 라인이 없습니다.",
+    noMatchingData: "현재 조건에 해당하는 불량 데이터가 없습니다.",
     refresh: "갱신",
     line: "Line",
   },
@@ -44,6 +45,7 @@ const ko = {
     material: "원자재동일부품",
     openShort: "원자재공용부품",
     indicator: "지표",
+    equipment: "설비이상",
   },
 
   /* ── 네비 툴팁 ── */
@@ -119,6 +121,17 @@ const ko = {
       "초록: 전주 대비 100% 미만 (감소)",
       "회색: 불량 없음 (0→0)",
     ],
+    equipment: [
+      "대상: 라인별 공정별 설비 정지시간",
+      "테이블: IP_LINE_DAILY_OPERATION_HIST",
+      "기준: 일 정지시간 60분 이상 → C급",
+      "기간: 당일 (F_GET_WORK_ACTUAL_DATE)",
+    ],
+    equipmentStatus: [
+      "빨강: 60분 이상 정지 (C급 불량개선)",
+      "노랑: 정지 발생 (60분 미만)",
+      "회색: 정지 없음",
+    ],
   },
 
   /* ── 테이블 헤더 ── */
@@ -134,6 +147,10 @@ const ko = {
     count: "건수",
     dailyNg: "일 NG",
     cumNg: "90일 NG",
+    consecutiveNg: "동일위치 연속 NG",
+    sameLocationNg: "동일위치 비연속 NG",
+    sameComponent: "동일부품",
+    sameBadCode: "동일불량코드",
     noDefectsToday: "금일 불량 없음",
     noDefects: "불량 없음",
     consecutive: "연속불량",
@@ -151,6 +168,7 @@ const ko = {
     defectPart: "불량부품",
     repair: "수리",
     handling: "처리",
+    badReason: "불량코드",
     inspectResult: "검사결과",
     receipt: "입고",
     repairLabel: "수리",
@@ -173,6 +191,7 @@ const ko = {
       materialDesc: "전체 6공정 원자재 주기별점검. 일 3건+ A급, 90일 누적 3건+ C급 불량개선.",
       openShortDesc: "ICT 공정 공용부품 Open/Short 불량. 동일 부품 1일 누적 2건+ B급 출하중지.",
       indicatorDesc: "모델별/공정별 주간 불량률 증가 지표. 전전주→전주→금주 비교.",
+      equipmentDesc: "라인별/공정별 일일 설비 정지시간 모니터링. 60분 이상 정지 시 C급.",
     },
     monitoring: {
       title: "CTQ 모니터링",
@@ -182,7 +201,7 @@ const ko = {
       okLabel: "정상",
     },
     accident: {
-      title: "CTQ 사고성 모니터링",
+      title: "이상점 모니터링",
       gradeALabel: "A급 (Line Stop)",
       gradeBLabel: "B급 (Warning)",
     },
@@ -216,6 +235,14 @@ const ko = {
       noData: "해당 기간 불량 데이터가 없습니다.",
       newDefect: "신규",
       refreshBtn: "새로고침",
+    },
+    equipment: {
+      title: "CTQ 설비이상 모니터링",
+      noData: "현재 조건에 해당하는 설비이상 데이터가 없습니다.",
+      minuteUnit: "분",
+      gradeDesc: "일 정지시간 60분 이상 → 불량개선",
+      tableDesc: "테이블: IP_LINE_DAILY_OPERATION_HIST",
+      periodDesc: "기간: 당일 (F_GET_WORK_ACTUAL_DATE)",
     },
   },
 

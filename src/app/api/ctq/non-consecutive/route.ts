@@ -100,6 +100,7 @@ interface LineSummaryRow {
 
 interface RepeatLocationRow {
   LINE_CODE: string;
+  MODEL_NAME: string;
   LOCATION_CODE: string;
   LOC_COUNT: number;
 }
@@ -175,42 +176,58 @@ async function getNonConsecutiveLocations(
   const conditionSub = buildDateCondition(config, "t2");
 
   const sql = `
-    SELECT LINE_CODE, LOCATION_CODE, LOC_COUNT
+    SELECT LINE_CODE, MODEL_NAME, LOCATION_CODE, LOC_COUNT
     FROM (
-      SELECT t.LINE_CODE,
+      SELECT base.LINE_CODE,
+             base.MODEL_NAME,
              r.LOCATION_CODE,
              COUNT(*) AS LOC_COUNT
-      FROM ${config.table} t
+      FROM (
+        SELECT t.LINE_CODE,
+               t.${config.pidCol} AS PID_VAL,
+               t.${config.dateCol} AS SORT_DATE,
+               F_GET_MODEL_NAME_BY_PID(t.${config.pidCol}) AS MODEL_NAME
+        FROM ${config.table} t
+        WHERE ${condition}
+          AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK')
+          AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')
+          AND t.LINE_CODE IS NOT NULL
+          ${lineFilter.clause}
+      ) base
       JOIN IP_PRODUCT_WORK_QC r
-        ON r.SERIAL_NO = t.${config.pidCol}
+        ON r.SERIAL_NO = base.PID_VAL
         AND r.RECEIPT_DEFICIT = '2'
         AND r.LOCATION_CODE IS NOT NULL
-      WHERE ${condition}
-        AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK')
-        AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')
-        AND t.LINE_CODE IS NOT NULL
-        ${lineFilter.clause}
-      GROUP BY t.LINE_CODE, r.LOCATION_CODE
+        AND r.LOCATION_CODE <> '*'
+      GROUP BY base.LINE_CODE, base.MODEL_NAME, r.LOCATION_CODE
       HAVING COUNT(*) >= 2
     ) total_loc
-    WHERE (LINE_CODE, LOCATION_CODE) NOT IN (
-      SELECT LINE_CODE, LOCATION_CODE
+    WHERE (LINE_CODE, MODEL_NAME, LOCATION_CODE) NOT IN (
+      SELECT LINE_CODE, MODEL_NAME, LOCATION_CODE
       FROM (
-        SELECT t2.LINE_CODE,
+        SELECT base2.LINE_CODE,
+               base2.MODEL_NAME,
                r2.LOCATION_CODE,
                LAG(r2.LOCATION_CODE) OVER (
-                 PARTITION BY t2.LINE_CODE ORDER BY t2.${config.dateCol}
+                 PARTITION BY base2.LINE_CODE, base2.MODEL_NAME ORDER BY base2.SORT_DATE
                ) AS PREV_LOC
-        FROM ${config.table} t2
+        FROM (
+          SELECT t2.LINE_CODE,
+                 t2.${config.pidCol} AS PID_VAL,
+                 t2.${config.dateCol} AS SORT_DATE,
+                 F_GET_MODEL_NAME_BY_PID(t2.${config.pidCol}) AS MODEL_NAME
+          FROM ${config.table} t2
+          WHERE ${conditionSub}
+            AND t2.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK')
+            AND (t2.QC_CONFIRM_YN IS NULL OR t2.QC_CONFIRM_YN != 'Y')
+            AND t2.LINE_CODE IS NOT NULL
+            ${lineFilter.clause.replace(/t\./g, "t2.")}
+        ) base2
         JOIN IP_PRODUCT_WORK_QC r2
-          ON r2.SERIAL_NO = t2.${config.pidCol}
+          ON r2.SERIAL_NO = base2.PID_VAL
           AND r2.RECEIPT_DEFICIT = '2'
           AND r2.LOCATION_CODE IS NOT NULL
-        WHERE ${conditionSub}
-          AND t2.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK')
-          AND (t2.QC_CONFIRM_YN IS NULL OR t2.QC_CONFIRM_YN != 'Y')
-          AND t2.LINE_CODE IS NOT NULL
-          ${lineFilter.clause.replace(/t\./g, "t2.")}
+          AND r2.LOCATION_CODE <> '*'
       )
       WHERE LOCATION_CODE = PREV_LOC
     )
@@ -241,7 +258,7 @@ async function getNgDetails(
       SELECT t.LINE_CODE,
              ${timeExpr} AS INSPECT_TIME,
              t.${config.pidCol} AS PID,
-             NVL(r.MODEL_NAME, '-') AS MODEL_NAME,
+             NVL(F_GET_MODEL_NAME_BY_PID(t.${config.pidCol}), NVL(r.MODEL_NAME, '-')) AS MODEL_NAME,
              NVL(r.RECEIPT_DEFICIT, '-') AS RECEIPT_DEFICIT,
              NVL(r.LOCATION_CODE, '-') AS LOCATION_CODE,
              NVL(r.REPAIR_RESULT_CODE, '-') AS REPAIR_RESULT_CODE,
@@ -355,6 +372,7 @@ export async function GET(request: NextRequest) {
           grade,
           ngCount: summary?.NG_COUNT ?? 0,
           locationCode: bLoc?.LOCATION_CODE ?? null,
+          modelName: bLoc?.MODEL_NAME ?? null,
           detail: bLoc ? `sameLoc:${bLoc.LOC_COUNT}(${bLoc.LOCATION_CODE})` : null,
           lastInspectDate: summary?.LAST_INSPECT ?? null,
           pendingCount: 0,

@@ -33,6 +33,7 @@ export interface RepeatProcessStatus {
   grade: RepeatGrade;
   ngCount: number;
   locationCode: string | null;
+  modelName: string | null;
   detail: string | null;
   lastInspectDate: string | null;
   pendingCount: number;

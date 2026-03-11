@@ -111,6 +111,7 @@ interface LineSummaryRow {
 /** 반복 Location 감지 결과 (SQL 집계) */
 interface RepeatLocationRow {
   LINE_CODE: string;
+  MODEL_NAME: string;
   LOCATION_CODE: string;
   LOC_COUNT: number;
 }
@@ -196,29 +197,37 @@ async function getRepeatLocations(
   const { condition } = buildDateCondition(config, "t");
 
   const sql = `
-    SELECT LINE_CODE, LOCATION_CODE, COUNT(*) AS LOC_COUNT
+    SELECT LINE_CODE, MODEL_NAME, LOCATION_CODE, COUNT(*) AS LOC_COUNT
     FROM (
-      SELECT LINE_CODE, LOCATION_CODE
+      SELECT LINE_CODE, MODEL_NAME, LOCATION_CODE
       FROM (
-        SELECT t.LINE_CODE,
+        SELECT base.LINE_CODE,
+               base.MODEL_NAME,
                r.LOCATION_CODE,
                LAG(r.LOCATION_CODE) OVER (
-                 PARTITION BY t.LINE_CODE ORDER BY t.${config.dateCol}
+                 PARTITION BY base.LINE_CODE, base.MODEL_NAME ORDER BY base.SORT_DATE
                ) AS PREV_LOC
-        FROM ${config.table} t
+        FROM (
+          SELECT t.LINE_CODE,
+                 t.${config.pidCol} AS PID_VAL,
+                 t.${config.dateCol} AS SORT_DATE,
+                 F_GET_MODEL_NAME_BY_PID(t.${config.pidCol}) AS MODEL_NAME
+          FROM ${config.table} t
+          WHERE ${condition}
+            AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK')
+            AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')
+            AND t.LINE_CODE IS NOT NULL
+            ${lineFilter.clause}
+        ) base
         JOIN IP_PRODUCT_WORK_QC r
-          ON r.SERIAL_NO = t.${config.pidCol}
+          ON r.SERIAL_NO = base.PID_VAL
           AND r.RECEIPT_DEFICIT = '2'
           AND r.LOCATION_CODE IS NOT NULL
-        WHERE ${condition}
-          AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK')
-          AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')
-          AND t.LINE_CODE IS NOT NULL
-          ${lineFilter.clause}
+          AND r.LOCATION_CODE <> '*'
       )
       WHERE LOCATION_CODE = PREV_LOC
     )
-    GROUP BY LINE_CODE, LOCATION_CODE
+    GROUP BY LINE_CODE, MODEL_NAME, LOCATION_CODE
   `;
   return executeQuery<RepeatLocationRow>(sql, {
     tsStart: timeRange.startStr,
@@ -246,7 +255,7 @@ async function getNgDetails(
       SELECT t.LINE_CODE,
              ${timeExpr} AS INSPECT_TIME,
              t.${config.pidCol} AS PID,
-             NVL(r.MODEL_NAME, '-') AS MODEL_NAME,
+             NVL(F_GET_MODEL_NAME_BY_PID(t.${config.pidCol}), NVL(r.MODEL_NAME, '-')) AS MODEL_NAME,
              NVL(r.RECEIPT_DEFICIT, '-') AS RECEIPT_DEFICIT,
              NVL(r.LOCATION_CODE, '-') AS LOCATION_CODE,
              NVL(r.REPAIR_RESULT_CODE, '-') AS REPAIR_RESULT_CODE,
@@ -318,6 +327,7 @@ export async function GET(request: NextRequest) {
 
       const rMap = new Map<string, RepeatLocationRow>();
       for (const row of repeatLocs[i]) {
+        allLineCodes.add(row.LINE_CODE);
         const existing = rMap.get(row.LINE_CODE);
         if (!existing || row.LOC_COUNT > existing.LOC_COUNT) {
           rMap.set(row.LINE_CODE, row);
@@ -360,6 +370,7 @@ export async function GET(request: NextRequest) {
           grade,
           ngCount: summary?.NG_COUNT ?? 0,
           locationCode: repeat?.LOCATION_CODE ?? null,
+          modelName: repeat?.MODEL_NAME ?? null,
           detail: repeat ? `consecutive:${repeat.LOC_COUNT}(${repeat.LOCATION_CODE})` : null,
           lastInspectDate: summary?.LAST_INSPECT ?? null,
           pendingCount: summary?.PENDING_COUNT ?? 0,

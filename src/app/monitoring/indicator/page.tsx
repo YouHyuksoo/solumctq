@@ -6,6 +6,7 @@
  * 1. 모델(ITEM_CODE)별 × 공정별 주간 불량 비교 테이블
  * 2. 자동 갱신 없음 — 진입 시 1회 조회 + 수동 새로고침
  * 3. 기존 라인 필터 공유 (LineFilterContext)
+ * 4. h-screen flex 레이아웃 — 페이지 스크롤 없이 테이블만 스크롤
  */
 
 "use client";
@@ -28,17 +29,33 @@ export default function IndicatorPage() {
   }, [fetchData]);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <header className="sticky top-0 z-10 bg-gray-950/95 backdrop-blur border-b border-gray-800 px-6 py-3">
+    <div className="h-screen flex flex-col bg-gray-950 text-white overflow-hidden">
+      <div className="shrink-0 bg-gray-900 border-b border-gray-700 px-6 py-4">
+        <div className="flex items-center justify-between max-w-[1920px] mx-auto">
+          <h1
+            className="text-4xl font-bold bg-clip-text text-transparent"
+            style={{ backgroundImage: "linear-gradient(to right, #f87171, #facc15, #4ade80, #60a5fa, #a78bfa, #f472b6)" }}
+          >
+            {t("pages.accident.title") as string}
+          </h1>
+          <div className="flex flex-col items-end gap-1">
+            {data && data.models.length > 0 && (
+              <div className="flex items-center gap-4 text-xs text-gray-400">
+                <span>{t("pages.indicator.weekBefore") as string}: {data.weekRanges.weekBefore.start}~{data.weekRanges.weekBefore.end}</span>
+                <span>{t("pages.indicator.lastWeek") as string}: {data.weekRanges.lastWeek.start}~{data.weekRanges.lastWeek.end}</span>
+                <span>{t("pages.indicator.thisWeek") as string}: {data.weekRanges.thisWeek.start}~{data.weekRanges.thisWeek.end} ({data.thisWeekDays}{t("pages.indicator.thisWeekDays") as string})</span>
+              </div>
+            )}
+            <span className="text-xs text-gray-500">Solum Vietnam</span>
+          </div>
+        </div>
+      </div>
+      <header className="shrink-0 bg-gray-800 border-b border-gray-700 px-6 py-3">
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
           <div className="flex items-center gap-4">
-            <h1 className="text-lg font-bold">
-              {t("pages.indicator.title") as string}
-            </h1>
             <MonitoringNav />
           </div>
           <div className="flex items-center gap-4">
-            {/* 새로고침 버튼 */}
             <button
               onClick={fetchData}
               disabled={loading}
@@ -69,14 +86,16 @@ export default function IndicatorPage() {
         </div>
       </header>
 
-      <main className="max-w-[1920px] mx-auto p-6">
+      {/* 본문 — 남은 공간 전체 사용, 테이블만 스크롤 */}
+      <main className="flex-1 min-h-0 max-w-[1920px] w-full mx-auto">
         {error && (
-          <div className="mb-4 p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm">
+          <div className="mx-6 mt-4 p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm">
             {t("common.dataError") as string}: {error}
           </div>
         )}
         {loading && !data && (
-          <div className="flex items-center justify-center h-64 text-gray-500">
+          <div className="flex flex-col items-center justify-center h-64 text-gray-500 gap-3">
+            <span className="w-8 h-8 border-4 border-gray-700 border-t-blue-400 rounded-full animate-spin" />
             {t("common.dataLoading") as string}
           </div>
         )}
@@ -86,18 +105,10 @@ export default function IndicatorPage() {
           </div>
         )}
         {data && data.models.length > 0 && (
-          <div>
-            {/* 주간 범위 표시 */}
-            <div className="mb-4 flex items-center gap-4 text-xs text-gray-500">
-              <span>{t("pages.indicator.weekBefore") as string}: {data.weekRanges.weekBefore.start}~{data.weekRanges.weekBefore.end}</span>
-              <span>{t("pages.indicator.lastWeek") as string}: {data.weekRanges.lastWeek.start}~{data.weekRanges.lastWeek.end}</span>
-              <span>{t("pages.indicator.thisWeek") as string}: {data.weekRanges.thisWeek.start}~{data.weekRanges.thisWeek.end} ({data.thisWeekDays}{t("pages.indicator.thisWeekDays") as string})</span>
-            </div>
-            <IndicatorTable
-              models={data.models}
-              thisWeekDays={data.thisWeekDays}
-            />
-          </div>
+          <IndicatorTable
+            models={data.models}
+            thisWeekDays={data.thisWeekDays}
+          />
         )}
       </main>
     </div>

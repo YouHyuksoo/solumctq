@@ -32,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/monitoring/material", labelKey: "nav.material", tooltipKey: "navTooltip.material", statusKey: "navTooltip.materialStatus" },
   { href: "/monitoring/open-short", labelKey: "nav.openShort", tooltipKey: "navTooltip.openShort", statusKey: "navTooltip.openShortStatus" },
   { href: "/monitoring/indicator", labelKey: "nav.indicator", tooltipKey: "navTooltip.indicator", statusKey: "navTooltip.indicatorStatus" },
+  { href: "/monitoring/equipment", labelKey: "nav.equipment", tooltipKey: "navTooltip.equipment", statusKey: "navTooltip.equipmentStatus" },
 ];
 
 export default function MonitoringNav() {
@@ -81,7 +82,7 @@ export default function MonitoringNav() {
                 {label}
               </Link>
               {hoveredIdx === idx && (
-                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-80 bg-gray-800 border border-gray-600 rounded-lg shadow-xl p-3 z-[9999] pointer-events-none">
+                <div className={`absolute top-full mt-2 w-80 bg-gray-800 border border-gray-600 rounded-lg shadow-xl p-3 z-[9999] pointer-events-none ${idx <= 1 ? "left-0" : idx >= NAV_ITEMS.length - 2 ? "right-0" : "left-1/2 -translate-x-1/2"}`}>
                   <div className="text-xs font-bold text-blue-400 mb-1.5">{label} {t("navTooltip.criteria") as string}</div>
                   <div className="space-y-1">
                     {tooltip.map((line, i) => (

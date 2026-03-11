@@ -1,39 +1,35 @@
 /**
- * @file src/app/monitoring/material/page.tsx
- * @description CTQ 원자재 동일부품 모니터링 페이지
+ * @file src/app/monitoring/equipment/page.tsx
+ * @description 설비이상 모니터링 페이지
  *
  * 초보자 가이드:
- * 1. **테이블**: IP_PRODUCT_WORK_QC
- * 2. **판정 기준**: 동일 부품 기준
- *    - A급: 일 3건+ NG
- *    - C급: 90일 누적 3건+ NG → 불량개선
+ * 1. 라인별 × 공정별 일일 정지시간 매트릭스
+ * 2. 60분 이상 정지 → C급 (불량개선)
  * 3. 수동 새로고침 (자동 갱신 없음)
+ * 4. h-screen flex 레이아웃 — 테이블만 스크롤
  */
 
 "use client";
 
 import { useEffect } from "react";
 import { useLineFilter } from "../contexts/LineFilterContext";
-import { useMaterial } from "./hooks/useMaterial";
-import MaterialLineCard from "./components/MaterialLineCard";
+import { useEquipment } from "./hooks/useEquipment";
+import EquipmentTable from "./components/EquipmentTable";
 import MonitoringNav from "../components/MonitoringNav";
 import { useLocale } from "@/i18n";
 
-export default function MaterialPage() {
+export default function EquipmentPage() {
   const { t, dateLocale } = useLocale();
   const { selectedLines } = useLineFilter();
-  const { data, error, loading, fetchData } = useMaterial(selectedLines);
+  const { data, error, loading, fetchData } = useEquipment(selectedLines);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const aCount = data?.lines.filter((l) => l.overallGrade === "A").length ?? 0;
-  const cCount = data?.lines.filter((l) => l.overallGrade === "C").length ?? 0;
-
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <div className="bg-gray-900 border-b border-gray-700 px-6 py-4">
+    <div className="h-screen flex flex-col bg-gray-950 text-white overflow-hidden">
+      <div className="shrink-0 bg-gray-900 border-b border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
           <h1
             className="text-4xl font-bold bg-clip-text text-transparent"
@@ -43,26 +39,19 @@ export default function MaterialPage() {
           </h1>
           <div className="flex flex-col items-end gap-1">
             <div className="flex items-center gap-4 text-xs text-gray-400">
-              <span><span className="text-red-400 font-bold">{t("grade.a") as string}</span>: {t("pages.material.gradeALabel") as string} — {t("table.dailyNg") as string} 3+</span>
-              <span><span className="text-purple-400 font-bold">{t("grade.c") as string}</span>: {t("pages.material.gradeCLabel") as string} — 90{t("pages.indicator.thisWeekDays") as string} {t("table.cumNg") as string} 3+</span>
-              <span>{t("table.process") as string}: IP_PRODUCT_WORK_QC</span>
+              <span>{t("table.process") as string}: ICT, Hi-Pot, FT, Burn-In, ATE, IMAGE, SET</span>
+              <span><span className="text-purple-400 font-bold">{t("grade.c") as string}</span>: {t("pages.equipment.gradeDesc") as string}</span>
             </div>
             <span className="text-xs text-gray-500">Solum Vietnam</span>
           </div>
         </div>
       </div>
-      <header className="sticky top-0 z-10 bg-gray-800 border-b border-gray-700 px-6 py-3">
+      <header className="shrink-0 bg-gray-800 border-b border-gray-700 px-6 py-3">
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
           <div className="flex items-center gap-4">
             <MonitoringNav />
           </div>
           <div className="flex items-center gap-4">
-            {data && data.lines.length > 0 && (
-              <>
-                <SummaryBadge label={t("pages.material.gradeALabel") as string} count={aCount} color="bg-red-600" />
-                <SummaryBadge label={t("pages.material.gradeCLabel") as string} count={cCount} color="bg-purple-600" />
-              </>
-            )}
             <button
               onClick={fetchData}
               disabled={loading}
@@ -93,9 +82,9 @@ export default function MaterialPage() {
         </div>
       </header>
 
-      <main className="max-w-[1920px] mx-auto p-6">
+      <main className="flex-1 min-h-0 max-w-[1920px] w-full mx-auto">
         {error && (
-          <div className="mb-4 p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm">
+          <div className="mx-6 mt-4 p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm">
             {t("common.dataError") as string}: {error}
           </div>
         )}
@@ -108,43 +97,29 @@ export default function MaterialPage() {
         {data && data.lines.length === 0 && (
           <div className="flex items-center justify-center" style={{ minHeight: "calc(100vh - 200px)" }}>
             <div className="text-center p-12 bg-gray-900/60 border border-gray-700 rounded-2xl max-w-lg">
-              <div className="text-6xl mb-5">📦</div>
+              <div className="text-6xl mb-5">🔧</div>
               <h2 className="text-2xl font-bold text-gray-200 mb-4">
-                {t("pages.material.title") as string}
+                {t("pages.equipment.title") as string}
               </h2>
               <p className="text-gray-400 text-base leading-relaxed mb-6">
-                {t("common.noMatchingData") as string}
+                {t("pages.equipment.noData") as string}
               </p>
               <div className="text-sm text-gray-400 space-y-3 text-left bg-gray-800/50 rounded-lg p-6">
                 <div className="font-bold text-gray-200 text-base mb-2">{t("navTooltip.criteria") as string}</div>
-                <p>· <span className="text-red-400 font-bold">{t("grade.a") as string}</span>: {t("pages.material.gradeALabel") as string} — DEFECT_ITEM_CODE 1{t("table.dailyNg") as string} 3+</p>
-                <p>· <span className="text-purple-400 font-bold">{t("grade.c") as string}</span>: {t("pages.material.gradeCLabel") as string} — DEFECT_ITEM_CODE {t("table.cumNg") as string} 3+</p>
+                <p>· <span className="text-purple-400 font-bold">{t("grade.c") as string}</span>: {t("pages.equipment.gradeDesc") as string}</p>
                 <div className="border-t border-gray-700 pt-3 mt-3 text-gray-500">
-                  <p>· {t("table.process") as string}: IP_PRODUCT_WORK_QC</p>
-                  <p>· {t("grade.a") as string} {t("table.lastInspect") as string}: 08:00 ~ +24h</p>
-                  <p>· {t("grade.c") as string} {t("table.lastInspect") as string}: 90d</p>
+                  <p>· {t("table.process") as string}: ICT, Hi-Pot, FT, Burn-In, ATE, IMAGE, SET</p>
+                  <p>· {t("pages.equipment.tableDesc") as string}</p>
+                  <p>· {t("pages.equipment.periodDesc") as string}</p>
                 </div>
               </div>
             </div>
           </div>
         )}
         {data && data.lines.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {data.lines.map((line) => (
-              <MaterialLineCard key={line.lineCode} line={line} />
-            ))}
-          </div>
+          <EquipmentTable lines={data.lines} />
         )}
       </main>
-    </div>
-  );
-}
-
-function SummaryBadge({ label, count, color }: { label: string; count: number; color: string }) {
-  return (
-    <div className="flex items-center gap-2 px-4 py-2 bg-gray-900 rounded-lg border border-gray-800">
-      <span className={`px-2 py-0.5 rounded text-xs font-bold ${color}`}>{count}</span>
-      <span className="text-sm text-gray-300">{label}</span>
     </div>
   );
 }

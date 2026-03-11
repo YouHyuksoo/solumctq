@@ -5,7 +5,8 @@
  * 초보자 가이드:
  * 1. 2단 헤더: 1행=공정명(colspan=3), 2행=전전주/전주/금주
  * 2. 비율 색상: 200%↑ 빨강, 100~199% 노랑, <100% 초록, 0→0 회색
- * 3. 전전주 셀은 기준값 (색상 없음), 전주/금주 셀에 비율 표시
+ * 3. 공정 사이 굵은 왼쪽 보더로 시각적 구분
+ * 4. 전전주=무배경, 전주=indigo 배경, 금주=teal 배경
  */
 
 "use client";
@@ -49,6 +50,9 @@ function getRatioText(
   return `${curr} (${ratio}%)`;
 }
 
+/** 공정 그룹 첫 번째 셀(전전주)에 왼쪽 굵은 보더 */
+const GROUP_BORDER = "border-l-2 border-l-gray-500";
+
 interface Props {
   models: IndicatorModelData[];
   thisWeekDays: number;
@@ -59,13 +63,13 @@ export default function IndicatorTable({ models, thisWeekDays }: Props) {
   const newLabel = t("pages.indicator.newDefect") as string;
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm border-collapse">
+    <div className="overflow-auto h-full">
+      <table className="w-full text-sm border-separate border-spacing-0">
         {/* 2단 헤더 */}
-        <thead>
-          <tr className="bg-gray-900/80">
+        <thead className="sticky top-0 z-20" style={{ boxShadow: "0 2px 0 0 #1f2937" }}>
+          <tr className="bg-gray-800">
             <th
-              className="text-left px-3 py-2 border border-gray-700 bg-gray-800 sticky left-0 z-10"
+              className="text-left px-3 py-2 border border-gray-700 bg-gray-800 sticky left-0 z-30"
               rowSpan={2}
             >
               {t("pages.indicator.model") as string}
@@ -73,14 +77,14 @@ export default function IndicatorTable({ models, thisWeekDays }: Props) {
             {PROCESS_KEYS.map((key) => (
               <th
                 key={key}
-                className="text-center px-1 py-1.5 border border-gray-700 bg-gray-800"
+                className={`text-center px-1 py-1.5 border border-gray-700 bg-gray-800 font-bold ${GROUP_BORDER}`}
                 colSpan={3}
               >
                 {PROCESS_LABELS[key]}
               </th>
             ))}
           </tr>
-          <tr className="bg-gray-900/60 text-xs text-gray-400">
+          <tr className="text-xs bg-gray-800">
             {PROCESS_KEYS.map((key) => (
               <SubHeaders key={key} thisWeekDays={thisWeekDays} />
             ))}
@@ -88,7 +92,7 @@ export default function IndicatorTable({ models, thisWeekDays }: Props) {
         </thead>
         <tbody>
           {models.map((model) => (
-            <tr key={model.itemCode} className="border-t border-gray-800 hover:bg-gray-900/40">
+            <tr key={model.itemCode} className="border-t border-gray-800 hover:bg-gray-800/30">
               <td className="px-3 py-1.5 font-medium text-gray-200 whitespace-nowrap border border-gray-800 sticky left-0 bg-gray-950 z-10">
                 {model.itemCode}
               </td>
@@ -111,15 +115,15 @@ function SubHeaders({ thisWeekDays }: { thisWeekDays: number }) {
   const { t } = useLocale();
   return (
     <>
-      <th className="px-1 py-1 border border-gray-700 whitespace-nowrap">
+      <th className={`px-1 py-1 border border-gray-700 whitespace-nowrap bg-gray-800 text-gray-400 ${GROUP_BORDER}`}>
         {t("pages.indicator.weekBefore") as string}
       </th>
-      <th className="px-1 py-1 border border-gray-700 whitespace-nowrap bg-gray-600/40">
+      <th className="px-1 py-1 border border-gray-700 whitespace-nowrap bg-indigo-900 text-indigo-200">
         {t("pages.indicator.lastWeek") as string}
       </th>
-      <th className="px-1 py-1 border border-gray-700 whitespace-nowrap">
+      <th className="px-1 py-1 border border-gray-700 whitespace-nowrap bg-teal-900 text-teal-200">
         {t("pages.indicator.thisWeek") as string}
-        <span className="text-gray-500 ml-0.5">({thisWeekDays}{t("pages.indicator.thisWeekDays") as string})</span>
+        <span className="text-teal-400/70 ml-0.5">({thisWeekDays}{t("pages.indicator.thisWeekDays") as string})</span>
       </th>
     </>
   );
@@ -132,18 +136,18 @@ function ProcessCells({ data, newLabel }: { data: WeeklyNgData; newLabel: string
 
   return (
     <>
-      {/* 전전주: 기준값 */}
-      <td className={`px-2 py-1.5 text-center border border-gray-800 ${
+      {/* 전전주: 기준값 — 배경 없음 */}
+      <td className={`px-2 py-1.5 text-center border border-gray-800 ${GROUP_BORDER} ${
         data.weekBefore > 0 ? "text-gray-300" : "text-gray-600"
       }`}>
         {data.weekBefore}
       </td>
-      {/* 전주: 전전주 대비 — 배경 구분 */}
-      <td className={`px-2 py-1.5 text-center border border-gray-800 whitespace-nowrap bg-gray-700/40 ${lastWeekColor}`}>
+      {/* 전주: indigo 배경 */}
+      <td className={`px-2 py-1.5 text-center border border-gray-800 whitespace-nowrap bg-indigo-950/60 ${lastWeekColor}`}>
         {getRatioText(data.weekBefore, data.lastWeek, newLabel)}
       </td>
-      {/* 금주: 전주 대비 */}
-      <td className={`px-2 py-1.5 text-center border border-gray-800 whitespace-nowrap ${thisWeekColor}`}>
+      {/* 금주: teal 배경 */}
+      <td className={`px-2 py-1.5 text-center border border-gray-800 whitespace-nowrap bg-teal-950/60 ${thisWeekColor}`}>
         {getRatioText(data.lastWeek, data.thisWeek, newLabel)}
       </td>
     </>

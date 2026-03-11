@@ -17,6 +17,7 @@ const en: TranslationKeys = {
     dataLoading: "Loading data...",
     dataError: "Data retrieval error",
     noActiveLines: "No active lines.",
+    noMatchingData: "No defect data matching the current criteria.",
     refresh: "Updated",
     line: "Line",
   },
@@ -43,6 +44,7 @@ const en: TranslationKeys = {
     material: "Material",
     openShort: "Open/Short",
     indicator: "Indicator",
+    equipment: "Equipment",
   },
 
   navTooltip: {
@@ -117,6 +119,17 @@ const en: TranslationKeys = {
       "Green: Under 100% vs previous week (decrease)",
       "Gray: No defects (0→0)",
     ],
+    equipment: [
+      "Target: Equipment stop time per line/process",
+      "Table: IP_LINE_DAILY_OPERATION_HIST",
+      "Criteria: Daily stop time 60min+ → Grade C",
+      "Period: Today (F_GET_WORK_ACTUAL_DATE)",
+    ],
+    equipmentStatus: [
+      "Red: 60min+ stop (Grade C - Improve)",
+      "Yellow: Stop occurred (under 60min)",
+      "Gray: No stop",
+    ],
   },
 
   table: {
@@ -131,6 +144,10 @@ const en: TranslationKeys = {
     count: "Count",
     dailyNg: "Daily NG",
     cumNg: "90d NG",
+    consecutiveNg: "Same location consecutive NG",
+    sameLocationNg: "Same location non-consecutive NG",
+    sameComponent: "Same component",
+    sameBadCode: "Same defect code",
     noDefectsToday: "No defects today",
     noDefects: "No defects",
     consecutive: "Consecutive",
@@ -148,6 +165,7 @@ const en: TranslationKeys = {
     defectPart: "Defect Part",
     repair: "Repair",
     handling: "Handling",
+    badReason: "Defect Code",
     inspectResult: "Result",
     receipt: "Receipt",
     repairLabel: "Repair",
@@ -169,6 +187,7 @@ const en: TranslationKeys = {
       materialDesc: "Material periodic inspection across 6 processes. Daily 3+ → Grade A, 90-day 3+ → Grade C.",
       openShortDesc: "ICT Open/Short defects. Same part daily cumulative 2+ → Grade B ship hold.",
       indicatorDesc: "Weekly NG rate trend by model/process. Compare week-over-week.",
+      equipmentDesc: "Daily equipment stop time by line/process. 60min+ stop → Grade C.",
     },
     monitoring: {
       title: "CTQ Monitoring",
@@ -178,7 +197,7 @@ const en: TranslationKeys = {
       okLabel: "Normal",
     },
     accident: {
-      title: "CTQ Accident Monitoring",
+      title: "Anomaly Monitoring",
       gradeALabel: "Grade A (Line Stop)",
       gradeBLabel: "Grade B (Warning)",
     },
@@ -212,6 +231,14 @@ const en: TranslationKeys = {
       noData: "No defect data for the period.",
       newDefect: "New",
       refreshBtn: "Refresh",
+    },
+    equipment: {
+      title: "CTQ Equipment Monitoring",
+      noData: "No equipment anomaly data matching the current criteria.",
+      minuteUnit: "min",
+      gradeDesc: "Daily stop time 60min+ → Quality improvement",
+      tableDesc: "Table: IP_LINE_DAILY_OPERATION_HIST",
+      periodDesc: "Period: Today (F_GET_WORK_ACTUAL_DATE)",
     },
   },
 
