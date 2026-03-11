@@ -14,6 +14,18 @@ export type RepeatProcessType = "FT" | "ATE" | "IMAGE" | "SETTV";
 /** 등급 */
 export type RepeatGrade = "A" | "B" | "OK";
 
+/** NG 상세 레코드 (툴팁용) */
+export interface NgDetailRecord {
+  time: string;
+  pid: string;
+  model: string;
+  receiptDeficit: string;
+  locationCode: string;
+  repairResult: string;
+  qcHandling: string;
+  defectItem: string;
+}
+
 /** 공정별 상태 */
 export interface RepeatProcessStatus {
   process: RepeatProcessType;
@@ -24,6 +36,7 @@ export interface RepeatProcessStatus {
   detail: string | null;
   lastInspectDate: string | null;
   pendingCount: number;
+  ngDetails: NgDetailRecord[];
 }
 
 /** 라인 카드 데이터 */

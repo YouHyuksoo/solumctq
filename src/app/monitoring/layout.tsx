@@ -11,15 +11,17 @@
 
 import { LineFilterProvider, useLineFilter } from "./contexts/LineFilterContext";
 import LineSelectModal from "./components/LineSelectModal";
+import { useLocale } from "@/i18n";
 
 function LineFilterGate({ children }: { children: React.ReactNode }) {
   const { selectedLines, setSelectedLines, isInitialized, hasSelection } =
     useLineFilter();
+  const { t } = useLocale();
 
   if (!isInitialized) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center text-gray-500">
-        로딩 중...
+        {t("common.loading") as string}
       </div>
     );
   }

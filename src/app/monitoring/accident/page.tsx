@@ -12,21 +12,23 @@
 
 "use client";
 
-import { useState } from "react";
 import { useLineFilter } from "../contexts/LineFilterContext";
 import { useAccident } from "./hooks/useAccident";
 import { useAutoRolling } from "../hooks/useAutoRolling";
+import { usePersistedState } from "../hooks/usePersistedState";
 import AccidentLineCard from "./components/AccidentLineCard";
 import SettingsPanel from "../components/SettingsPanel";
 import MonitoringNav from "../components/MonitoringNav";
+import { useLocale } from "@/i18n";
 
 const ITEMS_PER_PAGE = 9;
 
 export default function AccidentPage() {
-  const [monitorInterval, setMonitorInterval] = useState(30000);
-  const [rollingInterval, setRollingInterval] = useState(10000);
-  const [rollingEnabled, setRollingEnabled] = useState(true);
+  const [monitorInterval, setMonitorInterval] = usePersistedState("ctq-monitor-interval", 30000);
+  const [rollingInterval, setRollingInterval] = usePersistedState("ctq-rolling-interval", 10000);
+  const [rollingEnabled, setRollingEnabled] = usePersistedState("ctq-rolling-enabled", true);
 
+  const { t, dateLocale } = useLocale();
   const { selectedLines } = useLineFilter();
   const { data, error, loading } = useAccident(monitorInterval, selectedLines);
 
@@ -49,20 +51,20 @@ export default function AccidentPage() {
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
           <div className="flex items-center gap-4">
             <h1 className="text-lg font-bold">
-              CTQ 사고성 모니터링
+              {t("pages.accident.title") as string}
             </h1>
             <MonitoringNav />
           </div>
           <div className="flex items-center gap-4">
             {data && data.lines.length > 0 && (
               <>
-                <SummaryBadge label="A급 (Line Stop)" count={aCount} color="bg-red-600" />
-                <SummaryBadge label="B급 (Warning)" count={bCount} color="bg-yellow-600" />
+                <SummaryBadge label={t("pages.accident.gradeALabel") as string} count={aCount} color="bg-red-600" />
+                <SummaryBadge label={t("pages.accident.gradeBLabel") as string} count={bCount} color="bg-yellow-600" />
               </>
             )}
             <div className="flex items-center gap-2 text-xs text-gray-400 ml-4">
               {data && (
-                <span>갱신: {new Date(data.lastUpdated).toLocaleTimeString("ko-KR")}</span>
+                <span>{t("common.refresh") as string}: {new Date(data.lastUpdated).toLocaleTimeString(dateLocale)}</span>
               )}
               <span
                 className={`w-2 h-2 rounded-full ${
@@ -95,17 +97,17 @@ export default function AccidentPage() {
       <main className="max-w-[1920px] mx-auto p-6">
         {error && (
           <div className="mb-4 p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm">
-            데이터 조회 오류: {error}
+            {t("common.dataError") as string}: {error}
           </div>
         )}
         {loading && !data && (
           <div className="flex items-center justify-center h-64 text-gray-500">
-            데이터 로딩 중...
+            {t("common.dataLoading") as string}
           </div>
         )}
         {data && data.lines.length === 0 && (
           <div className="flex items-center justify-center h-64 text-gray-500">
-            활성 라인이 없습니다.
+            {t("common.noActiveLines") as string}
           </div>
         )}
         {data && data.lines.length > 0 && (

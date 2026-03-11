@@ -64,6 +64,18 @@ interface DefectRow {
   NG_90D: number;
 }
 
+interface NgDetailRow {
+  LINE_CODE: string;
+  DEFECT_ITEM: string;
+  QC_TIME: string;
+  SERIAL_NO: string;
+  MODEL_NAME: string;
+  RECEIPT_DEFICIT: string;
+  LOCATION_CODE: string;
+  REPAIR_RESULT_CODE: string;
+  QC_INSPECT_HANDLING: string;
+}
+
 interface LineNameRow {
   LINE_CODE: string;
   LINE_NAME: string;
@@ -83,6 +95,44 @@ async function getLineNames(lineCodes: string[]): Promise<Map<string, string>> {
   const map = new Map<string, string>();
   rows.forEach((r) => map.set(r.LINE_CODE, r.LINE_NAME));
   return map;
+}
+
+/** 부품별 NG 상세 (최근 5건, 툴팁용) */
+async function getNgDetailsByDefect(
+  lineFilter: { clause: string; params: Record<string, string> } = { clause: "", params: {} }
+): Promise<NgDetailRow[]> {
+  const times = getTimeRanges();
+  const sql = `
+    SELECT LINE_CODE, DEFECT_ITEM, QC_TIME, SERIAL_NO, MODEL_NAME,
+           RECEIPT_DEFICIT, LOCATION_CODE, REPAIR_RESULT_CODE, QC_INSPECT_HANDLING
+    FROM (
+      SELECT t.LINE_CODE,
+             t.DEFECT_ITEM_CODE AS DEFECT_ITEM,
+             TO_CHAR(t.QC_DATE, 'YYYY/MM/DD HH24:MI:SS') AS QC_TIME,
+             t.SERIAL_NO,
+             NVL(t.MODEL_NAME, '-') AS MODEL_NAME,
+             NVL(t.RECEIPT_DEFICIT, '-') AS RECEIPT_DEFICIT,
+             NVL(t.LOCATION_CODE, '-') AS LOCATION_CODE,
+             NVL(t.REPAIR_RESULT_CODE, '-') AS REPAIR_RESULT_CODE,
+             NVL(t.QC_INSPECT_HANDLING, '-') AS QC_INSPECT_HANDLING,
+             ROW_NUMBER() OVER (
+               PARTITION BY t.LINE_CODE, t.DEFECT_ITEM_CODE
+               ORDER BY t.QC_DATE DESC
+             ) AS RN
+      FROM IP_PRODUCT_WORK_QC t
+      WHERE t.QC_DATE >= TO_DATE(:ts90, 'YYYY/MM/DD HH24:MI:SS')
+        AND t.QC_DATE < TO_DATE(:tsEnd, 'YYYY/MM/DD HH24:MI:SS')
+        AND t.LINE_CODE IS NOT NULL
+        AND t.LINE_CODE <> '*'
+        AND t.DEFECT_ITEM_CODE IS NOT NULL
+        ${lineFilter.clause}
+    ) WHERE RN <= 5
+  `;
+  return executeQuery<NgDetailRow>(sql, {
+    ts90: times.start90,
+    tsEnd: times.dayEnd,
+    ...lineFilter.params,
+  });
 }
 
 async function fetchFromDB(
@@ -112,6 +162,16 @@ async function fetchFromDB(
     ...lineFilter.params,
   });
 
+  const detailRows = await getNgDetailsByDefect(lineFilter);
+
+  /* NG 상세 Map: LINE_CODE+DEFECT_ITEM → NgDetailRow[] */
+  const detailMap = new Map<string, NgDetailRow[]>();
+  for (const row of detailRows) {
+    const key = `${row.LINE_CODE}|${row.DEFECT_ITEM}`;
+    if (!detailMap.has(key)) detailMap.set(key, []);
+    detailMap.get(key)!.push(row);
+  }
+
   /* 라인별 그룹핑 */
   const lineDataMap = new Map<string, DefectRow[]>();
   const allLineCodes = new Set<string>();
@@ -139,10 +199,22 @@ async function fetchFromDB(
     let hasCGrade = false;
 
     for (const row of rowsForLine) {
+      const detKey = `${row.LINE_CODE}|${row.DEFECT_ITEM}`;
+      const dets = detailMap.get(detKey) ?? [];
       defects.push({
         defectItem: row.DEFECT_ITEM,
         dailyCount: row.NG_DAILY,
         cumulativeCount: row.NG_90D,
+        ngDetails: dets.map((d) => ({
+          time: d.QC_TIME,
+          pid: d.SERIAL_NO,
+          model: d.MODEL_NAME,
+          receiptDeficit: d.RECEIPT_DEFICIT,
+          locationCode: d.LOCATION_CODE,
+          repairResult: d.REPAIR_RESULT_CODE,
+          qcHandling: d.QC_INSPECT_HANDLING,
+          defectItem: d.DEFECT_ITEM,
+        })),
       });
       totalDailyNg += row.NG_DAILY;
       totalCumulativeNg += row.NG_90D;

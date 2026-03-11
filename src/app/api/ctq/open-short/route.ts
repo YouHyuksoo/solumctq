@@ -48,6 +48,19 @@ interface DefectRow {
   CNT: number;
 }
 
+interface NgDetailRow {
+  LINE_CODE: string;
+  BAD_REASON_CODE: string;
+  QC_TIME: string;
+  SERIAL_NO: string;
+  MODEL_NAME: string;
+  RECEIPT_DEFICIT: string;
+  LOCATION_CODE: string;
+  REPAIR_RESULT_CODE: string;
+  QC_INSPECT_HANDLING: string;
+  DEFECT_ITEM_CODE: string;
+}
+
 interface LineNameRow {
   LINE_CODE: string;
   LINE_NAME: string;
@@ -89,6 +102,41 @@ export async function GET(request: NextRequest) {
 
     const rows = await executeQuery<DefectRow>(sql, { dayStart, ...lineFilter.params });
 
+    /* NG 상세 (최근 5건, 툴팁용) */
+    const detailSql = `
+      SELECT LINE_CODE, BAD_REASON_CODE, QC_TIME, SERIAL_NO, MODEL_NAME,
+             RECEIPT_DEFICIT, LOCATION_CODE, REPAIR_RESULT_CODE, QC_INSPECT_HANDLING, DEFECT_ITEM_CODE
+      FROM (
+        SELECT t.LINE_CODE,
+               t.BAD_REASON_CODE,
+               TO_CHAR(t.QC_DATE, 'YYYY/MM/DD HH24:MI:SS') AS QC_TIME,
+               t.SERIAL_NO,
+               NVL(t.MODEL_NAME, '-') AS MODEL_NAME,
+               NVL(t.RECEIPT_DEFICIT, '-') AS RECEIPT_DEFICIT,
+               NVL(t.LOCATION_CODE, '-') AS LOCATION_CODE,
+               NVL(t.REPAIR_RESULT_CODE, '-') AS REPAIR_RESULT_CODE,
+               NVL(t.QC_INSPECT_HANDLING, '-') AS QC_INSPECT_HANDLING,
+               NVL(t.DEFECT_ITEM_CODE, '-') AS DEFECT_ITEM_CODE,
+               ROW_NUMBER() OVER (
+                 PARTITION BY t.LINE_CODE, t.BAD_REASON_CODE
+                 ORDER BY t.QC_DATE DESC
+               ) AS RN
+        FROM IP_PRODUCT_WORK_QC t
+        WHERE t.QC_DATE >= TO_DATE(:dayStart, 'YYYY/MM/DD HH24:MI:SS')
+          AND t.BAD_REASON_CODE IN ('B2020', 'B2030')
+          AND t.LINE_CODE IS NOT NULL
+          ${lineFilter.clause}
+      ) WHERE RN <= 5
+    `;
+    const detailRows = await executeQuery<NgDetailRow>(detailSql, { dayStart, ...lineFilter.params });
+
+    const detailMap = new Map<string, NgDetailRow[]>();
+    for (const row of detailRows) {
+      const key = `${row.LINE_CODE}|${row.BAD_REASON_CODE}`;
+      if (!detailMap.has(key)) detailMap.set(key, []);
+      detailMap.get(key)!.push(row);
+    }
+
     const allLineCodes = new Set<string>();
     const lineDataMap = new Map<string, DefectRow[]>();
 
@@ -112,11 +160,23 @@ export async function GET(request: NextRequest) {
 
       for (const row of rowsForLine) {
         const defectType = BAD_REASON_MAP[row.BAD_REASON_CODE] ?? "SHORT";
+        const detKey = `${row.LINE_CODE}|${row.BAD_REASON_CODE}`;
+        const dets = detailMap.get(detKey) ?? [];
         defects.push({
           defectItem: defectType,
           defectType,
           badReasonCode: row.BAD_REASON_CODE,
           count: row.CNT,
+          ngDetails: dets.map((d) => ({
+            time: d.QC_TIME,
+            pid: d.SERIAL_NO,
+            model: d.MODEL_NAME,
+            receiptDeficit: d.RECEIPT_DEFICIT,
+            locationCode: d.LOCATION_CODE,
+            repairResult: d.REPAIR_RESULT_CODE,
+            qcHandling: d.QC_INSPECT_HANDLING,
+            defectItem: d.DEFECT_ITEM_CODE,
+          })),
         });
         if (row.CNT >= 2) {
           overallGrade = "B";

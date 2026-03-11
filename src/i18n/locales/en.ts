@@ -1,0 +1,243 @@
+/**
+ * @file src/i18n/locales/en.ts
+ * @description English translation file
+ *
+ * 초보자 가이드:
+ * 1. ko.ts와 동일한 키 구조를 유지해야 함
+ * 2. 새 키 추가 시 ko.ts, vi.ts도 함께 업데이트
+ */
+
+import type { TranslationKeys } from "./ko";
+
+const en: TranslationKeys = {
+  common: {
+    ctqMonitoring: "CTQ Monitoring",
+    qualitySystem: "Real-time Quality Monitoring System",
+    loading: "Loading...",
+    dataLoading: "Loading data...",
+    dataError: "Data retrieval error",
+    noActiveLines: "No active lines.",
+    refresh: "Updated",
+    line: "Line",
+  },
+
+  grade: {
+    a: "Grade A",
+    b: "Grade B",
+    c: "Grade C",
+    lineStop: "Line Stop",
+    shipmentStop: "Ship Hold",
+    qualityImprove: "Improve",
+    warning: "Warning",
+    running: "Running",
+    ok: "Normal",
+  },
+
+  nav: {
+    goHome: "Go to Main Menu",
+    lineFilter: "Line Filter",
+    lineFilterCount: " selected",
+    repeatability: "Consecutive",
+    nonConsecutive: "Same Location",
+    accident: "Accident",
+    material: "Material",
+    openShort: "Open/Short",
+    indicator: "Indicator",
+  },
+
+  navTooltip: {
+    criteria: "Criteria",
+    statusGuide: "Status Guide",
+    repeatability: [
+      "Process: FT#1, ATE, IMAGE, SET Inspection",
+      "Condition: Same Location consecutive NG 2+",
+      "Grade: A (Line Stop)",
+      "Table: RAW + IP_PRODUCT_WORK_QC",
+      "Period: Today 08:00 ~ Next day 08:00",
+    ],
+    repeatabilityStatus: [
+      "NG (Yellow): Defect but not consecutive same location",
+      "Grade A (Red): Consecutive same location → Line Stop required",
+    ],
+    nonConsecutive: [
+      "Process: FT#1, ATE, IMAGE, SET Inspection",
+      "Condition: Same Location 2+ (non-consecutive)",
+      "Grade: B (Warning), excludes A",
+      "Table: RAW + IP_PRODUCT_WORK_QC",
+      "Period: Today 08:00 ~ Next day 08:00",
+    ],
+    nonConsecutiveStatus: [
+      "NG (Yellow): Defect but no repeated same location",
+      "Grade B (Orange): Same location non-consecutive 2+ → Warning",
+    ],
+    accident: [
+      "Process: HIPOT, BURN-IN, ATE",
+      "HIPOT: NG 1+ → Grade A (Line Stop)",
+      "BURNIN/ATE: 2+ → Grade A, 1 → Grade B",
+      "Table: RAW tables per process",
+      "Period: Today 08:00 ~ Next day 08:00",
+    ],
+    accidentStatus: [
+      "NG (Yellow): Defect below criteria",
+      "Grade A (Red): HIPOT 1+ or others 2+ → Line Stop",
+      "Grade B (Orange): BURNIN/ATE 1 occurrence → Warning",
+    ],
+    material: [
+      "Target: Same DEFECT_ITEM_CODE (component)",
+      "Grade A: Same part daily 3+ NG",
+      "Grade C: Same part 90-day cumulative 3+",
+      "Table: IP_PRODUCT_WORK_QC",
+      "Period: A=daily, C=90-day cumulative",
+    ],
+    materialStatus: [
+      "NG (Yellow): Same part defect below criteria",
+      "Grade A (Red): Same part daily 3+ → Line Stop",
+      "Grade C (Purple): 90-day cumulative 3+ → Quality improvement",
+    ],
+    openShort: [
+      "Process: ICT (W090, W430)",
+      "Target: OPEN(B2020) / SHORT(B2030)",
+      "Grade: Same defect code daily 2+ → Grade B",
+      "Table: IP_PRODUCT_WORK_QC",
+      "Period: Today 08:00 ~",
+    ],
+    openShortStatus: [
+      "NG (Yellow): Open/Short defect below criteria",
+      "Grade B (Orange): Same defect code daily 2+ → Ship Hold",
+    ],
+    indicator: [
+      "Target: All processes (ICT, Hi-Pot, FT, Burn-In, ATE, IMAGE, SET)",
+      "Content: Weekly NG count comparison by model/process",
+      "Criteria: 2x or more vs previous week → Grade C",
+      "Cycle: Weekly (Monday to Sunday)",
+    ],
+    indicatorStatus: [
+      "Red: 200%+ vs previous week or new defect (Grade C)",
+      "Yellow: 100~199% vs previous week (increase)",
+      "Green: Under 100% vs previous week (decrease)",
+      "Gray: No defects (0→0)",
+    ],
+  },
+
+  table: {
+    process: "Process",
+    status: "Status",
+    lastInspect: "Last Inspect",
+    ngCount: "NG",
+    pending: "Pending",
+    gradeCol: "Grade",
+    component: "Part",
+    type: "Type",
+    count: "Count",
+    dailyNg: "Daily NG",
+    cumNg: "90d NG",
+    noDefectsToday: "No defects today",
+    noDefects: "No defects",
+    consecutive: "Consecutive",
+    consecutiveFmt: "Consecutive:{count}({loc})",
+    sameLoc: "Same Loc",
+    sameLocFmt: "Same Loc:{count}({loc})",
+    ngGradeFmt: "NG {count} ({grade})",
+    recentNgDetail: "Recent NG Details",
+    ngDetail: "NG Details",
+    ngAll: "All NG",
+    time: "Time",
+    model: "Model",
+    category: "Type",
+    location: "Location",
+    defectPart: "Defect Part",
+    repair: "Repair",
+    handling: "Handling",
+    inspectResult: "Result",
+    receipt: "Receipt",
+    repairLabel: "Repair",
+    ofTotal: " of",
+    totalCount: "Total",
+    cases: "",
+    searching: "Searching...",
+    searchFailed: "Search failed",
+    noNgData: "No NG data",
+    showing: " shown (max 200)",
+    close: "Close",
+  },
+
+  pages: {
+    home: {
+      repeatDesc: "Grade A consecutive defect monitoring. Displays line grades when consecutive NG occurs on same PID.",
+      nonConsDesc: "Grade B non-consecutive monitoring. Tracks repeated NG at same location by line.",
+      accidentDesc: "HIPOT / BURNIN / ATE accident defects. Grade assigned when count exceeds threshold.",
+      materialDesc: "Material periodic inspection across 6 processes. Daily 3+ → Grade A, 90-day 3+ → Grade C.",
+      openShortDesc: "ICT Open/Short defects. Same part daily cumulative 2+ → Grade B ship hold.",
+      indicatorDesc: "Weekly NG rate trend by model/process. Compare week-over-week.",
+    },
+    monitoring: {
+      title: "CTQ Monitoring",
+      subtitle: "Repeatability / Accident",
+      gradeALabel: "Grade A (Line Stop)",
+      gradeBLabel: "Grade B (Ship Hold)",
+      okLabel: "Normal",
+    },
+    accident: {
+      title: "CTQ Accident Monitoring",
+      gradeALabel: "Grade A (Line Stop)",
+      gradeBLabel: "Grade B (Warning)",
+    },
+    repeatability: {
+      title: "CTQ Repeatability Monitoring",
+      gradeALabel: "Grade A (Line Stop)",
+      okLabel: "Normal",
+    },
+    nonConsecutive: {
+      title: "CTQ Repeatability Monitoring",
+      gradeBLabel: "Grade B (Warning)",
+      okLabel: "Normal",
+    },
+    openShort: {
+      title: "CTQ Open/Short",
+      gradeBLabel: "Grade B (Ship Hold)",
+      noData: "No Open/Short defects today.",
+    },
+    material: {
+      title: "CTQ Material Parts",
+      gradeALabel: "Grade A (Line Stop)",
+      gradeCLabel: "Grade C (Improve)",
+    },
+    indicator: {
+      title: "CTQ Indicator Monitoring",
+      weekBefore: "2 Weeks Ago",
+      lastWeek: "Last Week",
+      thisWeek: "This Week",
+      thisWeekDays: "days",
+      model: "Model",
+      noData: "No defect data for the period.",
+      newDefect: "New",
+      refreshBtn: "Refresh",
+    },
+  },
+
+  settings: {
+    title: "Settings",
+    dataInterval: "Data refresh interval",
+    screenRolling: "Screen rolling",
+    rollingInterval: "Rolling interval",
+    sec10: "10s",
+    sec30: "30s",
+    sec60: "60s",
+    sec120: "120s",
+    sec5: "5s",
+    sec15: "15s",
+  },
+
+  lineSelect: {
+    title: "Select Monitoring Lines",
+    forcedDesc: "Please select at least 1 line to monitor",
+    selectedCount: " lines selected",
+    selectAll: "Select All",
+    deselectAll: "Deselect All",
+    loadingLines: "Loading line list...",
+    cancel: "Cancel",
+    apply: "Apply",
+  },
+};
+
+export default en;

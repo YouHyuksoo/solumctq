@@ -228,7 +228,7 @@ function detectRepeatability(
     return {
       grade: "A",
       locationCode: consecutiveLocation,
-      detail: `연속(${consecutiveLocation})`,
+      detail: `consecutive(${consecutiveLocation})`,
       pendingCount,
     };
   }
@@ -240,7 +240,7 @@ function detectRepeatability(
     return {
       grade: "B",
       locationCode: repeatedLoc[0],
-      detail: `누적:${repeatedLoc[1]}(${repeatedLoc[0]})`,
+      detail: `sameLoc:${repeatedLoc[1]}(${repeatedLoc[0]})`,
       pendingCount,
     };
   }

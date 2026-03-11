@@ -43,6 +43,11 @@ export function useAutoRolling({
     setCurrentPage((prev) => (prev >= totalPages ? 0 : prev));
   }, [totalPages]);
 
+  /** 모달이 열려있으면 true (DOM 속성 기반 감지) */
+  const isModalOpen = useCallback(() => {
+    return typeof document !== "undefined" && document.querySelector("[data-ng-modal]") !== null;
+  }, []);
+
   /* 자동 전환 타이머 */
   useEffect(() => {
     if (!enabled || totalPages <= 1) {
@@ -52,8 +57,11 @@ export function useAutoRolling({
 
     startTimeRef.current = Date.now();
 
-    const pageTimer = setInterval(goToNext, intervalMs);
+    const pageTimer = setInterval(() => {
+      if (!isModalOpen()) goToNext();
+    }, intervalMs);
     const progressTimer = setInterval(() => {
+      if (isModalOpen()) return;
       const elapsed = Date.now() - startTimeRef.current;
       setProgress(Math.min((elapsed / intervalMs) * 100, 100));
     }, 100);
@@ -62,7 +70,7 @@ export function useAutoRolling({
       clearInterval(pageTimer);
       clearInterval(progressTimer);
     };
-  }, [enabled, intervalMs, totalPages, goToNext]);
+  }, [enabled, intervalMs, totalPages, goToNext, isModalOpen]);
 
   const startIdx = currentPage * itemsPerPage;
   const endIdx = Math.min(startIdx + itemsPerPage, totalItems);

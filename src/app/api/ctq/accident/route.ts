@@ -104,6 +104,18 @@ interface LineNameRow {
   LINE_NAME: string;
 }
 
+interface NgDetailRow {
+  LINE_CODE: string;
+  INSPECT_TIME: string;
+  PID: string;
+  MODEL_NAME: string;
+  RECEIPT_DEFICIT: string;
+  LOCATION_CODE: string;
+  REPAIR_RESULT_CODE: string;
+  QC_INSPECT_HANDLING: string;
+  DEFECT_ITEM_CODE: string;
+}
+
 /** LINE별 NG 건수 집계 */
 async function getLineSummary(
   config: ProcessConfig,
@@ -126,6 +138,47 @@ async function getLineSummary(
     GROUP BY t.LINE_CODE
   `;
   return executeQuery<LineSummaryRow>(sql, {
+    tsStart: timeRange.startStr,
+    tsEnd: timeRange.endStr,
+    ...lineFilter.params,
+  });
+}
+
+/** 공정별 NG 상세 (최근 5건, 툴팁용) */
+async function getNgDetails(
+  config: ProcessConfig,
+  timeRange: { startStr: string; endStr: string },
+  lineFilter: { clause: string; params: Record<string, string> }
+): Promise<NgDetailRow[]> {
+  const col = `t.${config.dateCol}`;
+  const condition = `${col} >= :tsStart AND ${col} < :tsEnd`;
+
+  const sql = `
+    SELECT LINE_CODE, INSPECT_TIME, PID, MODEL_NAME,
+           RECEIPT_DEFICIT, LOCATION_CODE, REPAIR_RESULT_CODE, QC_INSPECT_HANDLING, DEFECT_ITEM_CODE
+    FROM (
+      SELECT t.LINE_CODE,
+             t.${config.dateCol} AS INSPECT_TIME,
+             t.${config.pidCol} AS PID,
+             NVL(r.MODEL_NAME, '-') AS MODEL_NAME,
+             NVL(r.RECEIPT_DEFICIT, '-') AS RECEIPT_DEFICIT,
+             NVL(r.LOCATION_CODE, '-') AS LOCATION_CODE,
+             NVL(r.REPAIR_RESULT_CODE, '-') AS REPAIR_RESULT_CODE,
+             NVL(r.QC_INSPECT_HANDLING, '-') AS QC_INSPECT_HANDLING,
+             NVL(r.DEFECT_ITEM_CODE, '-') AS DEFECT_ITEM_CODE,
+             ROW_NUMBER() OVER (PARTITION BY t.LINE_CODE ORDER BY t.${config.dateCol} DESC) AS RN
+      FROM ${config.table} t
+      LEFT JOIN IP_PRODUCT_WORK_QC r
+        ON r.SERIAL_NO = t.${config.pidCol}
+        AND r.RECEIPT_DEFICIT = '2'
+      WHERE ${condition}
+        AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK')
+        AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN <> 'Y')
+        AND t.LINE_CODE IS NOT NULL
+        ${lineFilter.clause}
+    ) WHERE RN <= 5
+  `;
+  return executeQuery<NgDetailRow>(sql, {
     tsStart: timeRange.startStr,
     tsEnd: timeRange.endStr,
     ...lineFilter.params,
@@ -165,9 +218,10 @@ export async function GET(request: NextRequest) {
     const timeRange = getTimeRange();
 
     /* 1. 3공정 병렬 쿼리 */
-    const summaries = await Promise.all(
-      PROCESS_TYPES.map((pt) => getLineSummary(PROCESS_CONFIG[pt], timeRange, lineFilter))
-    );
+    const [summaries, ngDetails] = await Promise.all([
+      Promise.all(PROCESS_TYPES.map((pt) => getLineSummary(PROCESS_CONFIG[pt], timeRange, lineFilter))),
+      Promise.all(PROCESS_TYPES.map((pt) => getNgDetails(PROCESS_CONFIG[pt], timeRange, lineFilter))),
+    ]);
 
     /* 2. Map 변환 */
     const summaryByProcess = new Map<AccidentProcessType, Map<string, LineSummaryRow>>();
@@ -180,6 +234,17 @@ export async function GET(request: NextRequest) {
         allLineCodes.add(row.LINE_CODE);
       }
       summaryByProcess.set(pt, sMap);
+    });
+
+    const detailsByProcess = new Map<AccidentProcessType, Map<string, NgDetailRow[]>>();
+
+    PROCESS_TYPES.forEach((pt, i) => {
+      const dMap = new Map<string, NgDetailRow[]>();
+      for (const row of ngDetails[i]) {
+        if (!dMap.has(row.LINE_CODE)) dMap.set(row.LINE_CODE, []);
+        dMap.get(row.LINE_CODE)!.push(row);
+      }
+      detailsByProcess.set(pt, dMap);
     });
 
     /* 3. 라인이름 조회 */
@@ -200,11 +265,12 @@ export async function GET(request: NextRequest) {
 
         let detail: string | null = null;
         if (grade === "A") {
-          detail = `NG ${ngCount}건 (A급)`;
+          detail = `NG:${ngCount}(A)`;
         } else if (grade === "B") {
-          detail = `NG ${ngCount}건 (B급)`;
+          detail = `NG:${ngCount}(B)`;
         }
 
+        const details = detailsByProcess.get(pt)?.get(lineCode) ?? [];
         processes.push({
           process: pt,
           processLabel: PROCESS_LABELS[pt],
@@ -212,6 +278,16 @@ export async function GET(request: NextRequest) {
           ngCount,
           detail,
           lastInspectDate: summary?.LAST_INSPECT ?? null,
+          ngDetails: details.map((d) => ({
+            time: d.INSPECT_TIME,
+            pid: d.PID,
+            model: d.MODEL_NAME,
+            receiptDeficit: d.RECEIPT_DEFICIT,
+            locationCode: d.LOCATION_CODE,
+            repairResult: d.REPAIR_RESULT_CODE,
+            qcHandling: d.QC_INSPECT_HANDLING,
+            defectItem: d.DEFECT_ITEM_CODE,
+          })),
         });
 
         if (grade === "A" && overallGrade !== "A") overallGrade = "A";

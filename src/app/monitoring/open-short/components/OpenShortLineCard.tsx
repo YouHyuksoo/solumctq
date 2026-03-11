@@ -5,23 +5,36 @@
 
 "use client";
 
+import { useState } from "react";
 import type { OpenShortLineCardData, OpenShortGrade } from "../types";
+import NgTooltip from "../../components/NgTooltip";
+import NgDetailModal from "../../components/NgDetailModal";
+import { useLocale } from "@/i18n";
 
-const GRADE_STYLES: Record<OpenShortGrade, { card: string; badge: string; text: string }> = {
+const GRADE_STYLES: Record<OpenShortGrade, { card: string; badge: string }> = {
   B: {
     card: "border-orange-500 bg-orange-950/30",
     badge: "bg-orange-600 text-white",
-    text: "출하중지",
   },
   OK: {
     card: "border-gray-700 bg-gray-900/50",
     badge: "bg-green-700 text-white",
-    text: "Running",
   },
 };
 
 export default function OpenShortLineCard({ line }: { line: OpenShortLineCardData }) {
+  const { t } = useLocale();
   const style = GRADE_STYLES[line.overallGrade];
+
+  const GRADE_TEXT: Record<OpenShortGrade, string> = {
+    B: t("grade.shipmentStop") as string,
+    OK: t("grade.running") as string,
+  };
+  const [tooltip, setTooltip] = useState<{
+    idx: number;
+    pos: { x: number; y: number };
+  } | null>(null);
+  const [modal, setModal] = useState<{ defectType: string; badReasonCode: string } | null>(null);
 
   return (
     <div className={`rounded-lg border-2 ${style.card} p-0 overflow-hidden`}>
@@ -32,21 +45,27 @@ export default function OpenShortLineCard({ line }: { line: OpenShortLineCardDat
           <span className="ml-2 text-xs text-gray-500">({line.lineCode})</span>
         </div>
         <span className={`px-3 py-1 rounded text-xs font-bold ${style.badge}`}>
-          {style.text}
+          {GRADE_TEXT[line.overallGrade]}
         </span>
       </div>
 
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-black/30 text-gray-400 text-xs">
-            <th className="text-left px-3 py-1.5">부품</th>
-            <th className="text-center px-3 py-1.5 w-20">유형</th>
-            <th className="text-center px-3 py-1.5 w-16">건수</th>
+            <th className="text-left px-3 py-1.5">{t("table.component") as string}</th>
+            <th className="text-center px-3 py-1.5 w-20">{t("table.type") as string}</th>
+            <th className="text-center px-3 py-1.5 w-16">{t("table.count") as string}</th>
           </tr>
         </thead>
         <tbody>
           {line.defects.map((d, i) => (
-            <tr key={`${d.defectItem}-${d.badReasonCode}-${i}`} className="border-t border-gray-800">
+            <tr
+              key={`${d.defectItem}-${d.badReasonCode}-${i}`}
+              className={`border-t border-gray-800 ${d.ngDetails?.length > 0 ? "cursor-pointer" : ""}`}
+              onMouseEnter={(e) => d.ngDetails?.length > 0 && setTooltip({ idx: i, pos: { x: e.clientX, y: e.clientY } })}
+              onMouseLeave={() => setTooltip(null)}
+              onClick={() => d.count > 0 && setModal({ defectType: d.defectType, badReasonCode: d.badReasonCode })}
+            >
               <td className="px-3 py-1.5 font-medium text-gray-200 whitespace-nowrap">
                 {d.defectItem}
               </td>
@@ -67,12 +86,32 @@ export default function OpenShortLineCard({ line }: { line: OpenShortLineCardDat
           {line.defects.length === 0 && (
             <tr>
               <td colSpan={3} className="px-3 py-3 text-center text-gray-600 text-xs">
-                금일 불량 없음
+                {t("table.noDefectsToday") as string}
               </td>
             </tr>
           )}
         </tbody>
       </table>
+
+      {tooltip != null && (() => {
+        const d = line.defects[tooltip.idx];
+        if (!d?.ngDetails?.length) return null;
+        return (
+          <NgTooltip
+            details={d.ngDetails}
+            title={`${d.defectType} ${t("table.ngDetail") as string}`}
+            totalCount={d.count}
+            position={tooltip.pos}
+          />
+        );
+      })()}
+
+      <NgDetailModal
+        open={modal !== null}
+        title={modal ? `${line.lineName} - ${modal.defectType} ${t("table.ngAll") as string}` : ""}
+        fetchUrl={modal ? `/api/ctq/ng-details?type=open-short&lineCode=${encodeURIComponent(line.lineCode)}&badReasonCode=${encodeURIComponent(modal.badReasonCode)}` : ""}
+        onClose={() => setModal(null)}
+      />
     </div>
   );
 }

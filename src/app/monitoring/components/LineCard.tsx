@@ -6,27 +6,24 @@
 "use client";
 
 import type { LineCardData, AlertGrade } from "../types";
+import { useLocale, translateDetail } from "@/i18n";
 
-const GRADE_STYLES: Record<AlertGrade, { card: string; badge: string; text: string }> = {
+const GRADE_STYLES: Record<AlertGrade, { card: string; badge: string }> = {
   A: {
     card: "border-red-500 bg-red-950/30",
     badge: "bg-red-600 text-white",
-    text: "Line Stop",
   },
   B: {
     card: "border-yellow-500 bg-yellow-950/20",
     badge: "bg-yellow-500 text-black",
-    text: "출하중지",
   },
   C: {
     card: "border-orange-400 bg-orange-950/10",
     badge: "bg-orange-500 text-white",
-    text: "불량개선",
   },
   OK: {
     card: "border-gray-700 bg-gray-900/50",
     badge: "bg-green-700 text-white",
-    text: "Running",
   },
 };
 
@@ -47,7 +44,15 @@ function formatShortDate(dt: string): string {
 }
 
 export default function LineCard({ line }: { line: LineCardData }) {
+  const { t } = useLocale();
   const style = GRADE_STYLES[line.overallGrade];
+
+  const GRADE_TEXT: Record<AlertGrade, string> = {
+    A: t("grade.lineStop") as string,
+    B: t("grade.shipmentStop") as string,
+    C: t("grade.qualityImprove") as string,
+    OK: t("grade.running") as string,
+  };
 
   return (
     <div className={`rounded-lg border-2 ${style.card} p-0 overflow-hidden`}>
@@ -59,7 +64,7 @@ export default function LineCard({ line }: { line: LineCardData }) {
           <span className="ml-2 text-xs text-gray-500">({line.lineCode})</span>
         </div>
         <span className={`px-3 py-1 rounded text-xs font-bold ${style.badge}`}>
-          {style.text}
+          {GRADE_TEXT[line.overallGrade]}
         </span>
       </div>
 
@@ -67,12 +72,12 @@ export default function LineCard({ line }: { line: LineCardData }) {
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-black/30 text-gray-400 text-xs">
-            <th className="text-left px-3 py-1.5 w-24">공정</th>
-            <th className="text-left px-3 py-1.5">상태</th>
-            <th className="text-left px-3 py-1.5 w-28">최근 검사</th>
+            <th className="text-left px-3 py-1.5 w-24">{t("table.process") as string}</th>
+            <th className="text-left px-3 py-1.5 w-32">{t("table.status") as string}</th>
+            <th className="text-left px-3 py-1.5 w-28">{t("table.lastInspect") as string}</th>
             <th className="text-center px-3 py-1.5 w-14">NG</th>
-            <th className="text-center px-3 py-1.5 w-14">대기</th>
-            <th className="text-center px-3 py-1.5 w-16">등급</th>
+            <th className="text-center px-3 py-1.5 w-14">{t("table.pending") as string}</th>
+            <th className="text-center px-3 py-1.5 w-20">{t("table.gradeCol") as string}</th>
           </tr>
         </thead>
         <tbody>
@@ -84,7 +89,7 @@ export default function LineCard({ line }: { line: LineCardData }) {
               <td className="px-3 py-1.5 font-medium text-gray-200 whitespace-nowrap">
                 {p.processLabel}
               </td>
-              <td className="px-3 py-1.5" title={p.detail || ""}>
+              <td className="px-3 py-1.5" title={translateDetail(p.detail, t) || ""}>
                 {p.ngCount > 0 ? (
                   <span className="text-red-400 font-bold">NG</span>
                 ) : (
@@ -106,14 +111,14 @@ export default function LineCard({ line }: { line: LineCardData }) {
                   <span className="text-blue-400 text-xs">{p.pendingCount}</span>
                 )}
               </td>
-              <td className="px-3 py-1.5 text-center">
+              <td className="px-3 py-1.5 text-center whitespace-nowrap">
                 {p.grade !== "OK" && (
                   <span
-                    className={`px-2 py-0.5 rounded text-xs font-bold ${
+                    className={`px-2 py-0.5 rounded text-xs font-bold whitespace-nowrap ${
                       GRADE_STYLES[p.grade].badge
                     }`}
                   >
-                    {p.grade}급
+                    {t(`grade.${p.grade.toLowerCase()}`) as string}
                   </span>
                 )}
               </td>

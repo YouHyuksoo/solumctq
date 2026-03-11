@@ -14,6 +14,18 @@ export type AccidentProcessType = "HIPOT" | "BURNIN" | "ATE";
 /** 등급 */
 export type AccidentGrade = "A" | "B" | "OK";
 
+/** NG 상세 레코드 (툴팁용) */
+export interface NgDetailRecord {
+  time: string;
+  pid: string;
+  model: string;
+  receiptDeficit: string;
+  locationCode: string;
+  repairResult: string;
+  qcHandling: string;
+  defectItem: string;
+}
+
 /** 공정별 상태 */
 export interface AccidentProcessStatus {
   process: AccidentProcessType;
@@ -22,6 +34,7 @@ export interface AccidentProcessStatus {
   ngCount: number;
   detail: string | null;
   lastInspectDate: string | null;
+  ngDetails: NgDetailRecord[];
 }
 
 /** 라인 카드 데이터 */

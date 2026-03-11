@@ -11,20 +11,23 @@
 
 "use client";
 
-import { useState } from "react";
 import { useLineFilter } from "./contexts/LineFilterContext";
 import { useMonitoring } from "./hooks/useMonitoring";
 import { useAutoRolling } from "./hooks/useAutoRolling";
+import { usePersistedState } from "./hooks/usePersistedState";
 import LineCard from "./components/LineCard";
 import SettingsPanel from "./components/SettingsPanel";
+import MonitoringNav from "./components/MonitoringNav";
+import { useLocale } from "@/i18n";
 
 const ITEMS_PER_PAGE = 9; // 3열 × 3행
 
 export default function MonitoringPage() {
-  const [monitorInterval, setMonitorInterval] = useState(30000);
-  const [rollingInterval, setRollingInterval] = useState(10000);
-  const [rollingEnabled, setRollingEnabled] = useState(true);
+  const [monitorInterval, setMonitorInterval] = usePersistedState("ctq-monitor-interval", 30000);
+  const [rollingInterval, setRollingInterval] = usePersistedState("ctq-rolling-interval", 10000);
+  const [rollingEnabled, setRollingEnabled] = usePersistedState("ctq-rolling-enabled", true);
 
+  const { t, dateLocale } = useLocale();
   const { selectedLines } = useLineFilter();
   const { data, error, loading } = useMonitoring(monitorInterval, selectedLines);
 
@@ -44,27 +47,30 @@ export default function MonitoringPage() {
       {/* 상단 헤더 */}
       <header className="sticky top-0 z-10 bg-gray-950/95 backdrop-blur border-b border-gray-800 px-6 py-3">
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
-          <h1 className="text-lg font-bold">
-            CTQ 모니터링
-            <span className="ml-2 text-sm font-normal text-gray-400">
-              반복성 / 사고성
-            </span>
-          </h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-lg font-bold">
+              {t("pages.monitoring.title") as string}
+              <span className="ml-2 text-sm font-normal text-gray-400">
+                {t("pages.monitoring.subtitle") as string}
+              </span>
+            </h1>
+            <MonitoringNav />
+          </div>
           <div className="flex items-center gap-4">
             {data && data.lines.length > 0 && (
               <>
                 <SummaryBadge
-                  label="A급 (Line Stop)"
+                  label={t("pages.monitoring.gradeALabel") as string}
                   count={data.lines.filter((l) => l.overallGrade === "A").length}
                   color="bg-red-600"
                 />
                 <SummaryBadge
-                  label="B급 (출하중지)"
+                  label={t("pages.monitoring.gradeBLabel") as string}
                   count={data.lines.filter((l) => l.overallGrade === "B").length}
                   color="bg-yellow-500 text-black"
                 />
                 <SummaryBadge
-                  label="정상"
+                  label={t("pages.monitoring.okLabel") as string}
                   count={data.lines.filter((l) => l.overallGrade === "OK").length}
                   color="bg-green-700"
                 />
@@ -73,7 +79,7 @@ export default function MonitoringPage() {
             <div className="flex items-center gap-2 text-xs text-gray-400 ml-4">
               {data && (
                 <span>
-                  갱신: {new Date(data.lastUpdated).toLocaleTimeString("ko-KR")}
+                  {t("common.refresh") as string}: {new Date(data.lastUpdated).toLocaleTimeString(dateLocale)}
                 </span>
               )}
               <span
@@ -110,19 +116,19 @@ export default function MonitoringPage() {
       <main className="max-w-[1920px] mx-auto p-6">
         {error && (
           <div className="mb-4 p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm">
-            데이터 조회 오류: {error}
+            {t("common.dataError") as string}: {error}
           </div>
         )}
 
         {loading && !data && (
           <div className="flex items-center justify-center h-64 text-gray-500">
-            데이터 로딩 중...
+            {t("common.dataLoading") as string}
           </div>
         )}
 
         {data && data.lines.length === 0 && (
           <div className="flex items-center justify-center h-64 text-gray-500">
-            활성 라인이 없습니다.
+            {t("common.noActiveLines") as string}
           </div>
         )}
 

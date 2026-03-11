@@ -1,11 +1,11 @@
 /**
  * @file src/app/monitoring/components/MonitoringNav.tsx
- * @description CTQ 모니터링 상단 네비게이션 탭 + 라인 필터 아이콘
+ * @description CTQ 모니터링 상단 네비게이션 탭 + 라인 필터 아이콘 + 언어 전환
  *
  * 초보자 가이드:
  * 1. **네비게이션 탭**: 5개 모니터링 페이지 이동
  * 2. **필터 아이콘**: 깔때기 모양, 선택 라인 수 뱃지 표시
- * 3. **클릭**: LineSelectModal 팝업
+ * 3. **언어 전환**: 🌐 드롭다운으로 KO/EN/VI 선택
  */
 
 "use client";
@@ -13,78 +13,56 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLocale } from "@/i18n";
 import { useLineFilter } from "../contexts/LineFilterContext";
 import LineSelectModal from "./LineSelectModal";
+import LanguageSelector from "@/app/components/LanguageSelector";
 
-const NAV_ITEMS = [
-  {
-    href: "/monitoring/repeatability",
-    label: "반복성연속",
-    tooltip: [
-      "공정: FT#1, ATE, IMAGE, SET검사",
-      "조건: 동일 Location 연속 NG 2건+",
-      "판정: A급 (Line Stop)",
-      "테이블: 각 공정 RAW + IP_PRODUCT_WORK_QC",
-      "기간: 당일 08:00 ~ 익일 08:00",
-    ],
-  },
-  {
-    href: "/monitoring/non-consecutive",
-    label: "반복성동일",
-    tooltip: [
-      "공정: FT#1, ATE, IMAGE, SET검사",
-      "조건: 동일 Location 2건+ (비연속)",
-      "판정: B급 (Warning), A급 제외",
-      "테이블: 각 공정 RAW + IP_PRODUCT_WORK_QC",
-      "기간: 당일 08:00 ~ 익일 08:00",
-    ],
-  },
-  {
-    href: "/monitoring/accident",
-    label: "사고성",
-    tooltip: [
-      "공정: HIPOT, BURN-IN, ATE",
-      "HIPOT: NG 1건+ → A급 (Line Stop)",
-      "BURNIN/ATE: 2건+ → A급, 1건 → B급",
-      "테이블: 각 공정 RAW 테이블",
-      "기간: 당일 08:00 ~ 익일 08:00",
-    ],
-  },
-  {
-    href: "/monitoring/material",
-    label: "원자재동일부품",
-    tooltip: [
-      "대상: 동일 DEFECT_ITEM_CODE (부품)",
-      "A급: 동일 부품 일 3건+ NG",
-      "C급: 동일 부품 90일 누적 3건+",
-      "테이블: IP_PRODUCT_WORK_QC",
-      "기간: A급=당일, C급=90일 누적",
-    ],
-  },
-  {
-    href: "/monitoring/open-short",
-    label: "원자재공용부품",
-    tooltip: [
-      "공정: ICT (W090, W430)",
-      "대상: OPEN(B2020) / SHORT(B2030)",
-      "판정: 동일 불량코드 일 2건+ → B급",
-      "테이블: IP_PRODUCT_WORK_QC",
-      "기간: 당일 08:00 ~",
-    ],
-  },
+interface NavItem {
+  href: string;
+  labelKey: string;
+  tooltipKey: string;
+  statusKey: string;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { href: "/monitoring/repeatability", labelKey: "nav.repeatability", tooltipKey: "navTooltip.repeatability", statusKey: "navTooltip.repeatabilityStatus" },
+  { href: "/monitoring/non-consecutive", labelKey: "nav.nonConsecutive", tooltipKey: "navTooltip.nonConsecutive", statusKey: "navTooltip.nonConsecutiveStatus" },
+  { href: "/monitoring/accident", labelKey: "nav.accident", tooltipKey: "navTooltip.accident", statusKey: "navTooltip.accidentStatus" },
+  { href: "/monitoring/material", labelKey: "nav.material", tooltipKey: "navTooltip.material", statusKey: "navTooltip.materialStatus" },
+  { href: "/monitoring/open-short", labelKey: "nav.openShort", tooltipKey: "navTooltip.openShort", statusKey: "navTooltip.openShortStatus" },
+  { href: "/monitoring/indicator", labelKey: "nav.indicator", tooltipKey: "navTooltip.indicator", statusKey: "navTooltip.indicatorStatus" },
 ];
 
 export default function MonitoringNav() {
   const pathname = usePathname();
   const { selectedLines, setSelectedLines } = useLineFilter();
+  const { t } = useLocale();
   const [modalOpen, setModalOpen] = useState(false);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   return (
     <>
       <nav className="flex items-center gap-1 bg-gray-900/60 rounded-lg p-1">
-        {NAV_ITEMS.map(({ href, label, tooltip }, idx) => {
+        {/* 주 메뉴(홈)로 이동 */}
+        <Link
+          href="/"
+          className="p-1.5 rounded hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+          title={t("nav.goHome") as string}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z" />
+          </svg>
+        </Link>
+
+        <div className="w-px h-5 bg-gray-700" />
+
+        {NAV_ITEMS.map(({ href, labelKey, tooltipKey, statusKey }, idx) => {
           const active = pathname === href;
+          const label = t(labelKey) as string;
+          const tooltip = t(tooltipKey) as readonly string[];
+          const statusInfo = t(statusKey) as readonly string[];
+
           return (
             <div
               key={href}
@@ -103,8 +81,8 @@ export default function MonitoringNav() {
                 {label}
               </Link>
               {hoveredIdx === idx && (
-                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-72 bg-gray-800 border border-gray-600 rounded-lg shadow-xl p-3 z-[9999] pointer-events-none">
-                  <div className="text-xs font-bold text-blue-400 mb-1.5">{label} 판정 기준</div>
+                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-80 bg-gray-800 border border-gray-600 rounded-lg shadow-xl p-3 z-[9999] pointer-events-none">
+                  <div className="text-xs font-bold text-blue-400 mb-1.5">{label} {t("navTooltip.criteria") as string}</div>
                   <div className="space-y-1">
                     {tooltip.map((line, i) => (
                       <div key={i} className="text-xs text-gray-300 flex gap-1.5">
@@ -113,6 +91,25 @@ export default function MonitoringNav() {
                       </div>
                     ))}
                   </div>
+                  {statusInfo && statusInfo.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-gray-700">
+                      <div className="text-xs font-bold text-yellow-400 mb-1">{t("navTooltip.statusGuide") as string}</div>
+                      <div className="space-y-1">
+                        {statusInfo.map((line, i) => (
+                          <div key={i} className="text-xs flex gap-1.5">
+                            <span className="text-gray-500 shrink-0">▸</span>
+                            <span className={
+                              (line as string).startsWith("A") || (line as string).startsWith("Cấp A") ? "text-red-400" :
+                              (line as string).startsWith("B") || (line as string).startsWith("Cấp B") || (line as string).startsWith("Grade B") ? "text-orange-400" :
+                              (line as string).startsWith("C") || (line as string).startsWith("Cấp C") || (line as string).startsWith("Grade C") ? "text-purple-400" :
+                              (line as string).startsWith("NG") ? "text-yellow-400" :
+                              "text-gray-300"
+                            }>{line}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -123,7 +120,7 @@ export default function MonitoringNav() {
         <button
           onClick={() => setModalOpen(true)}
           className="relative ml-1 p-1.5 rounded hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
-          title={`라인 필터 (${selectedLines.length}개 선택)`}
+          title={`${t("nav.lineFilter") as string} (${selectedLines.length}${t("nav.lineFilterCount") as string})`}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -134,6 +131,11 @@ export default function MonitoringNav() {
             </span>
           )}
         </button>
+
+        <div className="w-px h-5 bg-gray-700" />
+
+        {/* 언어 전환 */}
+        <LanguageSelector />
       </nav>
 
       <LineSelectModal

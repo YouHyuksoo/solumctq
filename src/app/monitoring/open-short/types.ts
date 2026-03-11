@@ -6,11 +6,24 @@
 export type OpenShortDefectType = "OPEN" | "SHORT";
 export type OpenShortGrade = "B" | "OK";
 
+/** NG 상세 레코드 (툴팁용) */
+export interface NgDetailRecord {
+  time: string;
+  pid: string;
+  model: string;
+  receiptDeficit: string;
+  locationCode: string;
+  repairResult: string;
+  qcHandling: string;
+  defectItem: string;
+}
+
 export interface OpenShortDefectItem {
   defectItem: string;
   defectType: OpenShortDefectType;
   badReasonCode: string;
   count: number;
+  ngDetails: NgDetailRecord[];
 }
 
 export interface OpenShortLineCardData {

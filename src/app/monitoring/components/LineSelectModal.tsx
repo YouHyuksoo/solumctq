@@ -12,6 +12,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
+import { useLocale } from "@/i18n";
 
 interface LineItem {
   lineCode: string;
@@ -41,6 +42,7 @@ export default function LineSelectModal({
   const [groups, setGroups] = useState<LineGroup[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const { t } = useLocale();
 
   /* 라인 목록 fetch */
   useEffect(() => {
@@ -105,11 +107,11 @@ export default function LineSelectModal({
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
           <div>
-            <h2 className="text-lg font-bold text-white">모니터링 라인 선택</h2>
+            <h2 className="text-lg font-bold text-white">{t("lineSelect.title") as string}</h2>
             <p className="text-xs text-gray-400 mt-0.5">
               {forced
-                ? "모니터링할 라인을 1개 이상 선택해주세요"
-                : `${selected.size}개 라인 선택됨`}
+                ? t("lineSelect.forcedDesc") as string
+                : `${selected.size}${t("lineSelect.selectedCount") as string}`}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -117,13 +119,13 @@ export default function LineSelectModal({
               onClick={selectAll}
               className="px-3 py-1 text-xs rounded bg-gray-800 text-gray-300 hover:bg-gray-700"
             >
-              전체선택
+              {t("lineSelect.selectAll") as string}
             </button>
             <button
               onClick={deselectAll}
               className="px-3 py-1 text-xs rounded bg-gray-800 text-gray-300 hover:bg-gray-700"
             >
-              전체해제
+              {t("lineSelect.deselectAll") as string}
             </button>
             {!forced && (
               <button
@@ -142,7 +144,7 @@ export default function LineSelectModal({
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {loading ? (
             <div className="flex items-center justify-center h-32 text-gray-500">
-              라인 목록 로딩 중...
+              {t("lineSelect.loadingLines") as string}
             </div>
           ) : (
             groups.map((group) => {
@@ -204,7 +206,7 @@ export default function LineSelectModal({
         {/* 푸터 */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-gray-700">
           <span className="text-sm text-gray-400">
-            {selected.size}개 라인 선택됨
+            {selected.size}{t("lineSelect.selectedCount") as string}
           </span>
           <div className="flex gap-2">
             {!forced && (
@@ -212,7 +214,7 @@ export default function LineSelectModal({
                 onClick={onClose}
                 className="px-4 py-2 text-sm rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700"
               >
-                취소
+                {t("lineSelect.cancel") as string}
               </button>
             )}
             <button
@@ -224,7 +226,7 @@ export default function LineSelectModal({
                   : "bg-gray-800 text-gray-600 cursor-not-allowed"
               }`}
             >
-              적용 ({selected.size})
+              {t("lineSelect.apply") as string} ({selected.size})
             </button>
           </div>
         </div>

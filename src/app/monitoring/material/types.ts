@@ -10,10 +10,23 @@
 
 export type MaterialGrade = "A" | "C" | "OK";
 
+/** NG 상세 레코드 (툴팁용) */
+export interface NgDetailRecord {
+  time: string;
+  pid: string;
+  model: string;
+  receiptDeficit: string;
+  locationCode: string;
+  repairResult: string;
+  qcHandling: string;
+  defectItem: string;
+}
+
 export interface MaterialDefectItem {
   defectItem: string;
   dailyCount: number;
   cumulativeCount: number;
+  ngDetails: NgDetailRecord[];
 }
 
 export interface MaterialLineCardData {

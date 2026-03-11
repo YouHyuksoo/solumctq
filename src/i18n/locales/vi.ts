@@ -1,0 +1,243 @@
+/**
+ * @file src/i18n/locales/vi.ts
+ * @description Vietnamese translation file (Tiếng Việt)
+ *
+ * 초보자 가이드:
+ * 1. ko.ts와 동일한 키 구조를 유지해야 함
+ * 2. 새 키 추가 시 ko.ts, en.ts도 함께 업데이트
+ */
+
+import type { TranslationKeys } from "./ko";
+
+const vi: TranslationKeys = {
+  common: {
+    ctqMonitoring: "Giám sát CTQ",
+    qualitySystem: "Hệ thống giám sát chất lượng thời gian thực",
+    loading: "Đang tải...",
+    dataLoading: "Đang tải dữ liệu...",
+    dataError: "Lỗi truy xuất dữ liệu",
+    noActiveLines: "Không có line hoạt động.",
+    refresh: "Cập nhật",
+    line: "Line",
+  },
+
+  grade: {
+    a: "Cấp A",
+    b: "Cấp B",
+    c: "Cấp C",
+    lineStop: "Dừng Line",
+    shipmentStop: "Tạm dừng XK",
+    qualityImprove: "Cải thiện",
+    warning: "Cảnh báo",
+    running: "Đang chạy",
+    ok: "Bình thường",
+  },
+
+  nav: {
+    goHome: "Về menu chính",
+    lineFilter: "Bộ lọc Line",
+    lineFilterCount: " đã chọn",
+    repeatability: "Liên tiếp",
+    nonConsecutive: "Cùng vị trí",
+    accident: "Sự cố",
+    material: "Vật liệu",
+    openShort: "Open/Short",
+    indicator: "Chỉ số",
+  },
+
+  navTooltip: {
+    criteria: "Tiêu chí đánh giá",
+    statusGuide: "Hướng dẫn trạng thái",
+    repeatability: [
+      "Công đoạn: FT#1, ATE, IMAGE, Kiểm tra SET",
+      "Điều kiện: Cùng Location NG liên tiếp 2+",
+      "Đánh giá: Cấp A (Dừng Line)",
+      "Bảng: RAW + IP_PRODUCT_WORK_QC",
+      "Thời gian: Hôm nay 08:00 ~ Ngày mai 08:00",
+    ],
+    repeatabilityStatus: [
+      "NG (Vàng): Lỗi nhưng không liên tiếp cùng vị trí",
+      "Cấp A (Đỏ): Lỗi liên tiếp cùng vị trí → Cần dừng Line",
+    ],
+    nonConsecutive: [
+      "Công đoạn: FT#1, ATE, IMAGE, Kiểm tra SET",
+      "Điều kiện: Cùng Location 2+ (không liên tiếp)",
+      "Đánh giá: Cấp B (Cảnh báo), loại trừ Cấp A",
+      "Bảng: RAW + IP_PRODUCT_WORK_QC",
+      "Thời gian: Hôm nay 08:00 ~ Ngày mai 08:00",
+    ],
+    nonConsecutiveStatus: [
+      "NG (Vàng): Lỗi nhưng không lặp cùng vị trí",
+      "Cấp B (Cam): Cùng vị trí không liên tiếp 2+ → Cảnh báo",
+    ],
+    accident: [
+      "Công đoạn: HIPOT, BURN-IN, ATE",
+      "HIPOT: NG 1+ → Cấp A (Dừng Line)",
+      "BURNIN/ATE: 2+ → Cấp A, 1 → Cấp B",
+      "Bảng: Bảng RAW theo công đoạn",
+      "Thời gian: Hôm nay 08:00 ~ Ngày mai 08:00",
+    ],
+    accidentStatus: [
+      "NG (Vàng): Lỗi dưới tiêu chí",
+      "Cấp A (Đỏ): HIPOT 1+ hoặc khác 2+ → Dừng Line",
+      "Cấp B (Cam): BURNIN/ATE 1 lần → Cảnh báo",
+    ],
+    material: [
+      "Đối tượng: Cùng DEFECT_ITEM_CODE (linh kiện)",
+      "Cấp A: Cùng linh kiện ngày 3+ NG",
+      "Cấp C: Cùng linh kiện tích lũy 90 ngày 3+",
+      "Bảng: IP_PRODUCT_WORK_QC",
+      "Thời gian: A=trong ngày, C=tích lũy 90 ngày",
+    ],
+    materialStatus: [
+      "NG (Vàng): Lỗi cùng linh kiện dưới tiêu chí",
+      "Cấp A (Đỏ): Cùng linh kiện ngày 3+ → Dừng Line",
+      "Cấp C (Tím): Tích lũy 90 ngày 3+ → Cần cải thiện",
+    ],
+    openShort: [
+      "Công đoạn: ICT (W090, W430)",
+      "Đối tượng: OPEN(B2020) / SHORT(B2030)",
+      "Đánh giá: Cùng mã lỗi ngày 2+ → Cấp B",
+      "Bảng: IP_PRODUCT_WORK_QC",
+      "Thời gian: Hôm nay 08:00 ~",
+    ],
+    openShortStatus: [
+      "NG (Vàng): Lỗi Open/Short dưới tiêu chí",
+      "Cấp B (Cam): Cùng mã lỗi ngày 2+ → Tạm dừng XK",
+    ],
+    indicator: [
+      "Đối tượng: Tất cả công đoạn (ICT, Hi-Pot, FT, Burn-In, ATE, IMAGE, SET)",
+      "Nội dung: So sánh số lượng NG hàng tuần theo model/công đoạn",
+      "Tiêu chí: Gấp 2 lần trở lên so với tuần trước → Cấp C",
+      "Chu kỳ: Hàng tuần (Thứ Hai ~ Chủ Nhật)",
+    ],
+    indicatorStatus: [
+      "Đỏ: 200%+ so với tuần trước hoặc lỗi mới (Cấp C)",
+      "Vàng: 100~199% so với tuần trước (tăng)",
+      "Xanh: Dưới 100% so với tuần trước (giảm)",
+      "Xám: Không có lỗi (0→0)",
+    ],
+  },
+
+  table: {
+    process: "Công đoạn",
+    status: "Trạng thái",
+    lastInspect: "Kiểm tra gần nhất",
+    ngCount: "NG",
+    pending: "Chờ xử lý",
+    gradeCol: "Cấp",
+    component: "Linh kiện",
+    type: "Loại",
+    count: "Số lượng",
+    dailyNg: "NG ngày",
+    cumNg: "NG 90 ngày",
+    noDefectsToday: "Không có lỗi hôm nay",
+    noDefects: "Không có lỗi",
+    consecutive: "Liên tiếp",
+    consecutiveFmt: "Liên tiếp:{count}({loc})",
+    sameLoc: "Cùng vị trí",
+    sameLocFmt: "Cùng vị trí:{count}({loc})",
+    ngGradeFmt: "NG {count} ({grade})",
+    recentNgDetail: "Chi tiết NG gần đây",
+    ngDetail: "Chi tiết NG",
+    ngAll: "Tất cả NG",
+    time: "Thời gian",
+    model: "Mặt hàng",
+    category: "Phân loại",
+    location: "Vị trí",
+    defectPart: "Linh kiện lỗi",
+    repair: "Sửa chữa",
+    handling: "Xử lý",
+    inspectResult: "Kết quả",
+    receipt: "Nhập kho",
+    repairLabel: "Sửa chữa",
+    ofTotal: " trong",
+    totalCount: "Tổng",
+    cases: "",
+    searching: "Đang tìm...",
+    searchFailed: "Tìm kiếm thất bại",
+    noNgData: "Không có dữ liệu NG",
+    showing: " hiển thị (tối đa 200)",
+    close: "Đóng",
+  },
+
+  pages: {
+    home: {
+      repeatDesc: "Giám sát lỗi liên tiếp Cấp A. Hiển thị cấp theo line khi NG liên tiếp trên cùng PID.",
+      nonConsDesc: "Giám sát lỗi không liên tiếp Cấp B. Theo dõi NG lặp cùng vị trí theo line.",
+      accidentDesc: "Lỗi sự cố HIPOT / BURNIN / ATE. Đánh giá cấp khi vượt số lượng tiêu chí.",
+      materialDesc: "Kiểm tra vật liệu định kỳ 6 công đoạn. Ngày 3+ → Cấp A, 90 ngày 3+ → Cấp C.",
+      openShortDesc: "Lỗi Open/Short linh kiện chung ICT. Cùng linh kiện ngày 2+ → Cấp B tạm dừng XK.",
+      indicatorDesc: "Chỉ số tỷ lệ NG hàng tuần theo model/công đoạn. So sánh tuần trước.",
+    },
+    monitoring: {
+      title: "Giám sát CTQ",
+      subtitle: "Lặp lại / Sự cố",
+      gradeALabel: "Cấp A (Dừng Line)",
+      gradeBLabel: "Cấp B (Tạm dừng XK)",
+      okLabel: "Bình thường",
+    },
+    accident: {
+      title: "Giám sát sự cố CTQ",
+      gradeALabel: "Cấp A (Dừng Line)",
+      gradeBLabel: "Cấp B (Cảnh báo)",
+    },
+    repeatability: {
+      title: "Giám sát lặp lại CTQ",
+      gradeALabel: "Cấp A (Dừng Line)",
+      okLabel: "Bình thường",
+    },
+    nonConsecutive: {
+      title: "Giám sát lặp lại CTQ",
+      gradeBLabel: "Cấp B (Cảnh báo)",
+      okLabel: "Bình thường",
+    },
+    openShort: {
+      title: "CTQ Open/Short",
+      gradeBLabel: "Cấp B (Tạm dừng XK)",
+      noData: "Không có lỗi Open/Short hôm nay.",
+    },
+    material: {
+      title: "CTQ Linh kiện vật liệu",
+      gradeALabel: "Cấp A (Dừng Line)",
+      gradeCLabel: "Cấp C (Cải thiện)",
+    },
+    indicator: {
+      title: "Giám sát chỉ số CTQ",
+      weekBefore: "2 tuần trước",
+      lastWeek: "Tuần trước",
+      thisWeek: "Tuần này",
+      thisWeekDays: "ngày",
+      model: "Model",
+      noData: "Không có dữ liệu lỗi trong kỳ.",
+      newDefect: "Mới",
+      refreshBtn: "Làm mới",
+    },
+  },
+
+  settings: {
+    title: "Cài đặt",
+    dataInterval: "Chu kỳ cập nhật dữ liệu",
+    screenRolling: "Cuộn màn hình",
+    rollingInterval: "Chu kỳ cuộn",
+    sec10: "10 giây",
+    sec30: "30 giây",
+    sec60: "60 giây",
+    sec120: "120 giây",
+    sec5: "5 giây",
+    sec15: "15 giây",
+  },
+
+  lineSelect: {
+    title: "Chọn Line giám sát",
+    forcedDesc: "Vui lòng chọn ít nhất 1 line để giám sát",
+    selectedCount: " line đã chọn",
+    selectAll: "Chọn tất cả",
+    deselectAll: "Bỏ chọn tất cả",
+    loadingLines: "Đang tải danh sách line...",
+    cancel: "Hủy",
+    apply: "Áp dụng",
+  },
+};
+
+export default vi;

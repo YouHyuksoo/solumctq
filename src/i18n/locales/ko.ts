@@ -1,0 +1,261 @@
+/**
+ * @file src/i18n/locales/ko.ts
+ * @description 한국어 번역 파일 (기본 언어)
+ *
+ * 초보자 가이드:
+ * 1. 키를 추가할 때 en.ts, vi.ts에도 동일한 키를 추가해야 함
+ * 2. 중첩 객체로 카테고리 분류 (common, nav, pages 등)
+ */
+
+const ko = {
+  /* ── 공통 ── */
+  common: {
+    ctqMonitoring: "CTQ 모니터링",
+    qualitySystem: "품질 관리 실시간 모니터링 시스템",
+    loading: "로딩 중...",
+    dataLoading: "데이터 로딩 중...",
+    dataError: "데이터 조회 오류",
+    noActiveLines: "활성 라인이 없습니다.",
+    refresh: "갱신",
+    line: "Line",
+  },
+
+  /* ── 등급 ── */
+  grade: {
+    a: "A급",
+    b: "B급",
+    c: "C급",
+    lineStop: "Line Stop",
+    shipmentStop: "출하중지",
+    qualityImprove: "불량개선",
+    warning: "Warning",
+    running: "Running",
+    ok: "정상",
+  },
+
+  /* ── 네비게이션 ── */
+  nav: {
+    goHome: "주 메뉴로 이동",
+    lineFilter: "라인 필터",
+    lineFilterCount: "개 선택",
+    repeatability: "반복성연속",
+    nonConsecutive: "반복성동일",
+    accident: "사고성",
+    material: "원자재동일부품",
+    openShort: "원자재공용부품",
+    indicator: "지표",
+  },
+
+  /* ── 네비 툴팁 ── */
+  navTooltip: {
+    criteria: "판정 기준",
+    statusGuide: "상태 표시 안내",
+    repeatability: [
+      "공정: FT#1, ATE, IMAGE, SET검사",
+      "조건: 동일 Location 연속 NG 2건+",
+      "판정: A급 (Line Stop)",
+      "테이블: 각 공정 RAW + IP_PRODUCT_WORK_QC",
+      "기간: 당일 08:00 ~ 익일 08:00",
+    ],
+    repeatabilityStatus: [
+      "NG(노란색): 불량 발생했으나 연속 동일위치 아님",
+      "A급(붉은색): 연속 동일위치 불량 → Line Stop 필요",
+    ],
+    nonConsecutive: [
+      "공정: FT#1, ATE, IMAGE, SET검사",
+      "조건: 동일 Location 2건+ (비연속)",
+      "판정: B급 (Warning), A급 제외",
+      "테이블: 각 공정 RAW + IP_PRODUCT_WORK_QC",
+      "기간: 당일 08:00 ~ 익일 08:00",
+    ],
+    nonConsecutiveStatus: [
+      "NG(노란색): 불량 발생했으나 동일위치 반복 아님",
+      "B급(주황색): 동일위치 비연속 2건+ → Warning",
+    ],
+    accident: [
+      "공정: HIPOT, BURN-IN, ATE",
+      "HIPOT: NG 1건+ → A급 (Line Stop)",
+      "BURNIN/ATE: 2건+ → A급, 1건 → B급",
+      "테이블: 각 공정 RAW 테이블",
+      "기간: 당일 08:00 ~ 익일 08:00",
+    ],
+    accidentStatus: [
+      "NG(노란색): 불량 발생했으나 판정 기준 미달",
+      "A급(붉은색): HIPOT 1건+ 또는 기타 2건+ → Line Stop",
+      "B급(주황색): BURNIN/ATE 1건 발생 → Warning",
+    ],
+    material: [
+      "대상: 동일 DEFECT_ITEM_CODE (부품)",
+      "A급: 동일 부품 일 3건+ NG",
+      "C급: 동일 부품 90일 누적 3건+",
+      "테이블: IP_PRODUCT_WORK_QC",
+      "기간: A급=당일, C급=90일 누적",
+    ],
+    materialStatus: [
+      "NG(노란색): 동일 부품 불량이나 기준 미달",
+      "A급(붉은색): 동일 부품 일 3건+ → Line Stop",
+      "C급(보라색): 90일 누적 3건+ → 불량개선 필요",
+    ],
+    openShort: [
+      "공정: ICT (W090, W430)",
+      "대상: OPEN(B2020) / SHORT(B2030)",
+      "판정: 동일 불량코드 일 2건+ → B급",
+      "테이블: IP_PRODUCT_WORK_QC",
+      "기간: 당일 08:00 ~",
+    ],
+    openShortStatus: [
+      "NG(노란색): Open/Short 불량이나 기준 미달",
+      "B급(주황색): 동일 불량코드 일 2건+ → 출하중지",
+    ],
+    indicator: [
+      "대상: 모든 공정 (ICT, Hi-Pot, FT, Burn-In, ATE, IMAGE, SET)",
+      "내용: 모델별/공정별 주간 불량 건수 비교",
+      "기준: 전주 대비 2배 이상 → C급 (불량개선)",
+      "주기: 주간 (월요일~일요일)",
+    ],
+    indicatorStatus: [
+      "빨강: 전주 대비 200%↑ 또는 신규 불량 (C급)",
+      "노랑: 전주 대비 100~199% (증가)",
+      "초록: 전주 대비 100% 미만 (감소)",
+      "회색: 불량 없음 (0→0)",
+    ],
+  },
+
+  /* ── 테이블 헤더 ── */
+  table: {
+    process: "공정",
+    status: "상태",
+    lastInspect: "최근 검사",
+    ngCount: "NG",
+    pending: "대기",
+    gradeCol: "등급",
+    component: "부품",
+    type: "유형",
+    count: "건수",
+    dailyNg: "일 NG",
+    cumNg: "90일 NG",
+    noDefectsToday: "금일 불량 없음",
+    noDefects: "불량 없음",
+    consecutive: "연속불량",
+    consecutiveFmt: "연속불량:{count}회({loc})",
+    sameLoc: "동일위치",
+    sameLocFmt: "동일위치:{count}건({loc})",
+    ngGradeFmt: "NG {count}건 ({grade})",
+    recentNgDetail: "최근 NG 상세",
+    ngDetail: "NG 상세",
+    ngAll: "NG 전체",
+    time: "시간",
+    model: "품목",
+    category: "구분",
+    location: "위치",
+    defectPart: "불량부품",
+    repair: "수리",
+    handling: "처리",
+    inspectResult: "검사결과",
+    receipt: "입고",
+    repairLabel: "수리",
+    ofTotal: "건 중",
+    totalCount: "총",
+    cases: "건",
+    searching: "조회 중...",
+    searchFailed: "조회 실패",
+    noNgData: "NG 데이터가 없습니다",
+    showing: "건 표시 (최대 200건)",
+    close: "닫기",
+  },
+
+  /* ── 페이지별 ── */
+  pages: {
+    home: {
+      repeatDesc: "A급 연속불량 모니터링. 동일 PID에서 연속 NG 발생 시 라인별 등급 표시.",
+      nonConsDesc: "B급 비연속불량 모니터링. 동일 위치 반복 NG를 라인별로 추적 표시.",
+      accidentDesc: "HIPOT / BURNIN / ATE 공정 사고성 불량. 공정별 기준 건수 초과 시 등급 판정.",
+      materialDesc: "전체 6공정 원자재 주기별점검. 일 3건+ A급, 90일 누적 3건+ C급 불량개선.",
+      openShortDesc: "ICT 공정 공용부품 Open/Short 불량. 동일 부품 1일 누적 2건+ B급 출하중지.",
+      indicatorDesc: "모델별/공정별 주간 불량률 증가 지표. 전전주→전주→금주 비교.",
+    },
+    monitoring: {
+      title: "CTQ 모니터링",
+      subtitle: "반복성 / 사고성",
+      gradeALabel: "A급 (Line Stop)",
+      gradeBLabel: "B급 (출하중지)",
+      okLabel: "정상",
+    },
+    accident: {
+      title: "CTQ 사고성 모니터링",
+      gradeALabel: "A급 (Line Stop)",
+      gradeBLabel: "B급 (Warning)",
+    },
+    repeatability: {
+      title: "CTQ 반복성 모니터링",
+      gradeALabel: "A급 (Line Stop)",
+      okLabel: "정상",
+    },
+    nonConsecutive: {
+      title: "CTQ 반복성 모니터링",
+      gradeBLabel: "B급 (Warning)",
+      okLabel: "정상",
+    },
+    openShort: {
+      title: "CTQ 공용부품 Open/Short",
+      gradeBLabel: "B급 (출하중지)",
+      noData: "금일 Open/Short 불량이 없습니다.",
+    },
+    material: {
+      title: "CTQ 원자재 동일부품",
+      gradeALabel: "A급 (Line Stop)",
+      gradeCLabel: "C급 (불량개선)",
+    },
+    indicator: {
+      title: "CTQ 지표 모니터링",
+      weekBefore: "전전주",
+      lastWeek: "전주",
+      thisWeek: "금주",
+      thisWeekDays: "일차",
+      model: "모델",
+      noData: "해당 기간 불량 데이터가 없습니다.",
+      newDefect: "신규",
+      refreshBtn: "새로고침",
+    },
+  },
+
+  /* ── 설정 패널 ── */
+  settings: {
+    title: "설정",
+    dataInterval: "데이터 갱신 주기",
+    screenRolling: "화면 롤링",
+    rollingInterval: "롤링 전환 주기",
+    sec10: "10초",
+    sec30: "30초",
+    sec60: "60초",
+    sec120: "120초",
+    sec5: "5초",
+    sec15: "15초",
+  },
+
+  /* ── 라인 선택 모달 ── */
+  lineSelect: {
+    title: "모니터링 라인 선택",
+    forcedDesc: "모니터링할 라인을 1개 이상 선택해주세요",
+    selectedCount: "개 라인 선택됨",
+    selectAll: "전체선택",
+    deselectAll: "전체해제",
+    loadingLines: "라인 목록 로딩 중...",
+    cancel: "취소",
+    apply: "적용",
+  },
+} as const;
+
+/** 재귀적 번역 구조 타입 - 문자열 리터럴 대신 string/string[] 사용 */
+type DeepStringify<T> = {
+  [K in keyof T]: T[K] extends readonly string[]
+    ? readonly string[]
+    : T[K] extends string
+      ? string
+      : T[K] extends object
+        ? DeepStringify<T[K]>
+        : T[K];
+};
+
+export type TranslationKeys = DeepStringify<typeof ko>;
+export default ko;

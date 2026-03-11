@@ -5,23 +5,24 @@
 
 "use client";
 
+import { useState } from "react";
 import type { AccidentLineCardData, AccidentGrade } from "../types";
+import NgTooltip from "../../components/NgTooltip";
+import NgDetailModal from "../../components/NgDetailModal";
+import { useLocale, translateDetail } from "@/i18n";
 
-const GRADE_STYLES: Record<AccidentGrade, { card: string; badge: string; text: string }> = {
+const GRADE_STYLES: Record<AccidentGrade, { card: string; badge: string }> = {
   A: {
     card: "border-red-500 bg-red-950/30",
     badge: "bg-red-600 text-white",
-    text: "Line Stop",
   },
   B: {
     card: "border-yellow-500 bg-yellow-950/30",
     badge: "bg-yellow-600 text-white",
-    text: "Warning",
   },
   OK: {
     card: "border-gray-700 bg-gray-900/50",
     badge: "bg-green-700 text-white",
-    text: "Running",
   },
 };
 
@@ -41,7 +42,23 @@ function formatShortDate(dt: string): string {
 }
 
 export default function AccidentLineCard({ line }: { line: AccidentLineCardData }) {
+  const { t } = useLocale();
   const style = GRADE_STYLES[line.overallGrade];
+
+  const GRADE_TEXT: Record<AccidentGrade, string> = {
+    A: t("grade.lineStop") as string,
+    B: t("grade.warning") as string,
+    OK: t("grade.running") as string,
+  };
+  const [tooltip, setTooltip] = useState<{
+    process: string;
+    pos: { x: number; y: number };
+  } | null>(null);
+  const [modal, setModal] = useState<{ process: string; label: string } | null>(null);
+
+  const handleMouseEnter = (process: string, e: React.MouseEvent) => {
+    setTooltip({ process, pos: { x: e.clientX, y: e.clientY } });
+  };
 
   return (
     <div className={`rounded-lg border-2 ${style.card} p-0 overflow-hidden`}>
@@ -53,7 +70,7 @@ export default function AccidentLineCard({ line }: { line: AccidentLineCardData 
           <span className="ml-2 text-xs text-gray-500">({line.lineCode})</span>
         </div>
         <span className={`px-3 py-1 rounded text-xs font-bold ${style.badge}`}>
-          {style.text}
+          {GRADE_TEXT[line.overallGrade]}
         </span>
       </div>
 
@@ -61,11 +78,11 @@ export default function AccidentLineCard({ line }: { line: AccidentLineCardData 
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-black/30 text-gray-400 text-xs">
-            <th className="text-left px-3 py-1.5 w-24">공정</th>
-            <th className="text-left px-3 py-1.5">상태</th>
-            <th className="text-left px-3 py-1.5 w-28">최근 검사</th>
+            <th className="text-left px-3 py-1.5 w-24">{t("table.process") as string}</th>
+            <th className="text-left px-3 py-1.5 w-32">{t("table.status") as string}</th>
+            <th className="text-left px-3 py-1.5 w-28">{t("table.lastInspect") as string}</th>
             <th className="text-center px-3 py-1.5 w-14">NG</th>
-            <th className="text-center px-3 py-1.5 w-16">등급</th>
+            <th className="text-center px-3 py-1.5 w-20">{t("table.gradeCol") as string}</th>
           </tr>
         </thead>
         <tbody>
@@ -80,7 +97,7 @@ export default function AccidentLineCard({ line }: { line: AccidentLineCardData 
               <td className="px-3 py-1.5">
                 {p.detail ? (
                   <span className={`font-bold text-xs ${p.grade === "A" ? "text-red-400" : "text-yellow-400"}`}>
-                    {p.detail}
+                    {translateDetail(p.detail, t)}
                   </span>
                 ) : p.ngCount > 0 ? (
                   <span className="text-yellow-400">NG</span>
@@ -91,22 +108,27 @@ export default function AccidentLineCard({ line }: { line: AccidentLineCardData 
               <td className="px-3 py-1.5 text-gray-400 text-xs font-mono whitespace-nowrap">
                 {p.lastInspectDate ? formatShortDate(p.lastInspectDate) : "-"}
               </td>
-              <td className="px-3 py-1.5 text-center">
+              <td
+                className="px-3 py-1.5 text-center"
+                onMouseEnter={(e) => p.ngCount > 0 && p.ngDetails?.length > 0 && handleMouseEnter(p.process, e)}
+                onMouseLeave={() => setTooltip(null)}
+                onClick={() => p.ngCount > 0 && setModal({ process: p.process, label: p.processLabel })}
+              >
                 {p.ngCount > 0 ? (
-                  <span className="text-red-400 font-bold">{p.ngCount}</span>
+                  <span className="text-red-400 font-bold cursor-pointer">{p.ngCount}</span>
                 ) : (
                   <span className="text-gray-600">0</span>
                 )}
               </td>
-              <td className="px-3 py-1.5 text-center">
+              <td className="px-3 py-1.5 text-center whitespace-nowrap">
                 {p.grade === "A" && (
-                  <span className={`px-2 py-0.5 rounded text-xs font-bold ${GRADE_STYLES.A.badge}`}>
-                    A급
+                  <span className={`px-2 py-0.5 rounded text-xs font-bold whitespace-nowrap ${GRADE_STYLES.A.badge}`}>
+                    {t("grade.a") as string}
                   </span>
                 )}
                 {p.grade === "B" && (
-                  <span className={`px-2 py-0.5 rounded text-xs font-bold ${GRADE_STYLES.B.badge}`}>
-                    B급
+                  <span className={`px-2 py-0.5 rounded text-xs font-bold whitespace-nowrap ${GRADE_STYLES.B.badge}`}>
+                    {t("grade.b") as string}
                   </span>
                 )}
               </td>
@@ -114,6 +136,26 @@ export default function AccidentLineCard({ line }: { line: AccidentLineCardData 
           ))}
         </tbody>
       </table>
+
+      {tooltip && (() => {
+        const p = line.processes.find((pr) => pr.process === tooltip.process);
+        if (!p?.ngDetails?.length) return null;
+        return (
+          <NgTooltip
+            details={p.ngDetails}
+            title={`${p.processLabel} ${t("table.recentNgDetail") as string}`}
+            totalCount={p.ngCount}
+            position={tooltip.pos}
+          />
+        );
+      })()}
+
+      <NgDetailModal
+        open={modal !== null}
+        title={modal ? `${line.lineName} - ${modal.label} ${t("table.ngAll") as string}` : ""}
+        fetchUrl={modal ? `/api/ctq/ng-details?type=${modal.process}&lineCode=${encodeURIComponent(line.lineCode)}` : ""}
+        onClose={() => setModal(null)}
+      />
     </div>
   );
 }

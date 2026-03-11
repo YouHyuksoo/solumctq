@@ -11,6 +11,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useLocale } from "@/i18n";
 
 interface SettingsPanelProps {
   monitorInterval: number;
@@ -21,20 +22,6 @@ interface SettingsPanelProps {
   onRollingEnabledChange: (enabled: boolean) => void;
 }
 
-const MONITOR_OPTIONS = [
-  { label: "10초", value: 10000 },
-  { label: "30초", value: 30000 },
-  { label: "60초", value: 60000 },
-  { label: "120초", value: 120000 },
-];
-
-const ROLLING_OPTIONS = [
-  { label: "5초", value: 5000 },
-  { label: "10초", value: 10000 },
-  { label: "15초", value: 15000 },
-  { label: "30초", value: 30000 },
-];
-
 export default function SettingsPanel({
   monitorInterval,
   rollingInterval,
@@ -43,8 +30,22 @@ export default function SettingsPanel({
   onRollingIntervalChange,
   onRollingEnabledChange,
 }: SettingsPanelProps) {
+  const { t } = useLocale();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const monitorOptions = [
+    { label: t("settings.sec10") as string, value: 10000 },
+    { label: t("settings.sec30") as string, value: 30000 },
+    { label: t("settings.sec60") as string, value: 60000 },
+    { label: t("settings.sec120") as string, value: 120000 },
+  ];
+  const rollingOptions = [
+    { label: t("settings.sec5") as string, value: 5000 },
+    { label: t("settings.sec10") as string, value: 10000 },
+    { label: t("settings.sec15") as string, value: 15000 },
+    { label: t("settings.sec30") as string, value: 30000 },
+  ];
 
   /* 외부 클릭 시 닫기 */
   useEffect(() => {
@@ -62,7 +63,7 @@ export default function SettingsPanel({
       <button
         onClick={() => setOpen(!open)}
         className="p-1.5 rounded hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
-        title="설정"
+        title={t("settings.title") as string}
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -74,13 +75,13 @@ export default function SettingsPanel({
 
       {open && (
         <div className="absolute right-0 top-full mt-2 w-64 bg-gray-900 border border-gray-700 rounded-lg shadow-xl p-4 z-50">
-          <h3 className="text-sm font-bold text-gray-200 mb-3">설정</h3>
+          <h3 className="text-sm font-bold text-gray-200 mb-3">{t("settings.title") as string}</h3>
 
           {/* 모니터링 갱신 주기 */}
           <div className="mb-3">
-            <label className="text-xs text-gray-400 block mb-1">데이터 갱신 주기</label>
+            <label className="text-xs text-gray-400 block mb-1">{t("settings.dataInterval") as string}</label>
             <div className="flex gap-1">
-              {MONITOR_OPTIONS.map((opt) => (
+              {monitorOptions.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => onMonitorIntervalChange(opt.value)}
@@ -99,7 +100,7 @@ export default function SettingsPanel({
           {/* 롤링 ON/OFF */}
           <div className="mb-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs text-gray-400">화면 롤링</label>
+              <label className="text-xs text-gray-400">{t("settings.screenRolling") as string}</label>
               <button
                 onClick={() => onRollingEnabledChange(!rollingEnabled)}
                 className={`w-10 h-5 rounded-full relative transition-colors ${
@@ -118,9 +119,9 @@ export default function SettingsPanel({
           {/* 롤링 시간 */}
           {rollingEnabled && (
             <div>
-              <label className="text-xs text-gray-400 block mb-1">롤링 전환 주기</label>
+              <label className="text-xs text-gray-400 block mb-1">{t("settings.rollingInterval") as string}</label>
               <div className="flex gap-1">
-                {ROLLING_OPTIONS.map((opt) => (
+                {rollingOptions.map((opt) => (
                   <button
                     key={opt.value}
                     onClick={() => onRollingIntervalChange(opt.value)}
