@@ -150,6 +150,8 @@ export async function GET(request: NextRequest) {
       lineDataMap.get(row.LINE_CODE)!.push(row);
     }
 
+    /* 선택된 라인도 포함 (0건이어도 카드 표시) */
+    for (const lc of lines) allLineCodes.add(lc);
     const sortedLineCodes = [...allLineCodes].sort();
     const lineNameMap = await getLineNames(sortedLineCodes);
 

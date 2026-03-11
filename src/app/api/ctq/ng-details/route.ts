@@ -11,6 +11,7 @@
 import { NextResponse } from "next/server";
 import { type NextRequest } from "next/server";
 import { executeQuery } from "@/lib/oracle";
+import { getVietnamTimeRange } from "@/lib/line-filter";
 
 export const dynamic = "force-dynamic";
 
@@ -20,13 +21,14 @@ interface ProcessConfig {
   dateCol: string;
   resultCol: string;
   dateType: "varchar" | "date";
+  extraWhere?: string;
 }
 
 const RAW_CONFIGS: Record<string, ProcessConfig> = {
   FT: { table: "IQ_MACHINE_FT1_SMPS_DATA_RAW", pidCol: "PID", dateCol: "INSPECT_DATE", resultCol: "INSPECT_RESULT", dateType: "varchar" },
   ATE: { table: "IQ_MACHINE_ATE_SERVER_DATA_RAW", pidCol: "PID", dateCol: "INSPECT_DATE", resultCol: "INSPECT_RESULT", dateType: "varchar" },
-  IMAGE: { table: "IQ_MACHINE_INSPECT_DATA_PBA_FT", pidCol: "BARCODE", dateCol: "STARTTIME", resultCol: "RESULT", dateType: "date" },
-  SETTV: { table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET", pidCol: "BARCODE", dateCol: "INSPECT_TIME", resultCol: "INSPECT_RESULT", dateType: "date" },
+  IMAGE: { table: "IQ_MACHINE_INSPECT_DATA_PBA_FT", pidCol: "BARCODE", dateCol: "STARTTIME", resultCol: "RESULT", dateType: "date", extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  SETTV: { table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET", pidCol: "BARCODE", dateCol: "INSPECT_TIME", resultCol: "INSPECT_RESULT", dateType: "date", extraWhere: "AND t.LAST_FLAG = 'Y'" },
   HIPOT: { table: "IQ_MACHINE_HIPOT_POWER_DATA_RAW", pidCol: "PID", dateCol: "INSPECT_DATE", resultCol: "INSPECT_RESULT", dateType: "varchar" },
   BURNIN: { table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW", pidCol: "PID", dateCol: "INSPECT_DATE", resultCol: "INSPECT_RESULT", dateType: "varchar" },
 };
@@ -43,23 +45,6 @@ interface NgRow {
   INSPECT_RESULT: string;
   BAD_REASON_CODE: string;
   BAD_REASON_NAME: string;
-}
-
-/** 오늘 08:00 기준 시작/종료 */
-function getTimeRange() {
-  const now = new Date();
-  if (now.getHours() < 8) now.setDate(now.getDate() - 1);
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  const next = new Date(y, now.getMonth(), now.getDate() + 1);
-  const ny = next.getFullYear();
-  const nm = String(next.getMonth() + 1).padStart(2, "0");
-  const nd = String(next.getDate()).padStart(2, "0");
-  return {
-    startStr: `${y}/${m}/${d} 08:00:00`,
-    endStr: `${ny}/${nm}/${nd} 08:00:00`,
-  };
 }
 
 function getTimeRanges90() {
@@ -117,7 +102,7 @@ export async function GET(request: NextRequest) {
         defectItem: defectItem ?? "",
       });
     } else if (type === "open-short") {
-      const tr = getTimeRange();
+      const tr = getVietnamTimeRange();
       const sql = `
         SELECT TO_CHAR(t.QC_DATE, 'YYYY/MM/DD HH24:MI:SS') AS INSPECT_TIME,
                t.SERIAL_NO AS PID,
@@ -147,7 +132,7 @@ export async function GET(request: NextRequest) {
       if (!config) {
         return NextResponse.json({ error: `알 수 없는 type: ${type}` }, { status: 400 });
       }
-      const tr = getTimeRange();
+      const tr = getVietnamTimeRange();
       const dateCondition = config.dateType === "varchar"
         ? `t.${config.dateCol} >= :tsStart AND t.${config.dateCol} < :tsEnd`
         : `t.${config.dateCol} >= TO_DATE(:tsStart, 'YYYY/MM/DD HH24:MI:SS') AND t.${config.dateCol} < TO_DATE(:tsEnd, 'YYYY/MM/DD HH24:MI:SS')`;
@@ -172,8 +157,9 @@ export async function GET(request: NextRequest) {
           ON r.SERIAL_NO = t.${config.pidCol}
           AND r.RECEIPT_DEFICIT = '2'
         WHERE ${dateCondition}
-          AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK')
+          AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
           AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')
+          ${config.extraWhere ?? ""}
           AND t.LINE_CODE = :lineCode
         ORDER BY t.${config.dateCol} DESC
         FETCH FIRST 200 ROWS ONLY

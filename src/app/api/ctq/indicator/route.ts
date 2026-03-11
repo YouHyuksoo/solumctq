@@ -4,7 +4,7 @@
  *
  * 초보자 가이드:
  * 1. 7개 RAW 테이블에서 NG 건수를 병렬 조회
- * 2. RAW.PID → IP_PRODUCT_2D_BARCODE.SERIAL_NO JOIN으로 ITEM_CODE 취득
+ * 2. RAW.PID → IP_PRODUCT_2D_BARCODE JOIN으로 ITEM_CODE(모델) 취득
  * 3. 전전주/전주/금주 3주치 CASE WHEN으로 분류 집계
  * 4. 월요일을 주의 시작으로 계산
  */
@@ -27,8 +27,6 @@ interface ProcessConfig {
   dateType: "varchar" | "date";
   /** 추가 WHERE 조건 (예: LAST_FLAG = 'Y') */
   extraWhere?: string;
-  /** true면 라인 필터 적용 안 함 */
-  skipLineFilter?: boolean;
 }
 
 const PROCESS_CONFIG: Record<IndicatorProcessKey, ProcessConfig> = {
@@ -37,8 +35,8 @@ const PROCESS_CONFIG: Record<IndicatorProcessKey, ProcessConfig> = {
   FT:     { table: "IQ_MACHINE_FT1_SMPS_DATA_RAW",      dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar" },
   BURNIN: { table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW",   dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar" },
   ATE:    { table: "IQ_MACHINE_ATE_SERVER_DATA_RAW",     dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar" },
-  IMAGE:  { table: "IQ_MACHINE_INSPECT_DATA_PBA_FT",    dateCol: "STARTTIME",    pidCol: "BARCODE", resultCol: "RESULT",         dateType: "date", extraWhere: "AND t.LAST_FLAG = 'Y'", skipLineFilter: true },
-  SET:    { table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET",  dateCol: "INSPECT_TIME", pidCol: "BARCODE", resultCol: "INSPECT_RESULT", dateType: "date", extraWhere: "AND t.LAST_FLAG = 'Y'", skipLineFilter: true },
+  IMAGE:  { table: "IQ_MACHINE_INSPECT_DATA_PBA_FT",    dateCol: "STARTTIME",    pidCol: "BARCODE", resultCol: "RESULT",         dateType: "date", extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  SET:    { table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET",  dateCol: "INSPECT_TIME", pidCol: "BARCODE", resultCol: "INSPECT_RESULT", dateType: "date", extraWhere: "AND t.LAST_FLAG = 'Y'" },
 };
 
 const PROCESS_KEYS: IndicatorProcessKey[] = ["ICT", "HIPOT", "FT", "BURNIN", "ATE", "IMAGE", "SET"];
@@ -146,10 +144,10 @@ async function queryProcess(
     JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
     WHERE ${buildWhereDate(col, ":wbStart", ":twEnd", dt)}
       AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
-      ${config.skipLineFilter ? "" : "AND t.LINE_CODE IS NOT NULL"}
+      AND t.LINE_CODE IS NOT NULL
       AND b.ITEM_CODE IS NOT NULL
       ${config.extraWhere ?? ""}
-      ${config.skipLineFilter ? "" : lineFilter.clause}
+      ${lineFilter.clause}
     GROUP BY b.ITEM_CODE
     HAVING SUM(1) > 0
   `;
@@ -161,7 +159,7 @@ async function queryProcess(
     lwEnd: ranges.lastWeek.end,
     twStart: ranges.thisWeek.start,
     twEnd: ranges.thisWeek.end,
-    ...(config.skipLineFilter ? {} : lineFilter.params),
+    ...lineFilter.params,
   });
 }
 

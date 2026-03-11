@@ -11,7 +11,7 @@ import type { TranslationKeys } from "./ko";
 
 const vi: TranslationKeys = {
   common: {
-    ctqMonitoring: "Giám sát CTQ",
+    ctqMonitoring: "Giám sát bất thường",
     qualitySystem: "Hệ thống giám sát chất lượng thời gian thực",
     loading: "Đang tải...",
     dataLoading: "Đang tải dữ liệu...",
@@ -44,6 +44,7 @@ const vi: TranslationKeys = {
     material: "Vật liệu",
     openShort: "Open/Short",
     indicator: "Chỉ số",
+    fpy: "Tỷ lệ đạt",
     equipment: "Thiết bị",
   },
 
@@ -119,6 +120,17 @@ const vi: TranslationKeys = {
       "Xanh: Dưới 100% so với tuần trước (giảm)",
       "Xám: Không có lỗi (0→0)",
     ],
+    fpy: [
+      "Đối tượng: Tất cả công đoạn (ICT, Hi-Pot, FT, Burn-In, ATE, IMAGE, SET)",
+      "Nội dung: Tỷ lệ đạt lần đầu theo line/công đoạn trong ngày",
+      "Tiêu chí: Tỷ lệ đạt dưới 90% → Cấp A (Dừng Line)",
+      "Thời gian: Hôm nay 08:00 ~",
+    ],
+    fpyStatus: [
+      "Đỏ: Tỷ lệ đạt dưới 90% (Cấp A - Dừng Line)",
+      "Vàng: Tỷ lệ đạt 90~95%",
+      "Xanh: Tỷ lệ đạt trên 95%",
+    ],
     equipment: [
       "Đối tượng: Thời gian dừng thiết bị theo line/công đoạn",
       "Bảng: IP_LINE_DAILY_OPERATION_HIST",
@@ -187,10 +199,11 @@ const vi: TranslationKeys = {
       materialDesc: "Kiểm tra vật liệu định kỳ 6 công đoạn. Ngày 3+ → Cấp A, 90 ngày 3+ → Cấp C.",
       openShortDesc: "Lỗi Open/Short linh kiện chung ICT. Cùng linh kiện ngày 2+ → Cấp B tạm dừng XK.",
       indicatorDesc: "Chỉ số tỷ lệ NG hàng tuần theo model/công đoạn. So sánh tuần trước.",
+      fpyDesc: "Giám sát tỷ lệ đạt theo line/công đoạn. Dưới 90% → Cấp A.",
       equipmentDesc: "Giám sát thời gian dừng thiết bị theo line/công đoạn. Dừng 60 phút+ → Cấp C.",
     },
     monitoring: {
-      title: "Giám sát CTQ",
+      title: "Giám sát bất thường",
       subtitle: "Lặp lại / Sự cố",
       gradeALabel: "Cấp A (Dừng Line)",
       gradeBLabel: "Cấp B (Tạm dừng XK)",
@@ -231,6 +244,12 @@ const vi: TranslationKeys = {
       noData: "Không có dữ liệu lỗi trong kỳ.",
       newDefect: "Mới",
       refreshBtn: "Làm mới",
+    },
+    fpy: {
+      title: "Giám sát tỷ lệ đạt",
+      gradeALabel: "Cấp A (Dừng Line)",
+      gradeDesc: "Tỷ lệ đạt dưới 90% → Dừng Line",
+      noData: "Không có dữ liệu kiểm tra phù hợp với tiêu chí hiện tại.",
     },
     equipment: {
       title: "Giám sát thiết bị CTQ",

@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CTQ 모니터링",
-  description: "CTQ 품질 모니터링 시스템",
+  title: "이상점 모니터링",
+  description: "이상점 모니터링 시스템",
 };
 
 export default function RootLayout({

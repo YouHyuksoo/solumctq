@@ -14,7 +14,7 @@
 import { NextResponse } from "next/server";
 import { type NextRequest } from "next/server";
 import { executeQuery } from "@/lib/oracle";
-import { parseLines, buildLineInClause } from "@/lib/line-filter";
+import { parseLines, buildLineInClause, getVietnamTimeRange } from "@/lib/line-filter";
 import type {
   AccidentProcessType,
   AccidentProcessStatus,
@@ -72,27 +72,6 @@ const PROCESS_LABELS: Record<AccidentProcessType, string> = {
 
 const PROCESS_TYPES: AccidentProcessType[] = ["HIPOT", "BURNIN", "ATE"];
 
-/** 오늘 08:00 기준 시작/종료 시간 */
-function getTimeRange(): { startStr: string; endStr: string } {
-  const now = new Date();
-  if (now.getHours() < 8) {
-    now.setDate(now.getDate() - 1);
-  }
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-
-  const next = new Date(y, now.getMonth(), now.getDate() + 1);
-  const ny = next.getFullYear();
-  const nm = String(next.getMonth() + 1).padStart(2, "0");
-  const nd = String(next.getDate()).padStart(2, "0");
-
-  return {
-    startStr: `${y}/${m}/${d} 08:00:00`,
-    endStr: `${ny}/${nm}/${nd} 08:00:00`,
-  };
-}
-
 interface LineSummaryRow {
   LINE_CODE: string;
   NG_COUNT: number;
@@ -131,7 +110,7 @@ async function getLineSummary(
            MAX(t.${config.dateCol}) AS LAST_INSPECT
     FROM ${config.table} t
     WHERE ${condition}
-      AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK')
+      AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
       AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN <> 'Y')
       AND t.LINE_CODE IS NOT NULL
       ${lineFilter.clause}
@@ -172,7 +151,7 @@ async function getNgDetails(
         ON r.SERIAL_NO = t.${config.pidCol}
         AND r.RECEIPT_DEFICIT = '2'
       WHERE ${condition}
-        AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK')
+        AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
         AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN <> 'Y')
         AND t.LINE_CODE IS NOT NULL
         ${lineFilter.clause}
@@ -215,7 +194,7 @@ export async function GET(request: NextRequest) {
   try {
     const lines = parseLines(request);
     const lineFilter = buildLineInClause(lines, "t", "ln");
-    const timeRange = getTimeRange();
+    const timeRange = getVietnamTimeRange();
 
     /* 1. 3공정 병렬 쿼리 */
     const [summaries, ngDetails] = await Promise.all([
@@ -247,7 +226,8 @@ export async function GET(request: NextRequest) {
       detailsByProcess.set(pt, dMap);
     });
 
-    /* 3. 라인이름 조회 */
+    /* 3. 선택된 라인도 포함 (0건이어도 카드 표시) */
+    for (const lc of lines) allLineCodes.add(lc);
     const sortedLineCodes = [...allLineCodes].sort();
     const lineNameMap = await getLineNames(sortedLineCodes);
 

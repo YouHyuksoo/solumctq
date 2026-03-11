@@ -21,7 +21,7 @@
 import { NextResponse } from "next/server";
 import { type NextRequest } from "next/server";
 import { executeQuery } from "@/lib/oracle";
-import { parseLines, buildLineInClause } from "@/lib/line-filter";
+import { parseLines, buildLineInClause, getVietnamTimeRange } from "@/lib/line-filter";
 import type {
   RepeatProcessType,
   RepeatProcessStatus,
@@ -37,6 +37,7 @@ interface ProcessConfig {
   dateCol: string;
   resultCol: string;
   dateType: "varchar" | "date";
+  extraWhere?: string;
 }
 
 const PROCESS_CONFIG: Record<RepeatProcessType, ProcessConfig> = {
@@ -60,6 +61,7 @@ const PROCESS_CONFIG: Record<RepeatProcessType, ProcessConfig> = {
     dateCol: "STARTTIME",
     resultCol: "RESULT",
     dateType: "date",
+    extraWhere: "AND t.LAST_FLAG = 'Y'",
   },
   SETTV: {
     table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET",
@@ -67,6 +69,7 @@ const PROCESS_CONFIG: Record<RepeatProcessType, ProcessConfig> = {
     dateCol: "INSPECT_TIME",
     resultCol: "INSPECT_RESULT",
     dateType: "date",
+    extraWhere: "AND t.LAST_FLAG = 'Y'",
   },
 };
 
@@ -78,27 +81,6 @@ const PROCESS_LABELS: Record<RepeatProcessType, string> = {
 };
 
 const PROCESS_TYPES: RepeatProcessType[] = ["FT", "ATE", "IMAGE", "SETTV"];
-
-/** 오늘 08:00 기준 시작/종료 시간 (하루치) */
-function getTimeRange(): { startStr: string; endStr: string } {
-  const now = new Date();
-  if (now.getHours() < 8) {
-    now.setDate(now.getDate() - 1);
-  }
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-
-  const next = new Date(y, now.getMonth(), now.getDate() + 1);
-  const ny = next.getFullYear();
-  const nm = String(next.getMonth() + 1).padStart(2, "0");
-  const nd = String(next.getDate()).padStart(2, "0");
-
-  return {
-    startStr: `${y}/${m}/${d} 08:00:00`,
-    endStr: `${ny}/${nm}/${nd} 08:00:00`,
-  };
-}
 
 /** LINE별 NG 요약 (SQL 집계) */
 interface LineSummaryRow {
@@ -170,8 +152,9 @@ async function getLineSummary(
            ${lastInspectExpr} AS LAST_INSPECT
     FROM ${config.table} t
     WHERE ${condition}
-      AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK')
+      AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
       AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')
+      ${config.extraWhere ?? ""}
       AND t.LINE_CODE IS NOT NULL
       ${lineFilter.clause}
     GROUP BY t.LINE_CODE
@@ -214,9 +197,10 @@ async function getRepeatLocations(
                  F_GET_MODEL_NAME_BY_PID(t.${config.pidCol}) AS MODEL_NAME
           FROM ${config.table} t
           WHERE ${condition}
-            AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK')
+            AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
             AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')
-            AND t.LINE_CODE IS NOT NULL
+            ${config.extraWhere ?? ""}
+      AND t.LINE_CODE IS NOT NULL
             ${lineFilter.clause}
         ) base
         JOIN IP_PRODUCT_WORK_QC r
@@ -267,9 +251,10 @@ async function getNgDetails(
         ON r.SERIAL_NO = t.${config.pidCol}
         AND r.RECEIPT_DEFICIT = '2'
       WHERE ${condition}
-        AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK')
+        AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
         AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')
-        AND t.LINE_CODE IS NOT NULL
+        ${config.extraWhere ?? ""}
+      AND t.LINE_CODE IS NOT NULL
         ${lineFilter.clause}
     ) WHERE RN <= 5
   `;
@@ -303,7 +288,7 @@ export async function GET(request: NextRequest) {
   try {
     const lines = parseLines(request);
     const lineFilter = buildLineInClause(lines, "t", "ln");
-    const timeRange = getTimeRange();
+    const timeRange = getVietnamTimeRange();
 
     /* 1. 4공정 × 2쿼리 = 8개 쿼리 병렬 실행 (요약 + 반복Location) */
     const [summaries, repeatLocs, ngDetails] = await Promise.all([
@@ -347,7 +332,8 @@ export async function GET(request: NextRequest) {
       detailsByProcess.set(pt, dMap);
     });
 
-    /* 3. 라인이름 조회 */
+    /* 3. 선택된 라인도 포함 (0건이어도 카드 표시) */
+    for (const lc of lines) allLineCodes.add(lc);
     const sortedLineCodes = [...allLineCodes].sort();
     const lineNameMap = await getLineNames(sortedLineCodes);
 

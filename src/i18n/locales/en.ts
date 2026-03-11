@@ -11,7 +11,7 @@ import type { TranslationKeys } from "./ko";
 
 const en: TranslationKeys = {
   common: {
-    ctqMonitoring: "CTQ Monitoring",
+    ctqMonitoring: "Anomaly Monitoring",
     qualitySystem: "Real-time Quality Monitoring System",
     loading: "Loading...",
     dataLoading: "Loading data...",
@@ -44,6 +44,7 @@ const en: TranslationKeys = {
     material: "Material",
     openShort: "Open/Short",
     indicator: "Indicator",
+    fpy: "FPY",
     equipment: "Equipment",
   },
 
@@ -119,6 +120,17 @@ const en: TranslationKeys = {
       "Green: Under 100% vs previous week (decrease)",
       "Gray: No defects (0→0)",
     ],
+    fpy: [
+      "Target: All processes (ICT, Hi-Pot, FT, Burn-In, ATE, IMAGE, SET)",
+      "Content: Daily first pass yield by line/process",
+      "Criteria: FPY below 90% → Grade A (Line Stop)",
+      "Period: Today 08:00 ~",
+    ],
+    fpyStatus: [
+      "Red: FPY below 90% (Grade A - Line Stop)",
+      "Yellow: FPY 90~95%",
+      "Green: FPY 95% or above",
+    ],
     equipment: [
       "Target: Equipment stop time per line/process",
       "Table: IP_LINE_DAILY_OPERATION_HIST",
@@ -187,10 +199,11 @@ const en: TranslationKeys = {
       materialDesc: "Material periodic inspection across 6 processes. Daily 3+ → Grade A, 90-day 3+ → Grade C.",
       openShortDesc: "ICT Open/Short defects. Same part daily cumulative 2+ → Grade B ship hold.",
       indicatorDesc: "Weekly NG rate trend by model/process. Compare week-over-week.",
+      fpyDesc: "Daily first pass yield by line/process. Below 90% → Grade A.",
       equipmentDesc: "Daily equipment stop time by line/process. 60min+ stop → Grade C.",
     },
     monitoring: {
-      title: "CTQ Monitoring",
+      title: "Anomaly Monitoring",
       subtitle: "Repeatability / Accident",
       gradeALabel: "Grade A (Line Stop)",
       gradeBLabel: "Grade B (Ship Hold)",
@@ -231,6 +244,12 @@ const en: TranslationKeys = {
       noData: "No defect data for the period.",
       newDefect: "New",
       refreshBtn: "Refresh",
+    },
+    fpy: {
+      title: "FPY Monitoring",
+      gradeALabel: "Grade A (Line Stop)",
+      gradeDesc: "FPY below 90% → Line Stop",
+      noData: "No inspection data matching the current criteria.",
     },
     equipment: {
       title: "CTQ Equipment Monitoring",

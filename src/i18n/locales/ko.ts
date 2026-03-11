@@ -10,7 +10,7 @@
 const ko = {
   /* ── 공통 ── */
   common: {
-    ctqMonitoring: "CTQ 모니터링",
+    ctqMonitoring: "이상점 모니터링",
     qualitySystem: "품질 관리 실시간 모니터링 시스템",
     loading: "로딩 중...",
     dataLoading: "데이터 로딩 중...",
@@ -45,6 +45,7 @@ const ko = {
     material: "원자재동일부품",
     openShort: "원자재공용부품",
     indicator: "지표",
+    fpy: "직행율",
     equipment: "설비이상",
   },
 
@@ -121,6 +122,17 @@ const ko = {
       "초록: 전주 대비 100% 미만 (감소)",
       "회색: 불량 없음 (0→0)",
     ],
+    fpy: [
+      "대상: 모든 공정 (ICT, Hi-Pot, FT, Burn-In, ATE, IMAGE, SET)",
+      "내용: 라인별/공정별 당일 직행율",
+      "기준: 직행율 90% 미만 → A급 (Line Stop)",
+      "기간: 당일 08:00 ~",
+    ],
+    fpyStatus: [
+      "빨강: 직행율 90% 미만 (A급 Line Stop)",
+      "노랑: 직행율 90~95%",
+      "초록: 직행율 95% 이상",
+    ],
     equipment: [
       "대상: 라인별 공정별 설비 정지시간",
       "테이블: IP_LINE_DAILY_OPERATION_HIST",
@@ -191,10 +203,11 @@ const ko = {
       materialDesc: "전체 6공정 원자재 주기별점검. 일 3건+ A급, 90일 누적 3건+ C급 불량개선.",
       openShortDesc: "ICT 공정 공용부품 Open/Short 불량. 동일 부품 1일 누적 2건+ B급 출하중지.",
       indicatorDesc: "모델별/공정별 주간 불량률 증가 지표. 전전주→전주→금주 비교.",
+      fpyDesc: "라인별/공정별 당일 직행율 모니터링. 90% 미만 시 A급.",
       equipmentDesc: "라인별/공정별 일일 설비 정지시간 모니터링. 60분 이상 정지 시 C급.",
     },
     monitoring: {
-      title: "CTQ 모니터링",
+      title: "이상점 모니터링",
       subtitle: "반복성 / 사고성",
       gradeALabel: "A급 (Line Stop)",
       gradeBLabel: "B급 (출하중지)",
@@ -235,6 +248,12 @@ const ko = {
       noData: "해당 기간 불량 데이터가 없습니다.",
       newDefect: "신규",
       refreshBtn: "새로고침",
+    },
+    fpy: {
+      title: "직행율 모니터링",
+      gradeALabel: "A급 (Line Stop)",
+      gradeDesc: "직행율 90% 미만 → Line Stop",
+      noData: "현재 조건에 해당하는 검사 데이터가 없습니다.",
     },
     equipment: {
       title: "CTQ 설비이상 모니터링",

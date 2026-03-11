@@ -14,7 +14,7 @@
 import { NextResponse } from "next/server";
 import { type NextRequest } from "next/server";
 import { executeQuery } from "@/lib/oracle";
-import { parseLines, buildLineInClause } from "@/lib/line-filter";
+import { parseLines, buildLineInClause, getVietnamTimeRange } from "@/lib/line-filter";
 import type {
   MaterialDefectItem,
   MaterialLineCardData,
@@ -136,7 +136,8 @@ async function getNgDetailsByDefect(
 }
 
 async function fetchFromDB(
-  lineFilter: { clause: string; params: Record<string, string> } = { clause: "", params: {} }
+  lineFilter: { clause: string; params: Record<string, string> } = { clause: "", params: {} },
+  selectedLines: string[] = []
 ): Promise<CachedResult> {
   const times = getTimeRanges();
 
@@ -185,6 +186,8 @@ async function fetchFromDB(
     lineDataMap.get(row.LINE_CODE)!.push(row);
   }
 
+  /* 선택된 라인도 포함 (0건이어도 카드 표시) */
+  for (const lc of selectedLines) allLineCodes.add(lc);
   const sortedLineCodes = [...allLineCodes].sort();
   const lineNameMap = await getLineNames(sortedLineCodes);
 
@@ -266,7 +269,7 @@ export async function GET(request: NextRequest) {
 
     /* 라인 필터가 있으면 캐시 사용하지 않고 직접 조회 */
     if (lines.length > 0) {
-      const result = await fetchFromDB(lineFilter);
+      const result = await fetchFromDB(lineFilter, lines);
       return NextResponse.json(result);
     }
 

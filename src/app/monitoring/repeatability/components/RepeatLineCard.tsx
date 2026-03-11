@@ -86,7 +86,7 @@ export default function RepeatLineCard({ line }: { line: RepeatLineCardData }) {
           </tr>
         </thead>
         <tbody>
-          {line.processes.map((p) => (
+          {line.processes.filter((p) => p.ngCount > 0 || p.lastInspectDate).map((p) => (
             <tr
               key={p.process}
               className={`border-t border-gray-800 ${ROW_GRADE_STYLES[p.grade]}`}
