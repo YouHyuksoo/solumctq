@@ -16,7 +16,6 @@ import { useLineFilter } from "../contexts/LineFilterContext";
 import { useIndicator } from "./hooks/useIndicator";
 import IndicatorTable from "./components/IndicatorTable";
 import MonitoringNav from "../components/MonitoringNav";
-import HelpModal from "../components/HelpModal";
 import { useLocale } from "@/i18n";
 
 export default function IndicatorPage() {
@@ -55,7 +54,6 @@ export default function IndicatorPage() {
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
           <div className="flex items-center gap-4">
             <MonitoringNav />
-            <HelpModal pageKey="indicator" />
           </div>
           <div className="flex items-center gap-4">
             <button

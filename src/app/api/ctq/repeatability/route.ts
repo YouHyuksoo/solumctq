@@ -98,18 +98,6 @@ interface RepeatLocationRow {
   LOC_COUNT: number;
 }
 
-interface NgDetailRow {
-  LINE_CODE: string;
-  INSPECT_TIME: string;
-  PID: string;
-  MODEL_NAME: string;
-  RECEIPT_DEFICIT: string;
-  LOCATION_CODE: string;
-  REPAIR_RESULT_CODE: string;
-  QC_INSPECT_HANDLING: string;
-  DEFECT_ITEM_CODE: string;
-}
-
 interface LineNameRow {
   LINE_CODE: string;
   LINE_NAME: string;
@@ -220,51 +208,6 @@ async function getRepeatLocations(
   });
 }
 
-/** 공정별 NG 상세 (최근 5건, 툴팁용) */
-async function getNgDetails(
-  config: ProcessConfig,
-  timeRange: { startStr: string; endStr: string },
-  lineFilter: { clause: string; params: Record<string, string> }
-): Promise<NgDetailRow[]> {
-  const { condition } = buildDateCondition(config, "t");
-  const timeExpr =
-    config.dateType === "date"
-      ? `TO_CHAR(t.${config.dateCol}, 'YYYY/MM/DD HH24:MI:SS')`
-      : `t.${config.dateCol}`;
-
-  const sql = `
-    SELECT LINE_CODE, INSPECT_TIME, PID, MODEL_NAME,
-           RECEIPT_DEFICIT, LOCATION_CODE, REPAIR_RESULT_CODE, QC_INSPECT_HANDLING, DEFECT_ITEM_CODE
-    FROM (
-      SELECT t.LINE_CODE,
-             ${timeExpr} AS INSPECT_TIME,
-             t.${config.pidCol} AS PID,
-             NVL(F_GET_MODEL_NAME_BY_PID(t.${config.pidCol}), NVL(r.MODEL_NAME, '-')) AS MODEL_NAME,
-             NVL(r.RECEIPT_DEFICIT, '-') AS RECEIPT_DEFICIT,
-             NVL(r.LOCATION_CODE, '-') AS LOCATION_CODE,
-             NVL(r.REPAIR_RESULT_CODE, '-') AS REPAIR_RESULT_CODE,
-             NVL(r.QC_INSPECT_HANDLING, '-') AS QC_INSPECT_HANDLING,
-             NVL(r.DEFECT_ITEM_CODE, '-') AS DEFECT_ITEM_CODE,
-             ROW_NUMBER() OVER (PARTITION BY t.LINE_CODE ORDER BY t.${config.dateCol} DESC) AS RN
-      FROM ${config.table} t
-      LEFT JOIN IP_PRODUCT_WORK_QC r
-        ON r.SERIAL_NO = t.${config.pidCol}
-        AND r.RECEIPT_DEFICIT = '2'
-      WHERE ${condition}
-        AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
-        AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')
-        ${config.extraWhere ?? ""}
-      AND t.LINE_CODE IS NOT NULL
-        ${lineFilter.clause}
-    ) WHERE RN <= 5
-  `;
-  return executeQuery<NgDetailRow>(sql, {
-    tsStart: timeRange.startStr,
-    tsEnd: timeRange.endStr,
-    ...lineFilter.params,
-  });
-}
-
 /** LINE_CODE 이름 조회 */
 async function getLineNames(lineCodes: string[]): Promise<Map<string, string>> {
   if (lineCodes.length === 0) return new Map();
@@ -291,10 +234,9 @@ export async function GET(request: NextRequest) {
     const timeRange = getVietnamTimeRange();
 
     /* 1. 4공정 × 2쿼리 = 8개 쿼리 병렬 실행 (요약 + 반복Location) */
-    const [summaries, repeatLocs, ngDetails] = await Promise.all([
+    const [summaries, repeatLocs] = await Promise.all([
       Promise.all(PROCESS_TYPES.map((pt) => getLineSummary(PROCESS_CONFIG[pt], timeRange, lineFilter))),
       Promise.all(PROCESS_TYPES.map((pt) => getRepeatLocations(PROCESS_CONFIG[pt], timeRange, lineFilter))),
-      Promise.all(PROCESS_TYPES.map((pt) => getNgDetails(PROCESS_CONFIG[pt], timeRange, lineFilter))),
     ]);
 
     /* 2. 공정별 요약 및 반복Location → Map 변환 */
@@ -321,17 +263,6 @@ export async function GET(request: NextRequest) {
       repeatByProcess.set(pt, rMap);
     });
 
-    const detailsByProcess = new Map<RepeatProcessType, Map<string, NgDetailRow[]>>();
-
-    PROCESS_TYPES.forEach((pt, i) => {
-      const dMap = new Map<string, NgDetailRow[]>();
-      for (const row of ngDetails[i]) {
-        if (!dMap.has(row.LINE_CODE)) dMap.set(row.LINE_CODE, []);
-        dMap.get(row.LINE_CODE)!.push(row);
-      }
-      detailsByProcess.set(pt, dMap);
-    });
-
     /* 3. 선택된 라인도 포함 (0건이어도 카드 표시) */
     for (const lc of lines) allLineCodes.add(lc);
     const sortedLineCodes = [...allLineCodes].sort();
@@ -349,7 +280,6 @@ export async function GET(request: NextRequest) {
         const repeat = repeatByProcess.get(pt)?.get(lineCode);
         const grade: RepeatGrade = repeat ? "A" : "OK";
 
-        const details = detailsByProcess.get(pt)?.get(lineCode) ?? [];
         processes.push({
           process: pt,
           processLabel: PROCESS_LABELS[pt],
@@ -360,16 +290,6 @@ export async function GET(request: NextRequest) {
           detail: repeat ? `consecutive:${repeat.LOC_COUNT}(${repeat.LOCATION_CODE})` : null,
           lastInspectDate: summary?.LAST_INSPECT ?? null,
           pendingCount: summary?.PENDING_COUNT ?? 0,
-          ngDetails: details.map((d) => ({
-            time: d.INSPECT_TIME,
-            pid: d.PID,
-            model: d.MODEL_NAME,
-            receiptDeficit: d.RECEIPT_DEFICIT,
-            locationCode: d.LOCATION_CODE,
-            repairResult: d.REPAIR_RESULT_CODE,
-            qcHandling: d.QC_INSPECT_HANDLING,
-            defectItem: d.DEFECT_ITEM_CODE,
-          })),
         });
 
         if (grade === "A") overallGrade = "A";

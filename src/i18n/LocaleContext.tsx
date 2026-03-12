@@ -32,9 +32,9 @@ export const LOCALE_DATE_MAP: Record<Locale, string> = {
 
 /** 언어 표시 라벨 */
 export const LOCALE_LABELS: Record<Locale, string> = {
-  ko: "KO",
-  en: "EN",
-  vi: "VI",
+  ko: "한국어",
+  en: "English",
+  vi: "Tiếng Việt",
 };
 
 interface LocaleContextValue {

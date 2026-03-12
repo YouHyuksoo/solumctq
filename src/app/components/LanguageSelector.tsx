@@ -53,7 +53,7 @@ export default function LanguageSelector() {
                 setLocale(loc);
                 setOpen(false);
               }}
-              className={`block w-full px-4 py-2 text-xs font-medium text-left transition-colors ${
+              className={`block w-full px-4 py-2 text-xs font-medium text-left whitespace-nowrap transition-colors ${
                 locale === loc
                   ? "bg-blue-600 text-white"
                   : "text-gray-300 hover:bg-gray-800"

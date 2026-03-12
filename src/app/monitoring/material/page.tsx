@@ -17,7 +17,6 @@ import { useLineFilter } from "../contexts/LineFilterContext";
 import { useMaterial } from "./hooks/useMaterial";
 import MaterialLineCard from "./components/MaterialLineCard";
 import MonitoringNav from "../components/MonitoringNav";
-import HelpModal from "../components/HelpModal";
 import { useLocale } from "@/i18n";
 
 export default function MaterialPage() {
@@ -56,7 +55,6 @@ export default function MaterialPage() {
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
           <div className="flex items-center gap-4">
             <MonitoringNav />
-            <HelpModal pageKey="material" />
           </div>
           <div className="flex items-center gap-4">
             {data && data.lines.length > 0 && (

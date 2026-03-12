@@ -37,7 +37,7 @@ export interface RepeatProcessStatus {
   detail: string | null;
   lastInspectDate: string | null;
   pendingCount: number;
-  ngDetails: NgDetailRecord[];
+  ngDetails?: NgDetailRecord[];
 }
 
 /** 라인 카드 데이터 */
