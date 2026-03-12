@@ -16,6 +16,7 @@ import { useLineFilter } from "../contexts/LineFilterContext";
 import { useEquipment } from "./hooks/useEquipment";
 import EquipmentTable from "./components/EquipmentTable";
 import MonitoringNav from "../components/MonitoringNav";
+import HelpModal from "../components/HelpModal";
 import { useLocale } from "@/i18n";
 
 export default function EquipmentPage() {
@@ -50,6 +51,7 @@ export default function EquipmentPage() {
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
           <div className="flex items-center gap-4">
             <MonitoringNav />
+            <HelpModal pageKey="equipment" />
           </div>
           <div className="flex items-center gap-4">
             <button

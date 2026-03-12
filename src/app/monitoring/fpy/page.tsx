@@ -15,6 +15,7 @@ import { useLineFilter } from "../contexts/LineFilterContext";
 import { useFpy } from "./hooks/useFpy";
 import FpyLineCard from "./components/FpyLineCard";
 import MonitoringNav from "../components/MonitoringNav";
+import HelpModal from "../components/HelpModal";
 import { useLocale } from "@/i18n";
 
 export default function FpyPage() {
@@ -63,6 +64,7 @@ export default function FpyPage() {
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
           <div className="flex items-center gap-4">
             <MonitoringNav />
+            <HelpModal pageKey="fpy" />
           </div>
           <div className="flex items-center gap-4">
             {data && data.lines.length > 0 && aCount > 0 && (

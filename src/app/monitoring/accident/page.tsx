@@ -19,6 +19,7 @@ import { usePersistedState } from "../hooks/usePersistedState";
 import AccidentLineCard from "./components/AccidentLineCard";
 import SettingsPanel from "../components/SettingsPanel";
 import MonitoringNav from "../components/MonitoringNav";
+import HelpModal from "../components/HelpModal";
 import { useLocale } from "@/i18n";
 
 const ITEMS_PER_PAGE = 9;
@@ -69,6 +70,7 @@ export default function AccidentPage() {
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
           <div className="flex items-center gap-4">
             <MonitoringNav />
+            <HelpModal pageKey="accident" />
           </div>
           <div className="flex items-center gap-4">
             {data && data.lines.length > 0 && (
