@@ -38,12 +38,24 @@ export default function FpyPage() {
           >
             {t("pages.accident.title") as string}
           </h1>
-          <div className="flex flex-col items-end gap-1">
-            <div className="flex items-center gap-4 text-xs text-gray-400">
+          <div className="flex flex-col items-end gap-1 text-xs text-gray-400">
+            <div className="flex items-center gap-3">
               <span>{t("table.process") as string}: ICT, Hi-Pot, FT, Burn-In, ATE, IMAGE, SET</span>
-              <span><span className="text-red-400 font-bold">{t("grade.a") as string}</span>: {t("pages.fpy.gradeDesc") as string}</span>
+              <span className="text-gray-600">|</span>
+              <span><span className="text-red-400 font-bold">{t("grade.a") as string}</span>: 당일 직행율 90% 미만</span>
             </div>
-            <span className="text-xs text-gray-500">Solum Vietnam</span>
+            <div className="flex items-center gap-3 text-gray-500">
+              <span>직행율 = 제품별 최초검사 PASS수 / 고유제품수 x 100 (재검사 제외)</span>
+              <span className="text-gray-600">|</span>
+              <span>시프트: 08:00 ~ 익일 08:00 (VN)</span>
+            </div>
+            {data?.dateRange && (
+              <div className="flex items-center gap-3 text-gray-500">
+                <span>전일: <span className="text-gray-400">{data.dateRange.yesterday}</span></span>
+                <span className="text-gray-600">|</span>
+                <span>당일: <span className="text-gray-400">{data.dateRange.today}</span></span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -114,7 +126,7 @@ export default function FpyPage() {
         {data && data.lines.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {data.lines.map((line) => (
-              <FpyLineCard key={line.lineCode} line={line} />
+              <FpyLineCard key={line.lineCode} line={line} dateRange={data.dateRange} />
             ))}
           </div>
         )}

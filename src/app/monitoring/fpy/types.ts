@@ -36,5 +36,9 @@ export interface FpyLineData {
 /** API 응답 */
 export interface FpyResponse {
   lines: FpyLineData[];
+  dateRange: {
+    yesterday: string;
+    today: string;
+  };
   lastUpdated: string;
 }

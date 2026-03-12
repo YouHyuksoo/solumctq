@@ -124,6 +124,16 @@ export async function GET(request: NextRequest) {
     const lines = parseLines(request);
     const lineFilter = buildLineInClause(lines, "t", "ln");
 
+    /* DB 기준 날짜 범위 조회 (베트남 SYSDATE 기준) */
+    const dateRangeRows = await executeQuery<{ YD_START: string; YD_END: string; TD_START: string; TD_END: string }>(
+      `SELECT TO_CHAR(TRUNC(SYSDATE)-1, 'MM/DD') || ' 08:00' AS YD_START,
+              TO_CHAR(TRUNC(SYSDATE),   'MM/DD') || ' 08:00' AS YD_END,
+              TO_CHAR(TRUNC(SYSDATE),   'MM/DD') || ' 08:00' AS TD_START,
+              TO_CHAR(TRUNC(SYSDATE)+1, 'MM/DD') || ' 08:00' AS TD_END
+       FROM DUAL`, {}
+    );
+    const dr = dateRangeRows[0];
+
     /* 전일(-1)과 당일(0) 병렬 조회 */
     const [yesterdayResults, todayResults] = await Promise.all([
       Promise.all(PROCESS_KEYS.map((key) => queryProcess(key, PROCESS_CONFIG[key], lineFilter, -1))),
@@ -190,6 +200,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       lines: sortedLines,
+      dateRange: {
+        yesterday: `${dr.YD_START} ~ ${dr.YD_END}`,
+        today: `${dr.TD_START} ~ ${dr.TD_END}`,
+      },
       lastUpdated: new Date().toISOString(),
     });
   } catch (error) {

@@ -31,7 +31,12 @@ function getYieldColor(yieldRate: number): { text: string; bar: string } {
   return { text: "text-green-400", bar: "bg-green-500" };
 }
 
-export default function FpyLineCard({ line }: { line: FpyLineData }) {
+interface FpyLineCardProps {
+  line: FpyLineData;
+  dateRange?: { yesterday: string; today: string };
+}
+
+export default function FpyLineCard({ line, dateRange }: FpyLineCardProps) {
   const { t } = useLocale();
 
   const hasAnyProcess = PROCESS_KEYS.some((k) => line.processes[k]);
@@ -60,7 +65,7 @@ export default function FpyLineCard({ line }: { line: FpyLineData }) {
         {PROCESS_KEYS.map((key) => {
           const proc = line.processes[key];
           if (!proc) return null;
-          return <ProcessRow key={key} processKey={key} data={proc} />;
+          return <ProcessRow key={key} processKey={key} data={proc} dateRange={dateRange} />;
         })}
       </div>
     </div>
@@ -71,7 +76,7 @@ function GaugeBar({ data, label, barColorClass }: { data: FpyProcessData; label:
   const color = getYieldColor(data.yield);
   return (
     <div className="flex items-center gap-2">
-      <span className="w-7 text-[10px] text-gray-500 shrink-0 text-right">{label}</span>
+      <span className="w-10 text-[10px] text-gray-500 shrink-0 text-right">{label}</span>
       <div className="flex-1 h-3 bg-gray-800 rounded-full overflow-hidden relative">
         <div
           className={`h-full ${barColorClass} rounded-full transition-all duration-500`}
@@ -90,10 +95,15 @@ function GaugeBar({ data, label, barColorClass }: { data: FpyProcessData; label:
   );
 }
 
-function ProcessRow({ processKey, data }: { processKey: FpyProcessKey; data: FpyProcessDayData }) {
+function ProcessRow({ processKey, data, dateRange }: { processKey: FpyProcessKey; data: FpyProcessDayData; dateRange?: { yesterday: string; today: string } }) {
   const yesterday = data.yesterday;
   const today = data.today;
   if (!yesterday && !today) return null;
+
+  /** "03/11 08:00 ~ 03/12 08:00" → "03/11" */
+  const shortDate = (range?: string) => range?.split(" ")[0] ?? "";
+  const ydLabel = dateRange ? shortDate(dateRange.yesterday) : "전일";
+  const tdLabel = dateRange ? shortDate(dateRange.today) : "당일";
 
   const yieldDiff = yesterday && today ? today.yield - yesterday.yield : null;
 
@@ -105,20 +115,20 @@ function ProcessRow({ processKey, data }: { processKey: FpyProcessKey; data: Fpy
       <div className="flex-1 space-y-1">
         {/* 전일 (위) */}
         {yesterday ? (
-          <GaugeBar data={yesterday} label="전일" barColorClass="bg-gray-500" />
+          <GaugeBar data={yesterday} label={ydLabel} barColorClass="bg-gray-500" />
         ) : (
           <div className="flex items-center gap-2 h-3">
-            <span className="w-7 text-[10px] text-gray-600 shrink-0 text-right">전일</span>
+            <span className="w-10 text-[10px] text-gray-600 shrink-0 text-right">{ydLabel}</span>
             <span className="text-[10px] text-gray-600">—</span>
           </div>
         )}
         {/* 당일 (아래) */}
         {today ? (
-          <GaugeBar data={today} label="당일" barColorClass={getYieldColor(today.yield).bar} />
+          <GaugeBar data={today} label={tdLabel} barColorClass={getYieldColor(today.yield).bar} />
         ) : (
           <div className="flex items-center gap-2 h-3">
-            <span className="w-7 text-[10px] text-gray-600 shrink-0 text-right">당일</span>
-            <span className="text-[10px] text-gray-600">— 데이터 없음</span>
+            <span className="w-10 text-[10px] text-gray-600 shrink-0 text-right">{tdLabel}</span>
+            <span className="text-[10px] text-gray-600">—</span>
           </div>
         )}
       </div>
