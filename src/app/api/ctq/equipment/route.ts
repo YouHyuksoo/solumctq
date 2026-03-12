@@ -19,22 +19,22 @@ export const dynamic = "force-dynamic";
 
 const PROCESS_KEYS: EquipmentProcessKey[] = ["ICT", "HIPOT", "FT", "BURNIN", "ATE", "IMAGE", "SET"];
 
-/** DB WORKSTAGE_NAME → 화면 표시 키 매핑 */
-const DB_NAMES = ["ICT", "HIPOT", "FT", "BURNIN", "ATE", "IMG", "SETTV"] as const;
-const DB_TO_DISPLAY: Record<string, EquipmentProcessKey> = {
+/** LINE_STATUS_CODE 값 → 화면 표시 키 매핑 */
+const STATUS_CODES = ["ICT", "HIPOT", "FT", "BURNIN", "ATE", "IMAGE", "SETTV"] as const;
+const STATUS_TO_DISPLAY: Record<string, EquipmentProcessKey> = {
   ICT: "ICT",
   HIPOT: "HIPOT",
   FT: "FT",
   BURNIN: "BURNIN",
   ATE: "ATE",
-  IMG: "IMAGE",
+  IMAGE: "IMAGE",
   SETTV: "SET",
 };
 
 interface StopRow {
   LINE_CODE: string;
   LINE_NAME: string;
-  WORKSTAGE_NAME: string;
+  LINE_STATUS_CODE: string;
   STOP_MINUTES: number;
 }
 
@@ -43,21 +43,20 @@ export async function GET(request: NextRequest) {
     const lines = parseLines(request);
     const lineFilter = buildLineInClause(lines, "B", "ln");
 
-    const processPlaceholders = DB_NAMES.map((_, i) => `:ws${i}`).join(",");
+    const processPlaceholders = STATUS_CODES.map((_, i) => `:sc${i}`).join(",");
     const processParams: Record<string, string> = {};
-    DB_NAMES.forEach((name, i) => { processParams[`ws${i}`] = name; });
+    STATUS_CODES.forEach((code, i) => { processParams[`sc${i}`] = code; });
 
     const sql = `
       SELECT B.LINE_CODE,
              F_GET_LINE_NAME(B.LINE_CODE, 1) AS LINE_NAME,
-             W.WORKSTAGE_NAME,
+             B.LINE_STATUS_CODE,
              SUM((B.END_DATE - B.START_DATE) * 24 * 60) AS STOP_MINUTES
       FROM IP_LINE_DAILY_OPERATION_HIST B
-      JOIN IP_PRODUCT_WORKSTAGE W ON W.WORKSTAGE_CODE = B.WORKSTAGE_CODE
       WHERE B.ACTUAL_DATE = F_GET_WORK_ACTUAL_DATE(SYSDATE, 'A')
-        AND W.WORKSTAGE_NAME IN (${processPlaceholders})
+        AND B.LINE_STATUS_CODE IN (${processPlaceholders})
         ${lineFilter.clause}
-      GROUP BY B.LINE_CODE, F_GET_LINE_NAME(B.LINE_CODE, 1), W.WORKSTAGE_NAME
+      GROUP BY B.LINE_CODE, F_GET_LINE_NAME(B.LINE_CODE, 1), B.LINE_STATUS_CODE
     `;
 
     const rows = await executeQuery<StopRow>(sql, {
@@ -77,7 +76,7 @@ export async function GET(request: NextRequest) {
         });
       }
       const line = lineMap.get(row.LINE_CODE)!;
-      const key = DB_TO_DISPLAY[row.WORKSTAGE_NAME];
+      const key = STATUS_TO_DISPLAY[row.LINE_STATUS_CODE];
       if (key) {
         line.processes[key] = {
           stopMinutes: Math.round(row.STOP_MINUTES),

@@ -82,9 +82,10 @@ const PROCESS_LABELS: Record<RepeatProcessType, string> = {
 
 const PROCESS_TYPES: RepeatProcessType[] = ["FT", "ATE", "IMAGE", "SETTV"];
 
-/** LINE별 NG 요약 (SQL 집계) */
+/** LINE별 검사 요약 (SQL 집계) */
 interface LineSummaryRow {
   LINE_CODE: string;
+  TOTAL_COUNT: number;
   NG_COUNT: number;
   PENDING_COUNT: number;
   LAST_INSPECT: string;

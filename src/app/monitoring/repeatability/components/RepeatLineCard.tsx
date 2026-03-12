@@ -86,7 +86,7 @@ export default function RepeatLineCard({ line }: { line: RepeatLineCardData }) {
           </tr>
         </thead>
         <tbody>
-          {line.processes.filter((p) => p.ngCount > 0 || p.lastInspectDate).map((p) => (
+          {line.processes.map((p) => (
             <tr
               key={p.process}
               className={`border-t border-gray-800 ${ROW_GRADE_STYLES[p.grade]}`}
@@ -111,7 +111,7 @@ export default function RepeatLineCard({ line }: { line: RepeatLineCardData }) {
               </td>
               <td
                 className="px-4 py-2 text-center"
-                onMouseEnter={(e) => p.ngCount > 0 && p.ngDetails?.length > 0 && handleMouseEnter(p.process, e)}
+                onMouseEnter={(e) => p.ngCount > 0 && (p.ngDetails?.length ?? 0) > 0 && handleMouseEnter(p.process, e)}
                 onMouseLeave={() => setTooltip(null)}
                 onClick={() => p.ngCount > 0 && setModal({ process: p.process, label: p.processLabel })}
               >
