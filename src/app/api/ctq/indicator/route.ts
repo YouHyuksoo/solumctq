@@ -145,7 +145,7 @@ async function queryProcess(
     WHERE ${buildWhereDate(col, ":wbStart", ":twEnd", dt)}
       AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
       AND t.LINE_CODE IS NOT NULL
-      AND b.ITEM_CODE IS NOT NULL
+      AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
       ${config.extraWhere ?? ""}
       ${lineFilter.clause}
     GROUP BY b.ITEM_CODE

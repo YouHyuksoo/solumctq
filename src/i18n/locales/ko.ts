@@ -10,7 +10,7 @@
 const ko = {
   /* ── 공통 ── */
   common: {
-    ctqMonitoring: "이상점 모니터링",
+    ctqMonitoring: "이상점 모니터링 (SOLUM Vietnam)",
     qualitySystem: "품질 관리 실시간 모니터링 시스템",
     loading: "로딩 중...",
     dataLoading: "데이터 로딩 중...",
@@ -48,6 +48,7 @@ const ko = {
     indicator: "지표",
     fpy: "직행율",
     equipment: "설비이상",
+    analysis: "종합분석",
   },
 
   /* ── 네비 툴팁 ── */
@@ -60,6 +61,7 @@ const ko = {
       "판정: A급 (Line Stop)",
       "테이블: 각 공정 RAW + IP_PRODUCT_WORK_QC",
       "기간: 당일 08:00 ~ 익일 08:00",
+      "※ 수리이력(IP_PRODUCT_WORK_QC)에 등록된 데이터 기준 최종 판정",
     ],
     repeatabilityStatus: [
       "NG(노란색): 불량 발생했으나 연속 동일위치 아님",
@@ -68,13 +70,14 @@ const ko = {
     nonConsecutive: [
       "공정: FT#1, ATE, IMAGE, SET검사",
       "조건: 동일 Location 2건+ (비연속)",
-      "판정: B급 (Warning), A급 제외",
+      "판정: B급 (출하중지), A급 제외",
       "테이블: 각 공정 RAW + IP_PRODUCT_WORK_QC",
       "기간: 당일 08:00 ~ 익일 08:00",
+      "※ 수리이력(IP_PRODUCT_WORK_QC)에 등록된 데이터 기준 최종 판정",
     ],
     nonConsecutiveStatus: [
       "NG(노란색): 불량 발생했으나 동일위치 반복 아님",
-      "B급(주황색): 동일위치 비연속 2건+ → Warning",
+      "B급(주황색): 동일위치 비연속 2건+ → 출하중지",
     ],
     accident: [
       "공정: HIPOT, BURN-IN, ATE",
@@ -86,7 +89,7 @@ const ko = {
     accidentStatus: [
       "NG(노란색): 불량 발생했으나 판정 기준 미달",
       "A급(붉은색): HIPOT 1건+ 또는 기타 2건+ → Line Stop",
-      "B급(주황색): BURNIN/ATE 1건 발생 → Warning",
+      "B급(주황색): BURNIN/ATE 1건 발생 → 출하중지",
     ],
     material: [
       "대상: 동일 DEFECT_ITEM_CODE (부품)",
@@ -94,6 +97,7 @@ const ko = {
       "C급: 동일 부품 90일 누적 3건+",
       "테이블: IP_PRODUCT_WORK_QC",
       "기간: A급=당일, C급=90일 누적",
+      "※ 수리이력(IP_PRODUCT_WORK_QC)에 등록된 데이터 기준 최종 판정",
     ],
     materialStatus: [
       "NG(노란색): 동일 부품 불량이나 기준 미달",
@@ -106,6 +110,7 @@ const ko = {
       "판정: 동일 불량코드 일 2건+ → B급",
       "테이블: IP_PRODUCT_WORK_QC",
       "기간: 당일 08:00 ~",
+      "※ 수리이력(IP_PRODUCT_WORK_QC)에 등록된 데이터 기준 최종 판정",
     ],
     openShortStatus: [
       "NG(노란색): Open/Short 불량이나 기준 미달",
@@ -206,6 +211,7 @@ const ko = {
       indicatorDesc: "모델별/공정별 주간 불량률 증가 지표. 전전주→전주→금주 비교.",
       fpyDesc: "라인별/공정별 당일 직행율 모니터링. 90% 미만 시 A급.",
       equipmentDesc: "라인별/공정별 일일 설비 정지시간 모니터링. 60분 이상 정지 시 C급.",
+      analysisDesc: "8개 모니터링 종합 분석 보고",
     },
     monitoring: {
       title: "이상점 모니터링",
@@ -217,7 +223,7 @@ const ko = {
     accident: {
       title: "이상점 모니터링",
       gradeALabel: "A급 (Line Stop)",
-      gradeBLabel: "B급 (Warning)",
+      gradeBLabel: "B급 (출하중지)",
     },
     repeatability: {
       title: "CTQ 반복성 모니터링",
@@ -226,7 +232,7 @@ const ko = {
     },
     nonConsecutive: {
       title: "CTQ 반복성 모니터링",
-      gradeBLabel: "B급 (Warning)",
+      gradeBLabel: "B급 (출하중지)",
       okLabel: "정상",
     },
     openShort: {
@@ -264,6 +270,15 @@ const ko = {
       tableDesc: "테이블: IP_LINE_DAILY_OPERATION_HIST",
       periodDesc: "기간: 당일 (F_GET_WORK_ACTUAL_DATE)",
     },
+    analysis: {
+      title: "종합분석",
+      noIssues: "이상 없음",
+      overallStatus: "전체 현황",
+      abnormalLines: "이상 라인",
+      reportTime: "분석 시점",
+      fetchError: "조회 실패",
+      section: "상세 보고서",
+    },
   },
 
   /* ── 설정 패널 ── */
@@ -300,7 +315,7 @@ const ko = {
     shiftTime: "시프트: 08:00 ~ 익일 08:00 (베트남 현지시간 기준)",
     gradeSystem: "등급 체계",
     gradeADesc: "A급 (Line Stop): 즉시 라인 정지 필요. 붉은색 표시.",
-    gradeBDesc: "B급 (출하중지/Warning): 주의 필요. 주황색 표시.",
+    gradeBDesc: "B급 (출하중지): 주의 필요. 주황색 표시.",
     gradeCDesc: "C급 (불량개선): 개선 조치 필요. 보라색 표시.",
     menuGuide: "메뉴별 기능 안내",
     criteriaLabel: "판정 기준",

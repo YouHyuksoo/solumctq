@@ -15,6 +15,7 @@ import { useLineFilter } from "../contexts/LineFilterContext";
 import { useFpy } from "./hooks/useFpy";
 import FpyLineCard from "./components/FpyLineCard";
 import MonitoringNav from "../components/MonitoringNav";
+import HeaderActions from "../components/HeaderActions";
 import { useLocale } from "@/i18n";
 
 export default function FpyPage() {
@@ -94,6 +95,7 @@ export default function FpyPage() {
                 }`}
               />
             </div>
+            <HeaderActions />
           </div>
         </div>
       </header>
@@ -124,7 +126,7 @@ export default function FpyPage() {
           </div>
         )}
         {data && data.lines.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
             {data.lines.map((line) => (
               <FpyLineCard key={line.lineCode} line={line} dateRange={data.dateRange} />
             ))}

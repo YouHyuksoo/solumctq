@@ -11,7 +11,7 @@ import type { TranslationKeys } from "./ko";
 
 const vi: TranslationKeys = {
   common: {
-    ctqMonitoring: "Giám sát bất thường",
+    ctqMonitoring: "Giám sát bất thường (SOLUM Vietnam)",
     qualitySystem: "Hệ thống giám sát chất lượng thời gian thực",
     loading: "Đang tải...",
     dataLoading: "Đang tải dữ liệu...",
@@ -47,6 +47,7 @@ const vi: TranslationKeys = {
     indicator: "Chỉ số",
     fpy: "Tỷ lệ đạt",
     equipment: "Thiết bị",
+    analysis: "Phân tích",
   },
 
   navTooltip: {
@@ -58,6 +59,7 @@ const vi: TranslationKeys = {
       "Đánh giá: Cấp A (Dừng Line)",
       "Bảng: RAW + IP_PRODUCT_WORK_QC",
       "Thời gian: Hôm nay 08:00 ~ Ngày mai 08:00",
+      "※ Đánh giá cuối cùng dựa trên dữ liệu lịch sử sửa chữa (IP_PRODUCT_WORK_QC)",
     ],
     repeatabilityStatus: [
       "NG (Vàng): Lỗi nhưng không liên tiếp cùng vị trí",
@@ -66,13 +68,14 @@ const vi: TranslationKeys = {
     nonConsecutive: [
       "Công đoạn: FT#1, ATE, IMAGE, Kiểm tra SET",
       "Điều kiện: Cùng Location 2+ (không liên tiếp)",
-      "Đánh giá: Cấp B (Cảnh báo), loại trừ Cấp A",
+      "Đánh giá: Cấp B (Tạm dừng XK), loại trừ Cấp A",
       "Bảng: RAW + IP_PRODUCT_WORK_QC",
       "Thời gian: Hôm nay 08:00 ~ Ngày mai 08:00",
+      "※ Đánh giá cuối cùng dựa trên dữ liệu lịch sử sửa chữa (IP_PRODUCT_WORK_QC)",
     ],
     nonConsecutiveStatus: [
       "NG (Vàng): Lỗi nhưng không lặp cùng vị trí",
-      "Cấp B (Cam): Cùng vị trí không liên tiếp 2+ → Cảnh báo",
+      "Cấp B (Cam): Cùng vị trí không liên tiếp 2+ → Tạm dừng XK",
     ],
     accident: [
       "Công đoạn: HIPOT, BURN-IN, ATE",
@@ -84,7 +87,7 @@ const vi: TranslationKeys = {
     accidentStatus: [
       "NG (Vàng): Lỗi dưới tiêu chí",
       "Cấp A (Đỏ): HIPOT 1+ hoặc khác 2+ → Dừng Line",
-      "Cấp B (Cam): BURNIN/ATE 1 lần → Cảnh báo",
+      "Cấp B (Cam): BURNIN/ATE 1 lần → Tạm dừng XK",
     ],
     material: [
       "Đối tượng: Cùng DEFECT_ITEM_CODE (linh kiện)",
@@ -92,6 +95,7 @@ const vi: TranslationKeys = {
       "Cấp C: Cùng linh kiện tích lũy 90 ngày 3+",
       "Bảng: IP_PRODUCT_WORK_QC",
       "Thời gian: A=trong ngày, C=tích lũy 90 ngày",
+      "※ Đánh giá cuối cùng dựa trên dữ liệu lịch sử sửa chữa (IP_PRODUCT_WORK_QC)",
     ],
     materialStatus: [
       "NG (Vàng): Lỗi cùng linh kiện dưới tiêu chí",
@@ -104,6 +108,7 @@ const vi: TranslationKeys = {
       "Đánh giá: Cùng mã lỗi ngày 2+ → Cấp B",
       "Bảng: IP_PRODUCT_WORK_QC",
       "Thời gian: Hôm nay 08:00 ~",
+      "※ Đánh giá cuối cùng dựa trên dữ liệu lịch sử sửa chữa (IP_PRODUCT_WORK_QC)",
     ],
     openShortStatus: [
       "NG (Vàng): Lỗi Open/Short dưới tiêu chí",
@@ -202,6 +207,7 @@ const vi: TranslationKeys = {
       indicatorDesc: "Chỉ số tỷ lệ NG hàng tuần theo model/công đoạn. So sánh tuần trước.",
       fpyDesc: "Giám sát tỷ lệ đạt theo line/công đoạn. Dưới 90% → Cấp A.",
       equipmentDesc: "Giám sát thời gian dừng thiết bị theo line/công đoạn. Dừng 60 phút+ → Cấp C.",
+      analysisDesc: "Phân tích tổng hợp 8 giám sát",
     },
     monitoring: {
       title: "Giám sát bất thường",
@@ -213,7 +219,7 @@ const vi: TranslationKeys = {
     accident: {
       title: "Giám sát bất thường",
       gradeALabel: "Cấp A (Dừng Line)",
-      gradeBLabel: "Cấp B (Cảnh báo)",
+      gradeBLabel: "Cấp B (Tạm dừng XK)",
     },
     repeatability: {
       title: "Giám sát lặp lại CTQ",
@@ -222,7 +228,7 @@ const vi: TranslationKeys = {
     },
     nonConsecutive: {
       title: "Giám sát lặp lại CTQ",
-      gradeBLabel: "Cấp B (Cảnh báo)",
+      gradeBLabel: "Cấp B (Tạm dừng XK)",
       okLabel: "Bình thường",
     },
     openShort: {
@@ -260,6 +266,15 @@ const vi: TranslationKeys = {
       tableDesc: "Bảng: IP_LINE_DAILY_OPERATION_HIST",
       periodDesc: "Thời gian: Trong ngày (F_GET_WORK_ACTUAL_DATE)",
     },
+    analysis: {
+      title: "Phân tích tổng hợp",
+      noIssues: "Không có vấn đề",
+      overallStatus: "Tình trạng chung",
+      abnormalLines: "Line bất thường",
+      reportTime: "Thời gian phân tích",
+      fetchError: "Lỗi truy vấn",
+      section: "Báo cáo chi tiết",
+    },
   },
 
   settings: {
@@ -294,7 +309,7 @@ const vi: TranslationKeys = {
     shiftTime: "Ca làm việc: 08:00 ~ 08:00 ngày hôm sau (giờ Việt Nam)",
     gradeSystem: "Hệ thống cấp độ",
     gradeADesc: "Cấp A (Dừng Line): Cần dừng line ngay lập tức. Hiển thị màu đỏ.",
-    gradeBDesc: "Cấp B (Tạm dừng XK/Cảnh báo): Cần chú ý. Hiển thị màu cam.",
+    gradeBDesc: "Cấp B (Tạm dừng XK): Cần chú ý. Hiển thị màu cam.",
     gradeCDesc: "Cấp C (Cải thiện): Cần hành động khắc phục. Hiển thị màu tím.",
     menuGuide: "Hướng dẫn menu",
     criteriaLabel: "Tiêu chí",

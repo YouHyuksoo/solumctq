@@ -17,6 +17,7 @@ import { useLineFilter } from "../contexts/LineFilterContext";
 import { useMaterial } from "./hooks/useMaterial";
 import MaterialLineCard from "./components/MaterialLineCard";
 import MonitoringNav from "../components/MonitoringNav";
+import HeaderActions from "../components/HeaderActions";
 import { useLocale } from "@/i18n";
 
 export default function MaterialPage() {
@@ -89,6 +90,7 @@ export default function MaterialPage() {
                 }`}
               />
             </div>
+            <HeaderActions />
           </div>
         </div>
       </header>

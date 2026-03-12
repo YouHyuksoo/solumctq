@@ -16,8 +16,6 @@ import { usePathname } from "next/navigation";
 import { useLocale } from "@/i18n";
 import { useLineFilter } from "../contexts/LineFilterContext";
 import LineSelectModal from "./LineSelectModal";
-import SystemManual from "./HelpModal";
-import LanguageSelector from "@/app/components/LanguageSelector";
 
 interface NavItem {
   href: string;
@@ -35,6 +33,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/monitoring/indicator", labelKey: "nav.indicator", tooltipKey: "navTooltip.indicator", statusKey: "navTooltip.indicatorStatus" },
   { href: "/monitoring/fpy", labelKey: "nav.fpy", tooltipKey: "navTooltip.fpy", statusKey: "navTooltip.fpyStatus" },
   { href: "/monitoring/equipment", labelKey: "nav.equipment", tooltipKey: "navTooltip.equipment", statusKey: "navTooltip.equipmentStatus" },
+  { href: "/monitoring/analysis", labelKey: "nav.analysis", tooltipKey: "", statusKey: "" },
 ];
 
 export default function MonitoringNav() {
@@ -42,7 +41,6 @@ export default function MonitoringNav() {
   const { selectedLines, setSelectedLines } = useLineFilter();
   const { t } = useLocale();
   const [modalOpen, setModalOpen] = useState(false);
-  const [manualOpen, setManualOpen] = useState(false);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   return (
@@ -84,7 +82,7 @@ export default function MonitoringNav() {
               >
                 {label}
               </Link>
-              {hoveredIdx === idx && (
+              {hoveredIdx === idx && tooltipKey && (
                 <div className={`absolute top-full mt-2 w-80 bg-gray-800 border border-gray-600 rounded-lg shadow-xl p-3 z-[9999] pointer-events-none ${idx <= 1 ? "left-0" : idx >= NAV_ITEMS.length - 2 ? "right-0" : "left-1/2 -translate-x-1/2"}`}>
                   <div className="text-xs font-bold text-blue-400 mb-1.5">{label} {t("navTooltip.criteria") as string}</div>
                   <div className="space-y-1">
@@ -136,21 +134,6 @@ export default function MonitoringNav() {
           )}
         </button>
 
-        {/* 매뉴얼 버튼 */}
-        <button
-          onClick={() => setManualOpen(true)}
-          className="px-3 py-1.5 rounded flex items-center gap-1.5 text-sm font-medium bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white transition-colors border border-gray-600"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
-          {t("manual.btnLabel") as string}
-        </button>
-
-        <div className="w-px h-5 bg-gray-700" />
-
-        {/* 언어 전환 */}
-        <LanguageSelector />
       </nav>
 
       <LineSelectModal
@@ -164,7 +147,6 @@ export default function MonitoringNav() {
         onClose={() => setModalOpen(false)}
       />
 
-      <SystemManual open={manualOpen} onClose={() => setManualOpen(false)} />
     </>
   );
 }

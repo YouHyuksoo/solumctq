@@ -109,6 +109,8 @@ async function getLineSummary(
            COUNT(*) AS NG_COUNT,
            MAX(t.${config.dateCol}) AS LAST_INSPECT
     FROM ${config.table} t
+    JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
+      AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
     WHERE ${condition}
       AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
       AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN <> 'Y')
@@ -147,6 +149,8 @@ async function getNgDetails(
              NVL(r.DEFECT_ITEM_CODE, '-') AS DEFECT_ITEM_CODE,
              ROW_NUMBER() OVER (PARTITION BY t.LINE_CODE ORDER BY t.${config.dateCol} DESC) AS RN
       FROM ${config.table} t
+      JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
+        AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
       LEFT JOIN IP_PRODUCT_WORK_QC r
         ON r.SERIAL_NO = t.${config.pidCol}
         AND r.RECEIPT_DEFICIT = '2'

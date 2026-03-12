@@ -16,6 +16,7 @@ import { useLineFilter } from "../contexts/LineFilterContext";
 import { useIndicator } from "./hooks/useIndicator";
 import IndicatorTable from "./components/IndicatorTable";
 import MonitoringNav from "../components/MonitoringNav";
+import HeaderActions from "../components/HeaderActions";
 import { useLocale } from "@/i18n";
 
 export default function IndicatorPage() {
@@ -82,6 +83,7 @@ export default function IndicatorPage() {
                 }`}
               />
             </div>
+            <HeaderActions />
           </div>
         </div>
       </header>

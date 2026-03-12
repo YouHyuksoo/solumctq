@@ -140,6 +140,8 @@ async function getLineSummary(
            0 AS PENDING_COUNT,
            ${lastInspectExpr} AS LAST_INSPECT
     FROM ${config.table} t
+    JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
+      AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
     WHERE ${condition}
       AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
       AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')
@@ -185,6 +187,8 @@ async function getRepeatLocations(
                  t.${config.dateCol} AS SORT_DATE,
                  F_GET_MODEL_NAME_BY_PID(t.${config.pidCol}) AS MODEL_NAME
           FROM ${config.table} t
+          JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
+            AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
           WHERE ${condition}
             AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
             AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')

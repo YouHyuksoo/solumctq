@@ -17,6 +17,7 @@ import { usePersistedState } from "../hooks/usePersistedState";
 import OpenShortLineCard from "./components/OpenShortLineCard";
 import SettingsPanel from "../components/SettingsPanel";
 import MonitoringNav from "../components/MonitoringNav";
+import HeaderActions from "../components/HeaderActions";
 import { useLocale } from "@/i18n";
 
 const ITEMS_PER_PAGE = 9;
@@ -39,7 +40,8 @@ export default function OpenShortPage() {
       enabled: rollingEnabled,
     });
 
-  const visibleLines = data?.lines.slice(startIdx, endIdx) ?? [];
+  const sortedLines = [...(data?.lines ?? [])].sort((a, b) => a.lineName.localeCompare(b.lineName));
+  const visibleLines = sortedLines.slice(startIdx, endIdx);
   const bCount = data?.lines.filter((l) => l.overallGrade === "B").length ?? 0;
 
   return (
@@ -88,6 +90,7 @@ export default function OpenShortPage() {
               onRollingIntervalChange={setRollingInterval}
               onRollingEnabledChange={setRollingEnabled}
             />
+            <HeaderActions />
           </div>
         </div>
         {rollingEnabled && totalPages > 1 && (

@@ -11,7 +11,7 @@ import type { TranslationKeys } from "./ko";
 
 const en: TranslationKeys = {
   common: {
-    ctqMonitoring: "Anomaly Monitoring",
+    ctqMonitoring: "Anomaly Monitoring (SOLUM Vietnam)",
     qualitySystem: "Real-time Quality Monitoring System",
     loading: "Loading...",
     dataLoading: "Loading data...",
@@ -47,6 +47,7 @@ const en: TranslationKeys = {
     indicator: "Indicator",
     fpy: "FPY",
     equipment: "Equipment",
+    analysis: "Analysis",
   },
 
   navTooltip: {
@@ -58,6 +59,7 @@ const en: TranslationKeys = {
       "Grade: A (Line Stop)",
       "Table: RAW + IP_PRODUCT_WORK_QC",
       "Period: Today 08:00 ~ Next day 08:00",
+      "* Final judgment based on repair history (IP_PRODUCT_WORK_QC) data",
     ],
     repeatabilityStatus: [
       "NG (Yellow): Defect but not consecutive same location",
@@ -66,13 +68,14 @@ const en: TranslationKeys = {
     nonConsecutive: [
       "Process: FT#1, ATE, IMAGE, SET Inspection",
       "Condition: Same Location 2+ (non-consecutive)",
-      "Grade: B (Warning), excludes A",
+      "Grade: B (Ship Hold), excludes A",
       "Table: RAW + IP_PRODUCT_WORK_QC",
       "Period: Today 08:00 ~ Next day 08:00",
+      "* Final judgment based on repair history (IP_PRODUCT_WORK_QC) data",
     ],
     nonConsecutiveStatus: [
       "NG (Yellow): Defect but no repeated same location",
-      "Grade B (Orange): Same location non-consecutive 2+ → Warning",
+      "Grade B (Orange): Same location non-consecutive 2+ → Ship Hold",
     ],
     accident: [
       "Process: HIPOT, BURN-IN, ATE",
@@ -84,7 +87,7 @@ const en: TranslationKeys = {
     accidentStatus: [
       "NG (Yellow): Defect below criteria",
       "Grade A (Red): HIPOT 1+ or others 2+ → Line Stop",
-      "Grade B (Orange): BURNIN/ATE 1 occurrence → Warning",
+      "Grade B (Orange): BURNIN/ATE 1 occurrence → Ship Hold",
     ],
     material: [
       "Target: Same DEFECT_ITEM_CODE (component)",
@@ -92,6 +95,7 @@ const en: TranslationKeys = {
       "Grade C: Same part 90-day cumulative 3+",
       "Table: IP_PRODUCT_WORK_QC",
       "Period: A=daily, C=90-day cumulative",
+      "* Final judgment based on repair history (IP_PRODUCT_WORK_QC) data",
     ],
     materialStatus: [
       "NG (Yellow): Same part defect below criteria",
@@ -104,6 +108,7 @@ const en: TranslationKeys = {
       "Grade: Same defect code daily 2+ → Grade B",
       "Table: IP_PRODUCT_WORK_QC",
       "Period: Today 08:00 ~",
+      "* Final judgment based on repair history (IP_PRODUCT_WORK_QC) data",
     ],
     openShortStatus: [
       "NG (Yellow): Open/Short defect below criteria",
@@ -202,6 +207,7 @@ const en: TranslationKeys = {
       indicatorDesc: "Weekly NG rate trend by model/process. Compare week-over-week.",
       fpyDesc: "Daily first pass yield by line/process. Below 90% → Grade A.",
       equipmentDesc: "Daily equipment stop time by line/process. 60min+ stop → Grade C.",
+      analysisDesc: "Comprehensive analysis of all 8 monitors",
     },
     monitoring: {
       title: "Anomaly Monitoring",
@@ -213,7 +219,7 @@ const en: TranslationKeys = {
     accident: {
       title: "Anomaly Monitoring",
       gradeALabel: "Grade A (Line Stop)",
-      gradeBLabel: "Grade B (Warning)",
+      gradeBLabel: "Grade B (Ship Hold)",
     },
     repeatability: {
       title: "CTQ Repeatability Monitoring",
@@ -222,7 +228,7 @@ const en: TranslationKeys = {
     },
     nonConsecutive: {
       title: "CTQ Repeatability Monitoring",
-      gradeBLabel: "Grade B (Warning)",
+      gradeBLabel: "Grade B (Ship Hold)",
       okLabel: "Normal",
     },
     openShort: {
@@ -260,6 +266,15 @@ const en: TranslationKeys = {
       tableDesc: "Table: IP_LINE_DAILY_OPERATION_HIST",
       periodDesc: "Period: Today (F_GET_WORK_ACTUAL_DATE)",
     },
+    analysis: {
+      title: "Comprehensive Analysis",
+      noIssues: "No Issues",
+      overallStatus: "Overall Status",
+      abnormalLines: "Abnormal Lines",
+      reportTime: "Report Time",
+      fetchError: "Fetch Failed",
+      section: "Detail Report",
+    },
   },
 
   settings: {
@@ -294,7 +309,7 @@ const en: TranslationKeys = {
     shiftTime: "Shift: 08:00 ~ Next day 08:00 (Vietnam local time)",
     gradeSystem: "Grade System",
     gradeADesc: "Grade A (Line Stop): Immediate line stop required. Displayed in red.",
-    gradeBDesc: "Grade B (Ship Hold/Warning): Attention needed. Displayed in orange.",
+    gradeBDesc: "Grade B (Ship Hold): Attention needed. Displayed in orange.",
     gradeCDesc: "Grade C (Improve): Corrective action needed. Displayed in purple.",
     menuGuide: "Menu Guide",
     criteriaLabel: "Criteria",

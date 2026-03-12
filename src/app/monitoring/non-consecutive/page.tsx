@@ -17,6 +17,7 @@ import { usePersistedState } from "../hooks/usePersistedState";
 import RepeatLineCard from "../repeatability/components/RepeatLineCard";
 import SettingsPanel from "../components/SettingsPanel";
 import MonitoringNav from "../components/MonitoringNav";
+import HeaderActions from "../components/HeaderActions";
 import { useLocale } from "@/i18n";
 
 const ITEMS_PER_PAGE = 9;
@@ -92,6 +93,7 @@ export default function NonConsecutivePage() {
               onRollingIntervalChange={setRollingInterval}
               onRollingEnabledChange={setRollingEnabled}
             />
+            <HeaderActions />
           </div>
         </div>
         {rollingEnabled && totalPages > 1 && (

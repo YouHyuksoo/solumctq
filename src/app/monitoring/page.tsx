@@ -18,6 +18,7 @@ import { usePersistedState } from "./hooks/usePersistedState";
 import LineCard from "./components/LineCard";
 import SettingsPanel from "./components/SettingsPanel";
 import MonitoringNav from "./components/MonitoringNav";
+import HeaderActions from "./components/HeaderActions";
 import { useLocale } from "@/i18n";
 
 const ITEMS_PER_PAGE = 9; // 3열 × 3행
@@ -114,6 +115,7 @@ export default function MonitoringPage() {
               onRollingIntervalChange={setRollingInterval}
               onRollingEnabledChange={setRollingEnabled}
             />
+            <HeaderActions />
           </div>
         </div>
 

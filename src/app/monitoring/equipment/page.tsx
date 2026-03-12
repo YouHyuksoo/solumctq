@@ -16,6 +16,7 @@ import { useLineFilter } from "../contexts/LineFilterContext";
 import { useEquipment } from "./hooks/useEquipment";
 import EquipmentTable from "./components/EquipmentTable";
 import MonitoringNav from "../components/MonitoringNav";
+import HeaderActions from "../components/HeaderActions";
 import { useLocale } from "@/i18n";
 
 export default function EquipmentPage() {
@@ -78,6 +79,7 @@ export default function EquipmentPage() {
                 }`}
               />
             </div>
+            <HeaderActions />
           </div>
         </div>
       </header>

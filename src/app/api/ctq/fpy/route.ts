@@ -50,54 +50,68 @@ interface LineNameRow {
   LINE_NAME: string;
 }
 
-/** 날짜 범위 WHERE 절 생성 (from 08:00 ~ to 08:00) */
-function buildDateRange(col: string, dateType: "varchar" | "date", dayOffset: number): string {
-  const startOffset = dayOffset;
-  const endOffset = dayOffset + 1;
-
+/**
+ * 2일치 날짜 범위 WHERE 절 (전일 08:00 ~ 익일 08:00)
+ * 튜닝: 전일+당일을 1쿼리로 합쳐 DB 라운드트립 14→7회로 감소
+ */
+function buildDateRange2Days(col: string, dateType: "varchar" | "date"): string {
   if (dateType === "varchar") {
-    const start = `TO_CHAR(TRUNC(SYSDATE)${startOffset >= 0 ? "+" : ""}${startOffset}, 'YYYY/MM/DD') || ' 08:00:00'`;
-    const end = `TO_CHAR(TRUNC(SYSDATE)${endOffset >= 0 ? "+" : ""}${endOffset}, 'YYYY/MM/DD') || ' 08:00:00'`;
-    return `${col} >= ${start} AND ${col} < ${end}`;
+    return `${col} >= TO_CHAR(TRUNC(SYSDATE)-1, 'YYYY/MM/DD') || ' 08:00:00' AND ${col} < TO_CHAR(TRUNC(SYSDATE)+1, 'YYYY/MM/DD') || ' 08:00:00'`;
   }
-  return `${col} >= TRUNC(SYSDATE)${startOffset >= 0 ? "+" : ""}${startOffset} + 8/24 AND ${col} < TRUNC(SYSDATE)${endOffset >= 0 ? "+" : ""}${endOffset} + 8/24`;
+  return `${col} >= TRUNC(SYSDATE)-1 + 8/24 AND ${col} < TRUNC(SYSDATE)+1 + 8/24`;
 }
 
-async function queryProcess(
+/** DAY_TYPE 분류 CASE 절 (Y=전일, T=당일) */
+function buildDayCase(col: string, dateType: "varchar" | "date"): string {
+  if (dateType === "varchar") {
+    return `CASE WHEN ${col} < TO_CHAR(TRUNC(SYSDATE), 'YYYY/MM/DD') || ' 08:00:00' THEN 'Y' ELSE 'T' END`;
+  }
+  return `CASE WHEN ${col} < TRUNC(SYSDATE) + 8/24 THEN 'Y' ELSE 'T' END`;
+}
+
+interface FpyRow2Days extends FpyRow {
+  DAY_TYPE: string;
+}
+
+/**
+ * 튜닝 포인트:
+ * 1. 전일+당일 1쿼리 (14→7 DB 호출)
+ * 2. JOIN → EXISTS (존재 확인만 필요)
+ * 3. ROW_NUMBER → MIN KEEP (DENSE_RANK FIRST) (Oracle 집계, 서브쿼리 1단계 제거)
+ */
+async function queryProcess2Days(
   key: FpyProcessKey,
   config: ProcessConfig,
   lineFilter: { clause: string; params: Record<string, string> },
-  dayOffset: number
-): Promise<{ key: FpyProcessKey; rows: FpyRow[] }> {
+): Promise<{ key: FpyProcessKey; rows: FpyRow2Days[] }> {
   const col = `t.${config.dateCol}`;
   const passIn = config.passValues.map(v => `'${v}'`).join(",");
+  const dayCase = buildDayCase(col, config.dateType);
 
-  /*
-   * 핵심: ROW_NUMBER() OVER (PARTITION BY PID ORDER BY dateCol)
-   * → 제품별 최초 검사만 추출 (RN=1)
-   * → 직행율 = 최초검사 PASS 제품수 / 고유 제품수
-   */
   const sql = `
-    SELECT sub.LINE_CODE,
+    SELECT sub.LINE_CODE, sub.DAY_TYPE,
            COUNT(*) AS TOTAL_CNT,
-           SUM(CASE WHEN sub.${config.resultCol} IN (${passIn}) THEN 1 ELSE 0 END) AS PASS_CNT
+           SUM(CASE WHEN sub.FIRST_RESULT IN (${passIn}) THEN 1 ELSE 0 END) AS PASS_CNT
     FROM (
       SELECT t.LINE_CODE,
-             t.${config.resultCol},
-             ROW_NUMBER() OVER (PARTITION BY t.${config.pidCol} ORDER BY t.${config.dateCol}) AS RN
+             ${dayCase} AS DAY_TYPE,
+             MIN(t.${config.resultCol}) KEEP (DENSE_RANK FIRST ORDER BY t.${config.dateCol}) AS FIRST_RESULT
       FROM ${config.table} t
-      WHERE ${buildDateRange(col, config.dateType, dayOffset)}
+      WHERE ${buildDateRange2Days(col, config.dateType)}
         ${config.extraWhere ?? ""}
         AND t.LINE_CODE IS NOT NULL
         ${lineFilter.clause}
+        AND EXISTS (
+          SELECT 1 FROM IP_PRODUCT_2D_BARCODE b
+          WHERE b.SERIAL_NO = t.${config.pidCol}
+            AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
+        )
+      GROUP BY t.LINE_CODE, t.${config.pidCol}, ${dayCase}
     ) sub
-    WHERE sub.RN = 1
-    GROUP BY sub.LINE_CODE
-    HAVING COUNT(*) > 0
+    GROUP BY sub.LINE_CODE, sub.DAY_TYPE
   `;
 
-  const rows = await executeQuery<FpyRow>(sql, lineFilter.params);
-
+  const rows = await executeQuery<FpyRow2Days>(sql, lineFilter.params);
   return { key, rows };
 }
 
@@ -134,19 +148,16 @@ export async function GET(request: NextRequest) {
     );
     const dr = dateRangeRows[0];
 
-    /* 전일(-1)과 당일(0) 병렬 조회 */
-    const [yesterdayResults, todayResults] = await Promise.all([
-      Promise.all(PROCESS_KEYS.map((key) => queryProcess(key, PROCESS_CONFIG[key], lineFilter, -1))),
-      Promise.all(PROCESS_KEYS.map((key) => queryProcess(key, PROCESS_CONFIG[key], lineFilter, 0))),
-    ]);
+    /* 7공정 × 2일치를 1쿼리씩 병렬 조회 (14→7 DB 호출) */
+    const allResults = await Promise.all(
+      PROCESS_KEYS.map((key) => queryProcess2Days(key, PROCESS_CONFIG[key], lineFilter)),
+    );
 
     /* 라인코드 수집 */
     const allLineCodes = new Set<string>();
-    for (const results of [yesterdayResults, todayResults]) {
-      for (const { rows } of results) {
-        for (const row of rows) {
-          if (row.LINE_CODE) allLineCodes.add(row.LINE_CODE);
-        }
+    for (const { rows } of allResults) {
+      for (const row of rows) {
+        if (row.LINE_CODE) allLineCodes.add(row.LINE_CODE);
       }
     }
     /* 선택된 라인도 포함 (0건이어도 카드 표시) */
@@ -168,26 +179,18 @@ export async function GET(request: NextRequest) {
       return lineMap.get(code)!;
     }
 
-    /* 전일 데이터 병합 */
-    for (const { key, rows } of yesterdayResults) {
-      for (const row of rows) {
-        if (!row.LINE_CODE) continue;
-        const line = ensureLine(row.LINE_CODE);
-        if (!line.processes[key]) line.processes[key] = {};
-        line.processes[key]!.yesterday = toProcessData(row);
-      }
-    }
-
-    /* 당일 데이터 병합 + 등급 판정 */
-    for (const { key, rows } of todayResults) {
+    /* 전일+당일 데이터 병합 (DAY_TYPE: Y=전일, T=당일) */
+    for (const { key, rows } of allResults) {
       for (const row of rows) {
         if (!row.LINE_CODE) continue;
         const line = ensureLine(row.LINE_CODE);
         if (!line.processes[key]) line.processes[key] = {};
         const pd = toProcessData(row);
-        line.processes[key]!.today = pd;
-        if (pd.yield < 90) {
-          line.overallGrade = "A";
+        if (row.DAY_TYPE === "Y") {
+          line.processes[key]!.yesterday = pd;
+        } else {
+          line.processes[key]!.today = pd;
+          if (pd.yield < 90) line.overallGrade = "A";
         }
       }
     }

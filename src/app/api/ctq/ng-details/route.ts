@@ -153,6 +153,8 @@ export async function GET(request: NextRequest) {
                NVL(r.BAD_REASON_CODE, '-') AS BAD_REASON_CODE,
                NVL(F_GET_CODE_MASTER('WQC BAD REASON CODE', r.BAD_REASON_CODE, 'C', 1), '-') AS BAD_REASON_NAME
         FROM ${config.table} t
+        JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
+          AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
         LEFT JOIN IP_PRODUCT_WORK_QC r
           ON r.SERIAL_NO = t.${config.pidCol}
           AND r.RECEIPT_DEFICIT = '2'
