@@ -23,6 +23,22 @@ import type {
 
 export const dynamic = "force-dynamic";
 
+/** Open/Short 대상 소분류 코드 — 이 코드로 시작하는 DEFECT_ITEM_CODE는 open-short 페이지 대상 */
+const OPEN_SHORT_PREFIXES = ["2703M01", "2005A01", "2007A01", "2007M01", "2011A01", "2203A01"];
+
+/** Material에서 제외할 NOT LIKE 조건 생성 */
+function buildExcludeOpenShortClause(alias: string): string {
+  return OPEN_SHORT_PREFIXES
+    .map((_, i) => `${alias}.DEFECT_ITEM_CODE NOT LIKE :osPfx${i} || '%'`)
+    .join(" AND ");
+}
+
+function getOpenShortPrefixParams(): Record<string, string> {
+  const params: Record<string, string> = {};
+  OPEN_SHORT_PREFIXES.forEach((pfx, i) => { params[`osPfx${i}`] = pfx; });
+  return params;
+}
+
 /* ──────────────── 캐시 ──────────────── */
 interface CachedResult {
   lines: MaterialLineCardData[];
@@ -125,12 +141,14 @@ async function getNgDetailsByDefect(
         AND t.LINE_CODE IS NOT NULL
         AND t.LINE_CODE <> '*'
         AND t.DEFECT_ITEM_CODE IS NOT NULL
+        AND ${buildExcludeOpenShortClause("t")}
         ${lineFilter.clause}
     ) WHERE RN <= 5
   `;
   return executeQuery<NgDetailRow>(sql, {
     ts90: times.start90,
     tsEnd: times.dayEnd,
+    ...getOpenShortPrefixParams(),
     ...lineFilter.params,
   });
 }
@@ -152,6 +170,7 @@ async function fetchFromDB(
       AND t.LINE_CODE IS NOT NULL
       AND t.LINE_CODE <> '*'
       AND t.DEFECT_ITEM_CODE IS NOT NULL
+      AND ${buildExcludeOpenShortClause("t")}
       ${lineFilter.clause}
     GROUP BY t.LINE_CODE, t.DEFECT_ITEM_CODE
   `;
@@ -160,6 +179,7 @@ async function fetchFromDB(
     ts90: times.start90,
     tsEnd: times.dayEnd,
     dayStart: times.dayStart,
+    ...getOpenShortPrefixParams(),
     ...lineFilter.params,
   });
 

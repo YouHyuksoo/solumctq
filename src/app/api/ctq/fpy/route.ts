@@ -53,6 +53,7 @@ interface LineNameRow {
 /**
  * 2일치 날짜 범위 WHERE 절 (전일 08:00 ~ 익일 08:00)
  * 튜닝: 전일+당일을 1쿼리로 합쳐 DB 라운드트립 14→7회로 감소
+ * 당일 직행율은 10:00부터 집계 (08:00~10:00 데이터는 전일·당일 모두 제외)
  */
 function buildDateRange2Days(col: string, dateType: "varchar" | "date"): string {
   if (dateType === "varchar") {
@@ -61,12 +62,12 @@ function buildDateRange2Days(col: string, dateType: "varchar" | "date"): string 
   return `${col} >= TRUNC(SYSDATE)-1 + 8/24 AND ${col} < TRUNC(SYSDATE)+1 + 8/24`;
 }
 
-/** DAY_TYPE 분류 CASE 절 (Y=전일, T=당일) */
+/** DAY_TYPE 분류 CASE 절 (Y=전일, T=당일, X=제외) — 전일 08~08, 당일 10~ */
 function buildDayCase(col: string, dateType: "varchar" | "date"): string {
   if (dateType === "varchar") {
-    return `CASE WHEN ${col} < TO_CHAR(TRUNC(SYSDATE), 'YYYY/MM/DD') || ' 08:00:00' THEN 'Y' ELSE 'T' END`;
+    return `CASE WHEN ${col} < TO_CHAR(TRUNC(SYSDATE), 'YYYY/MM/DD') || ' 08:00:00' THEN 'Y' WHEN ${col} >= TO_CHAR(TRUNC(SYSDATE), 'YYYY/MM/DD') || ' 10:00:00' THEN 'T' ELSE 'X' END`;
   }
-  return `CASE WHEN ${col} < TRUNC(SYSDATE) + 8/24 THEN 'Y' ELSE 'T' END`;
+  return `CASE WHEN ${col} < TRUNC(SYSDATE) + 8/24 THEN 'Y' WHEN ${col} >= TRUNC(SYSDATE) + 10/24 THEN 'T' ELSE 'X' END`;
 }
 
 interface FpyRow2Days extends FpyRow {
@@ -138,15 +139,17 @@ export async function GET(request: NextRequest) {
     const lines = parseLines(request);
     const lineFilter = buildLineInClause(lines, "t", "ln");
 
-    /* DB 기준 날짜 범위 조회 (베트남 SYSDATE 기준) */
-    const dateRangeRows = await executeQuery<{ YD_START: string; YD_END: string; TD_START: string; TD_END: string }>(
+    /* DB 기준 날짜 범위 + 현재 시간 조회 (베트남 SYSDATE 기준) */
+    const dateRangeRows = await executeQuery<{ YD_START: string; YD_END: string; TD_START: string; TD_END: string; VN_HOUR: number }>(
       `SELECT TO_CHAR(TRUNC(SYSDATE)-1, 'MM/DD') || ' 08:00' AS YD_START,
               TO_CHAR(TRUNC(SYSDATE),   'MM/DD') || ' 08:00' AS YD_END,
-              TO_CHAR(TRUNC(SYSDATE),   'MM/DD') || ' 08:00' AS TD_START,
-              TO_CHAR(TRUNC(SYSDATE)+1, 'MM/DD') || ' 08:00' AS TD_END
+              TO_CHAR(TRUNC(SYSDATE),   'MM/DD') || ' 10:00' AS TD_START,
+              TO_CHAR(TRUNC(SYSDATE)+1, 'MM/DD') || ' 08:00' AS TD_END,
+              TO_NUMBER(TO_CHAR(SYSDATE, 'HH24')) AS VN_HOUR
        FROM DUAL`, {}
     );
     const dr = dateRangeRows[0];
+    const isBeforeTodayStart = dr.VN_HOUR < 10;
 
     /* 7공정 × 2일치를 1쿼리씩 병렬 조회 (14→7 DB 호출) */
     const allResults = await Promise.all(
@@ -188,9 +191,22 @@ export async function GET(request: NextRequest) {
         const pd = toProcessData(row);
         if (row.DAY_TYPE === "Y") {
           line.processes[key]!.yesterday = pd;
-        } else {
+        } else if (row.DAY_TYPE === "T") {
           line.processes[key]!.today = pd;
           if (pd.yield < 90) line.overallGrade = "A";
+        }
+        /* DAY_TYPE='X' (08:00~10:00) 데이터는 전일·당일 모두 제외 */
+      }
+    }
+
+    /* 10시 이전이면 당일 직행율을 0으로 강제 표시 */
+    if (isBeforeTodayStart) {
+      const zeroData: FpyProcessData = { total: 0, pass: 0, ng: 0, yield: 0 };
+      for (const line of lineMap.values()) {
+        for (const key of PROCESS_KEYS) {
+          if (line.processes[key]?.yesterday) {
+            line.processes[key]!.today = zeroData;
+          }
         }
       }
     }

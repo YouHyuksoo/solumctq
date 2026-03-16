@@ -284,7 +284,7 @@ const ko: LangData = {
       "PASS 건수 / 전체 건수 × 100 = 직행율",
       "90% 미만 시 A급 판정",
     ],
-    period: "전일/당일 비교 (08:00 ~ 익일 08:00)",
+    period: "전일/당일 비교 (전일 08:00~08:00, 당일 10:00~익일 08:00)",
     notes: ["재검사(2회차 이상) 결과는 직행율 계산에 포함되지 않음"],
   },
   equipment: {
@@ -534,7 +534,7 @@ const en: LangData = {
       "PASS count / Total count × 100 = FPY",
       "Below 90% → Grade A",
     ],
-    period: "Yesterday/Today comparison (08:00 ~ Next 08:00)",
+    period: "Yesterday/Today comparison (Yesterday 08:00~08:00, Today 10:00~Next 08:00)",
     notes: ["Re-inspection (2nd+ attempt) results are not included in FPY calculation"],
   },
   equipment: {
@@ -784,7 +784,7 @@ const vi: LangData = {
       "Số PASS / Tổng × 100 = FPY",
       "Dưới 90% → Cấp A",
     ],
-    period: "So sánh hôm qua/hôm nay (08:00 ~ 08:00 ngày sau)",
+    period: "So sánh hôm qua/hôm nay (Hôm qua 08:00~08:00, Hôm nay 10:00~08:00 ngày sau)",
     notes: ["Kết quả kiểm tra lại (lần 2+) không tính vào FPY"],
   },
   equipment: {

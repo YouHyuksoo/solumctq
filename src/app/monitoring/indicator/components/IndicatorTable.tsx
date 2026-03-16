@@ -1,18 +1,18 @@
 /**
  * @file src/app/monitoring/indicator/components/IndicatorTable.tsx
- * @description 지표 테이블 — 모델 × 공정 매트릭스, 3주 비교
+ * @description 지표 테이블 — 모델 × 공정 매트릭스, 3기간 비교 (주간/월간)
  *
  * 초보자 가이드:
- * 1. 2단 헤더: 1행=공정명(colspan=3), 2행=전전주/전주/금주
- * 2. 비율 색상: 200%↑ 빨강, 100~199% 노랑, <100% 초록, 0→0 회색
+ * 1. 2단 헤더: 1행=공정명(colspan=3), 2행=전전주/전주/금주 또는 전전월/전월/당월
+ * 2. 비율 색상: 200%↑ 빨강, 100~199% 노랑, <100% 초록, 신규 보라, 0→0 회색
  * 3. 공정 사이 굵은 왼쪽 보더로 시각적 구분
- * 4. 전전주=무배경, 전주=indigo 배경, 금주=teal 배경
+ * 4. period prop으로 주간/월간 라벨 전환
  */
 
 "use client";
 
 import { useLocale } from "@/i18n";
-import type { IndicatorModelData, IndicatorProcessKey, WeeklyNgData } from "../types";
+import type { IndicatorModelData, IndicatorProcessKey, PeriodType, WeeklyNgData } from "../types";
 
 const PROCESS_KEYS: IndicatorProcessKey[] = ["ICT", "HIPOT", "FT", "BURNIN", "ATE", "IMAGE", "SET"];
 
@@ -29,7 +29,7 @@ const PROCESS_LABELS: Record<IndicatorProcessKey, string> = {
 /** 비율에 따른 색상 클래스 반환 */
 function getRatioColor(prev: number, curr: number): string {
   if (prev === 0 && curr === 0) return "text-gray-600";
-  if (prev === 0 && curr > 0) return "text-red-400 font-bold";
+  if (prev === 0 && curr > 0) return "text-violet-400 font-bold";
   if (curr === 0) return "text-green-400";
   const ratio = (curr / prev) * 100;
   if (ratio >= 200) return "text-red-400 font-bold";
@@ -56,9 +56,10 @@ const GROUP_BORDER = "border-l-2 border-l-gray-500";
 interface Props {
   models: IndicatorModelData[];
   thisWeekDays: number;
+  period: PeriodType;
 }
 
-export default function IndicatorTable({ models, thisWeekDays }: Props) {
+export default function IndicatorTable({ models, thisWeekDays, period }: Props) {
   const { t } = useLocale();
   const newLabel = t("pages.indicator.newDefect") as string;
 
@@ -86,7 +87,7 @@ export default function IndicatorTable({ models, thisWeekDays }: Props) {
           </tr>
           <tr className="text-xs bg-gray-800">
             {PROCESS_KEYS.map((key) => (
-              <SubHeaders key={key} thisWeekDays={thisWeekDays} />
+              <SubHeaders key={key} thisWeekDays={thisWeekDays} period={period} />
             ))}
           </tr>
         </thead>
@@ -110,20 +111,21 @@ export default function IndicatorTable({ models, thisWeekDays }: Props) {
   );
 }
 
-/** 공정별 서브헤더 (전전주/전주/금주) */
-function SubHeaders({ thisWeekDays }: { thisWeekDays: number }) {
+/** 공정별 서브헤더 (전전주/전주/금주 또는 전전월/전월/당월) */
+function SubHeaders({ thisWeekDays, period }: { thisWeekDays: number; period: PeriodType }) {
   const { t } = useLocale();
+  const isMonthly = period === "monthly";
   return (
     <>
       <th className={`px-1 py-1 border border-gray-700 whitespace-nowrap bg-gray-800 text-gray-400 ${GROUP_BORDER}`}>
-        {t("pages.indicator.weekBefore") as string}
+        {t(`pages.indicator.${isMonthly ? "monthBefore" : "weekBefore"}`) as string}
       </th>
       <th className="px-1 py-1 border border-gray-700 whitespace-nowrap bg-indigo-900 text-indigo-200">
-        {t("pages.indicator.lastWeek") as string}
+        {t(`pages.indicator.${isMonthly ? "lastMonth" : "lastWeek"}`) as string}
       </th>
       <th className="px-1 py-1 border border-gray-700 whitespace-nowrap bg-teal-900 text-teal-200">
-        {t("pages.indicator.thisWeek") as string}
-        <span className="text-teal-400/70 ml-0.5">({thisWeekDays}{t("pages.indicator.thisWeekDays") as string})</span>
+        {t(`pages.indicator.${isMonthly ? "thisMonth" : "thisWeek"}`) as string}
+        <span className="text-teal-400/70 ml-0.5">({thisWeekDays}{t(`pages.indicator.${isMonthly ? "thisMonthDays" : "thisWeekDays"}`) as string})</span>
       </th>
     </>
   );

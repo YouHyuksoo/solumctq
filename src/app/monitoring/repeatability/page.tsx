@@ -18,6 +18,7 @@ import RepeatLineCard from "./components/RepeatLineCard";
 import SettingsPanel from "../components/SettingsPanel";
 import MonitoringNav from "../components/MonitoringNav";
 import HeaderActions from "../components/HeaderActions";
+import LineSelectButton from "../components/LineSelectButton";
 import { useLocale } from "@/i18n";
 
 const ITEMS_PER_PAGE = 9;
@@ -48,12 +49,15 @@ export default function RepeatabilityPage() {
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="bg-gray-900 border-b border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
-          <h1
-            className="text-4xl font-bold bg-clip-text text-transparent"
-            style={{ backgroundImage: "linear-gradient(to right, #f87171, #facc15, #4ade80, #60a5fa, #a78bfa, #f472b6)" }}
-          >
-            {t("pages.accident.title") as string}
-          </h1>
+          <div className="flex items-center">
+            <h1
+              className="text-4xl font-bold bg-clip-text text-transparent"
+              style={{ backgroundImage: "linear-gradient(to right, #f87171, #facc15, #4ade80, #60a5fa, #a78bfa, #f472b6)" }}
+            >
+              {t("pages.accident.title") as string}
+            </h1>
+            <LineSelectButton />
+          </div>
           <div className="flex flex-col items-end gap-1">
             <div className="flex items-center gap-4 text-xs text-gray-400">
               <span>{t("table.process") as string}: FT#1, ATE, IMAGE, SET</span>

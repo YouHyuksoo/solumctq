@@ -16,6 +16,7 @@ import { useFpy } from "./hooks/useFpy";
 import FpyLineCard from "./components/FpyLineCard";
 import MonitoringNav from "../components/MonitoringNav";
 import HeaderActions from "../components/HeaderActions";
+import LineSelectButton from "../components/LineSelectButton";
 import { useLocale } from "@/i18n";
 
 export default function FpyPage() {
@@ -33,12 +34,15 @@ export default function FpyPage() {
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="bg-gray-900 border-b border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
-          <h1
-            className="text-4xl font-bold bg-clip-text text-transparent"
-            style={{ backgroundImage: "linear-gradient(to right, #f87171, #facc15, #4ade80, #60a5fa, #a78bfa, #f472b6)" }}
-          >
-            {t("pages.accident.title") as string}
-          </h1>
+          <div className="flex items-center">
+            <h1
+              className="text-4xl font-bold bg-clip-text text-transparent"
+              style={{ backgroundImage: "linear-gradient(to right, #f87171, #facc15, #4ade80, #60a5fa, #a78bfa, #f472b6)" }}
+            >
+              {t("pages.accident.title") as string}
+            </h1>
+            <LineSelectButton />
+          </div>
           <div className="flex flex-col items-end gap-1 text-xs text-gray-400">
             <div className="flex items-center gap-3">
               <span>{t("table.process") as string}: ICT, Hi-Pot, FT, Burn-In, ATE, IMAGE, SET</span>
@@ -48,7 +52,7 @@ export default function FpyPage() {
             <div className="flex items-center gap-3 text-gray-500">
               <span>직행율 = 제품별 최초검사 PASS수 / 고유제품수 x 100 (재검사 제외)</span>
               <span className="text-gray-600">|</span>
-              <span>시프트: 08:00 ~ 익일 08:00 (VN)</span>
+              <span>전일: 08:00~08:00 | 당일: 10:00~익일 08:00 (VN)</span>
             </div>
             {data?.dateRange && (
               <div className="flex items-center gap-3 text-gray-500">

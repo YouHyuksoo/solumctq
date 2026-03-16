@@ -22,6 +22,22 @@ import type {
 
 export const dynamic = "force-dynamic";
 
+/** 비교 대상 소분류 코드 — 이 코드로 시작하는 DEFECT_ITEM_CODE만 대상 */
+const OPEN_SHORT_PREFIXES = ["2703M01", "2005A01", "2007A01", "2007M01", "2011A01", "2203A01"];
+
+/** LIKE 조건 생성 (OR) */
+function buildIncludeOpenShortClause(alias: string): string {
+  return "(" + OPEN_SHORT_PREFIXES
+    .map((_, i) => `${alias}.DEFECT_ITEM_CODE LIKE :osPfx${i} || '%'`)
+    .join(" OR ") + ")";
+}
+
+function getOpenShortPrefixParams(): Record<string, string> {
+  const params: Record<string, string> = {};
+  OPEN_SHORT_PREFIXES.forEach((pfx, i) => { params[`osPfx${i}`] = pfx; });
+  return params;
+}
+
 const BAD_REASON_MAP: Record<string, OpenShortDefectType> = {
   B2020: "OPEN",
   B2030: "SHORT",
@@ -98,11 +114,13 @@ export async function GET(request: NextRequest) {
       WHERE t.QC_DATE >= TO_DATE(:dayStart, 'YYYY/MM/DD HH24:MI:SS')
         AND t.BAD_REASON_CODE IN ('B2020', 'B2030')
         AND t.LINE_CODE IS NOT NULL
+        AND t.DEFECT_ITEM_CODE IS NOT NULL
+        AND ${buildIncludeOpenShortClause("t")}
         ${lineFilter.clause}
       GROUP BY t.LINE_CODE, t.BAD_REASON_CODE
     `;
 
-    const rows = await executeQuery<DefectRow>(sql, { dayStart, ...lineFilter.params });
+    const rows = await executeQuery<DefectRow>(sql, { dayStart, ...getOpenShortPrefixParams(), ...lineFilter.params });
 
     /* NG 상세 (최근 5건, 툴팁용) */
     const detailSql = `
@@ -127,10 +145,12 @@ export async function GET(request: NextRequest) {
         WHERE t.QC_DATE >= TO_DATE(:dayStart, 'YYYY/MM/DD HH24:MI:SS')
           AND t.BAD_REASON_CODE IN ('B2020', 'B2030')
           AND t.LINE_CODE IS NOT NULL
+          AND t.DEFECT_ITEM_CODE IS NOT NULL
+          AND ${buildIncludeOpenShortClause("t")}
           ${lineFilter.clause}
       ) WHERE RN <= 5
     `;
-    const detailRows = await executeQuery<NgDetailRow>(detailSql, { dayStart, ...lineFilter.params });
+    const detailRows = await executeQuery<NgDetailRow>(detailSql, { dayStart, ...getOpenShortPrefixParams(), ...lineFilter.params });
 
     const detailMap = new Map<string, NgDetailRow[]>();
     for (const row of detailRows) {

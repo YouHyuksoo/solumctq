@@ -1,19 +1,19 @@
 /**
  * @file src/app/api/ctq/indicator/route.ts
- * @description CTQ 지표 API — 모델(ITEM_CODE)별 × 공정별 주간 불량 건수 비교
+ * @description CTQ 지표 API — 모델(ITEM_CODE)별 × 공정별 주간/월간 불량 건수 비교
  *
  * 초보자 가이드:
  * 1. 7개 RAW 테이블에서 NG 건수를 병렬 조회
  * 2. RAW.PID → IP_PRODUCT_2D_BARCODE JOIN으로 ITEM_CODE(모델) 취득
- * 3. 전전주/전주/금주 3주치 CASE WHEN으로 분류 집계
- * 4. 월요일을 주의 시작으로 계산
+ * 3. 전전주/전주/금주 또는 전전월/전월/당월 3기간 CASE WHEN 분류 집계
+ * 4. period=weekly: 월요일 시작 주간, period=monthly: 매월 1일~말일
  */
 
 import { NextResponse } from "next/server";
 import { type NextRequest } from "next/server";
 import { executeQuery } from "@/lib/oracle";
 import { parseLines, buildLineInClause } from "@/lib/line-filter";
-import type { IndicatorProcessKey, IndicatorModelData } from "@/app/monitoring/indicator/types";
+import type { IndicatorProcessKey, IndicatorModelData, PeriodType } from "@/app/monitoring/indicator/types";
 
 export const dynamic = "force-dynamic";
 
@@ -103,6 +103,48 @@ function getWeekRanges() {
   };
 }
 
+/* ── 월간 범위 계산 (매월 1일~말일) ── */
+
+function getMonthRanges() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth(); // 0-based
+
+  // 당월 1일
+  const thisMonthStart = new Date(y, m, 1);
+  // 전월 1일
+  const lastMonthStart = new Date(y, m - 1, 1);
+  // 전전월 1일
+  const monthBeforeStart = new Date(y, m - 2, 1);
+  // 익월 1일 (당월 종료 경계)
+  const nextMonthStart = new Date(y, m + 1, 1);
+
+  // 당월 경과 일수
+  const thisMonthDays = now.getDate();
+
+  return {
+    weekBefore: {
+      start: formatOracleDate(monthBeforeStart),
+      end: formatOracleDate(lastMonthStart),
+      displayStart: formatDisplayDate(monthBeforeStart),
+      displayEnd: formatDisplayDate(new Date(lastMonthStart.getTime() - 86400000)),
+    },
+    lastWeek: {
+      start: formatOracleDate(lastMonthStart),
+      end: formatOracleDate(thisMonthStart),
+      displayStart: formatDisplayDate(lastMonthStart),
+      displayEnd: formatDisplayDate(new Date(thisMonthStart.getTime() - 86400000)),
+    },
+    thisWeek: {
+      start: formatOracleDate(thisMonthStart),
+      end: formatOracleDate(nextMonthStart),
+      displayStart: formatDisplayDate(thisMonthStart),
+      displayEnd: formatDisplayDate(now),
+    },
+    thisWeekDays: thisMonthDays,
+  };
+}
+
 /* ── 공정별 NG 집계 쿼리 ── */
 
 interface WeeklyRow {
@@ -169,7 +211,9 @@ export async function GET(request: NextRequest) {
   try {
     const lines = parseLines(request);
     const lineFilter = buildLineInClause(lines, "t", "ln");
-    const ranges = getWeekRanges();
+    const periodParam = request.nextUrl.searchParams.get("period");
+    const period: PeriodType = periodParam === "monthly" ? "monthly" : "weekly";
+    const ranges = period === "monthly" ? getMonthRanges() : getWeekRanges();
 
     /* 7개 공정 병렬 조회 */
     const results = await Promise.all(
@@ -211,6 +255,7 @@ export async function GET(request: NextRequest) {
         lastWeek: { start: ranges.lastWeek.displayStart, end: ranges.lastWeek.displayEnd },
         thisWeek: { start: ranges.thisWeek.displayStart, end: ranges.thisWeek.displayEnd },
       },
+      period,
       thisWeekDays: ranges.thisWeekDays,
       lastUpdated: new Date().toISOString(),
     });

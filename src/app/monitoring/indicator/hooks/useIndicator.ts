@@ -5,12 +5,13 @@
  * 초보자 가이드:
  * 1. fetchData()를 호출하면 /api/ctq/indicator에서 데이터 조회
  * 2. selectedLines 변경 시 자동 재조회하지 않음 (페이지에서 useEffect로 처리)
+ * 3. period 파라미터로 주간/월간 전환 가능
  */
 
 import { useState, useCallback } from "react";
-import type { IndicatorResponse } from "../types";
+import type { IndicatorResponse, PeriodType } from "../types";
 
-export function useIndicator(selectedLines: string[] = []) {
+export function useIndicator(selectedLines: string[] = [], period: PeriodType = "weekly") {
   const [data, setData] = useState<IndicatorResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -18,10 +19,11 @@ export function useIndicator(selectedLines: string[] = []) {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const linesParam = selectedLines.length > 0
-        ? `?lines=${selectedLines.join(",")}`
-        : "";
-      const res = await fetch(`/api/ctq/indicator${linesParam}`);
+      const params = new URLSearchParams();
+      if (selectedLines.length > 0) params.set("lines", selectedLines.join(","));
+      if (period === "monthly") params.set("period", "monthly");
+      const qs = params.toString();
+      const res = await fetch(`/api/ctq/indicator${qs ? `?${qs}` : ""}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: IndicatorResponse = await res.json();
       setData(json);
@@ -31,7 +33,7 @@ export function useIndicator(selectedLines: string[] = []) {
     } finally {
       setLoading(false);
     }
-  }, [selectedLines]);
+  }, [selectedLines, period]);
 
   return { data, error, loading, fetchData };
 }

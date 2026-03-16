@@ -7,7 +7,6 @@
 
 import { useState } from "react";
 import type { AccidentLineCardData, AccidentGrade } from "../types";
-import NgTooltip from "../../components/NgTooltip";
 import NgDetailModal from "../../components/NgDetailModal";
 import { useLocale, translateDetail } from "@/i18n";
 
@@ -50,15 +49,7 @@ export default function AccidentLineCard({ line }: { line: AccidentLineCardData 
     B: t("grade.warning") as string,
     OK: t("grade.running") as string,
   };
-  const [tooltip, setTooltip] = useState<{
-    process: string;
-    pos: { x: number; y: number };
-  } | null>(null);
   const [modal, setModal] = useState<{ process: string; label: string } | null>(null);
-
-  const handleMouseEnter = (process: string, e: React.MouseEvent) => {
-    setTooltip({ process, pos: { x: e.clientX, y: e.clientY } });
-  };
 
   return (
     <div className={`rounded-lg border-2 ${style.card} p-0 overflow-hidden`}>
@@ -108,8 +99,6 @@ export default function AccidentLineCard({ line }: { line: AccidentLineCardData 
               </td>
               <td
                 className="px-4 py-2 text-center"
-                onMouseEnter={(e) => p.ngCount > 0 && p.ngDetails?.length > 0 && handleMouseEnter(p.process, e)}
-                onMouseLeave={() => setTooltip(null)}
                 onClick={() => p.ngCount > 0 && setModal({ process: p.process, label: p.processLabel })}
               >
                 {p.ngCount > 0 ? (
@@ -134,19 +123,6 @@ export default function AccidentLineCard({ line }: { line: AccidentLineCardData 
           ))}
         </tbody>
       </table>
-
-      {tooltip && (() => {
-        const p = line.processes.find((pr) => pr.process === tooltip.process);
-        if (!p?.ngDetails?.length) return null;
-        return (
-          <NgTooltip
-            details={p.ngDetails}
-            title={`${p.processLabel} ${t("table.recentNgDetail") as string}`}
-            totalCount={p.ngCount}
-            position={tooltip.pos}
-          />
-        );
-      })()}
 
       <NgDetailModal
         open={modal !== null}

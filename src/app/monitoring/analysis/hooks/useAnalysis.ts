@@ -112,7 +112,7 @@ function parseEquipmentResponse(json: any): { highestGrade: string; abnormalLine
   return { highestGrade: highest, abnormalLines: abnormal };
 }
 
-/** 지표 응답 파싱 — 전주 대비 200%+ 또는 신규불량(0→N) = Grade C */
+/** 지표 응답 파싱 — 전월 대비 200%+ 또는 신규불량(0→N) = Grade C */
 function parseIndicatorResponse(json: any): { highestGrade: string; abnormalLines: AbnormalLine[] } {
   const models = json.models ?? [];
   let highest = "OK";
@@ -163,7 +163,13 @@ export function useAnalysis(selectedLines: string[] = []) {
   const [data, setData] = useState<AnalysisData | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const linesParam = selectedLines.length > 0 ? `?lines=${selectedLines.join(",")}` : "";
+  const buildUrl = useCallback((path: string, key: MonitorKey) => {
+    const params = new URLSearchParams();
+    if (selectedLines.length > 0) params.set("lines", selectedLines.join(","));
+    if (key === "indicator") params.set("period", "monthly");
+    const qs = params.toString();
+    return `${path}${qs ? `?${qs}` : ""}`;
+  }, [selectedLines]);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -171,9 +177,10 @@ export function useAnalysis(selectedLines: string[] = []) {
     const results = await Promise.allSettled(
       API_ENDPOINTS.map(async ({ key, path }) => {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 30000);
+        const timeoutMs = key === "indicator" ? 60000 : 30000;
+        const timeout = setTimeout(() => controller.abort(), timeoutMs);
         try {
-          const res = await fetch(`${path}${linesParam}`, { signal: controller.signal });
+          const res = await fetch(buildUrl(path, key), { signal: controller.signal });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const json = await res.json();
           return { key, json };
@@ -210,7 +217,7 @@ export function useAnalysis(selectedLines: string[] = []) {
 
     setData({ summaries, overall, lastUpdated: new Date().toISOString() });
     setLoading(false);
-  }, [linesParam]);
+  }, [buildUrl]);
 
   return { data, loading, fetchAll };
 }

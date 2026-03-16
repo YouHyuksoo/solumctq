@@ -16,6 +16,7 @@ import { useLocale } from "@/i18n";
 import { useLineFilter } from "../contexts/LineFilterContext";
 import MonitoringNav from "../components/MonitoringNav";
 import HeaderActions from "../components/HeaderActions";
+import LineSelectButton from "../components/LineSelectButton";
 import SummaryCards from "./components/SummaryCards";
 import DetailReport from "./components/DetailReport";
 import { useAnalysis } from "./hooks/useAnalysis";
@@ -46,7 +47,10 @@ export default function AnalysisPage() {
         {/* 타이틀 + 새로고침 */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold">{t("pages.analysis.title") as string}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-bold">{t("pages.analysis.title") as string}</h1>
+              <LineSelectButton />
+            </div>
             {data && (
               <p className="text-xs text-gray-500 mt-1">
                 {t("pages.analysis.reportTime") as string}: {new Date(data.lastUpdated).toLocaleTimeString()}
