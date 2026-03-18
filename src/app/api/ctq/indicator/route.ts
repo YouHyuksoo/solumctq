@@ -172,63 +172,40 @@ function buildWhereDate(col: string, startParam: string, endParam: string, dateT
   return `${col} >= TO_DATE(${startParam}, 'YYYY/MM/DD HH24:MI:SS') AND ${col} < TO_DATE(${endParam}, 'YYYY/MM/DD HH24:MI:SS')`;
 }
 
-/** NG 건수만 집계 (기존 쿼리 — NG 필터로 빠름) */
-async function queryNgCount(
+/**
+ * 공정별 NG + 전체 건수 동시 집계 (CASE문 한 쿼리)
+ * - WHERE: 날짜 범위 + LINE_CODE → IDX(INSPECT_DATE, LINE_CODE) 레인지 스캔
+ * - CASE: NG 여부를 SELECT에서 분기하여 전체/NG를 한 번의 스캔으로 집계
+ */
+async function queryProcess(
   config: ProcessConfig,
   ranges: ReturnType<typeof getWeekRanges>,
   lineFilter: { clause: string; params: Record<string, string> }
 ): Promise<WeeklyRow[]> {
   const col = `t.${config.dateCol}`;
   const dt = config.dateType;
+  const isNg = `CASE WHEN t.${config.resultCol} NOT IN ('PASS','GOOD','OK','Y') THEN 1 ELSE 0 END`;
 
   const sql = `
     SELECT b.ITEM_CODE,
-           SUM(${buildCaseWhen(col, ":wbStart", ":wbEnd", dt)}) AS WB_NG,
-           SUM(${buildCaseWhen(col, ":lwStart", ":lwEnd", dt)}) AS LW_NG,
-           SUM(${buildCaseWhen(col, ":twStart", ":twEnd", dt)}) AS TW_NG
-    FROM ${config.table} t
-    JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
-    WHERE ${buildWhereDate(col, ":wbStart", ":twEnd", dt)}
-      AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
-      AND t.LINE_CODE IS NOT NULL
-      AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
-      ${config.extraWhere ?? ""}
-      ${lineFilter.clause}
-    GROUP BY b.ITEM_CODE
-  `;
-
-  const rows = await executeQuery<{ ITEM_CODE: string; WB_NG: number; LW_NG: number; TW_NG: number }>(sql, {
-    wbStart: ranges.weekBefore.start,
-    wbEnd: ranges.weekBefore.end,
-    lwStart: ranges.lastWeek.start,
-    lwEnd: ranges.lastWeek.end,
-    twStart: ranges.thisWeek.start,
-    twEnd: ranges.thisWeek.end,
-    ...lineFilter.params,
-  });
-
-  return rows.map((r) => ({
-    ITEM_CODE: r.ITEM_CODE,
-    WB_NG: r.WB_NG, WB_TOTAL: 0,
-    LW_NG: r.LW_NG, LW_TOTAL: 0,
-    TW_NG: r.TW_NG, TW_TOTAL: 0,
-  }));
-}
-
-/** 전체 검사 건수 집계 (ITEM_CODE별 기간별, NG 필터 없음) */
-async function queryTotalCount(
-  config: ProcessConfig,
-  ranges: ReturnType<typeof getWeekRanges>,
-  lineFilter: { clause: string; params: Record<string, string> }
-): Promise<Map<string, { wb: number; lw: number; tw: number }>> {
-  const col = `t.${config.dateCol}`;
-  const dt = config.dateType;
-
-  const sql = `
-    SELECT b.ITEM_CODE,
-           SUM(${buildCaseWhen(col, ":wbStart", ":wbEnd", dt)}) AS WB_TOTAL,
-           SUM(${buildCaseWhen(col, ":lwStart", ":lwEnd", dt)}) AS LW_TOTAL,
-           SUM(${buildCaseWhen(col, ":twStart", ":twEnd", dt)}) AS TW_TOTAL
+           SUM(CASE WHEN ${col} >= ${dt === "varchar" ? ":wbStart" : "TO_DATE(:wbStart, 'YYYY/MM/DD HH24:MI:SS')"}
+                     AND ${col} <  ${dt === "varchar" ? ":wbEnd"   : "TO_DATE(:wbEnd, 'YYYY/MM/DD HH24:MI:SS')"}
+                     AND ${isNg} = 1 THEN 1 ELSE 0 END) AS WB_NG,
+           SUM(CASE WHEN ${col} >= ${dt === "varchar" ? ":wbStart" : "TO_DATE(:wbStart, 'YYYY/MM/DD HH24:MI:SS')"}
+                     AND ${col} <  ${dt === "varchar" ? ":wbEnd"   : "TO_DATE(:wbEnd, 'YYYY/MM/DD HH24:MI:SS')"}
+                    THEN 1 ELSE 0 END) AS WB_TOTAL,
+           SUM(CASE WHEN ${col} >= ${dt === "varchar" ? ":lwStart" : "TO_DATE(:lwStart, 'YYYY/MM/DD HH24:MI:SS')"}
+                     AND ${col} <  ${dt === "varchar" ? ":lwEnd"   : "TO_DATE(:lwEnd, 'YYYY/MM/DD HH24:MI:SS')"}
+                     AND ${isNg} = 1 THEN 1 ELSE 0 END) AS LW_NG,
+           SUM(CASE WHEN ${col} >= ${dt === "varchar" ? ":lwStart" : "TO_DATE(:lwStart, 'YYYY/MM/DD HH24:MI:SS')"}
+                     AND ${col} <  ${dt === "varchar" ? ":lwEnd"   : "TO_DATE(:lwEnd, 'YYYY/MM/DD HH24:MI:SS')"}
+                    THEN 1 ELSE 0 END) AS LW_TOTAL,
+           SUM(CASE WHEN ${col} >= ${dt === "varchar" ? ":twStart" : "TO_DATE(:twStart, 'YYYY/MM/DD HH24:MI:SS')"}
+                     AND ${col} <  ${dt === "varchar" ? ":twEnd"   : "TO_DATE(:twEnd, 'YYYY/MM/DD HH24:MI:SS')"}
+                     AND ${isNg} = 1 THEN 1 ELSE 0 END) AS TW_NG,
+           SUM(CASE WHEN ${col} >= ${dt === "varchar" ? ":twStart" : "TO_DATE(:twStart, 'YYYY/MM/DD HH24:MI:SS')"}
+                     AND ${col} <  ${dt === "varchar" ? ":twEnd"   : "TO_DATE(:twEnd, 'YYYY/MM/DD HH24:MI:SS')"}
+                    THEN 1 ELSE 0 END) AS TW_TOTAL
     FROM ${config.table} t
     JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
     WHERE ${buildWhereDate(col, ":wbStart", ":twEnd", dt)}
@@ -239,7 +216,7 @@ async function queryTotalCount(
     GROUP BY b.ITEM_CODE
   `;
 
-  const rows = await executeQuery<{ ITEM_CODE: string; WB_TOTAL: number; LW_TOTAL: number; TW_TOTAL: number }>(sql, {
+  return executeQuery<WeeklyRow>(sql, {
     wbStart: ranges.weekBefore.start,
     wbEnd: ranges.weekBefore.end,
     lwStart: ranges.lastWeek.start,
@@ -248,12 +225,6 @@ async function queryTotalCount(
     twEnd: ranges.thisWeek.end,
     ...lineFilter.params,
   });
-
-  const map = new Map<string, { wb: number; lw: number; tw: number }>();
-  for (const r of rows) {
-    map.set(r.ITEM_CODE, { wb: r.WB_TOTAL, lw: r.LW_TOTAL, tw: r.TW_TOTAL });
-  }
-  return map;
 }
 
 /* ── GET 핸들러 ── */
@@ -266,11 +237,10 @@ export async function GET(request: NextRequest) {
     const period: PeriodType = periodParam === "monthly" ? "monthly" : "weekly";
     const ranges = period === "monthly" ? getMonthRanges() : getWeekRanges();
 
-    /* 7개 공정 × 2(NG+Total) = 14쿼리 병렬 조회 */
-    const [ngResults, totalResults] = await Promise.all([
-      Promise.all(PROCESS_KEYS.map((key) => queryNgCount(PROCESS_CONFIG[key], ranges, lineFilter))),
-      Promise.all(PROCESS_KEYS.map((key) => queryTotalCount(PROCESS_CONFIG[key], ranges, lineFilter))),
-    ]);
+    /* 7개 공정 병렬 조회 (CASE문으로 NG+전체 한 쿼리) */
+    const results = await Promise.all(
+      PROCESS_KEYS.map((key) => queryProcess(PROCESS_CONFIG[key], ranges, lineFilter))
+    );
 
     /* ITEM_CODE별 merge — PPM 계산 */
     const modelMap = new Map<string, IndicatorModelData>();
@@ -280,17 +250,15 @@ export async function GET(request: NextRequest) {
       total > 0 ? Math.round((ng / total) * 1_000_000) : 0;
 
     PROCESS_KEYS.forEach((key, i) => {
-      const totalMap = totalResults[i];
-      for (const row of ngResults[i]) {
+      for (const row of results[i]) {
         if (!modelMap.has(row.ITEM_CODE)) {
           modelMap.set(row.ITEM_CODE, { itemCode: row.ITEM_CODE, processes: {} });
         }
         const model = modelMap.get(row.ITEM_CODE)!;
-        const totals = totalMap.get(row.ITEM_CODE) ?? { wb: 0, lw: 0, tw: 0 };
         model.processes[key] = {
-          weekBefore: toPpm(row.WB_NG, totals.wb),
-          lastWeek: toPpm(row.LW_NG, totals.lw),
-          thisWeek: toPpm(row.TW_NG, totals.tw),
+          weekBefore: toPpm(row.WB_NG, row.WB_TOTAL),
+          lastWeek: toPpm(row.LW_NG, row.LW_TOTAL),
+          thisWeek: toPpm(row.TW_NG, row.TW_TOTAL),
         };
       }
     });
