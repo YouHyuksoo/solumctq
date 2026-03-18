@@ -172,6 +172,7 @@ const vi: TranslationKeys = {
     recentNgDetail: "Chi tiết NG gần đây",
     ngDetail: "Chi tiết NG",
     ngAll: "Tất cả NG",
+    pendingJudgment: "Chờ phán định",
     time: "Thời gian",
     model: "Mặt hàng",
     category: "Phân loại",

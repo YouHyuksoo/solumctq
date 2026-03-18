@@ -4,9 +4,10 @@
  *
  * 초보자 가이드:
  * 1. **대상 공정**: HIPOT, BURNIN, ATE
- * 2. **판정 기준**:
- *    - HIPOT: 1건 이상 NG → A급 (사고성 높음)
- *    - BURNIN/ATE: 2건+ → A급, 1건 → B급
+ * 2. **판정 기준** (수리 판정 완료 건만 등급 산정):
+ *    - HIPOT: 판정완료 1건+ → A급 (사고성 높음)
+ *    - BURNIN/ATE: 판정완료 2건+ → A급, 1건 → B급
+ *    - 수리등록 후 미판정 건은 NG로만 표시 (등급 미반영)
  * 3. **매일 08:00 ~ 다음날 08:00** 하루치만 대상
  * 4. **QC_CONFIRM_YN='Y' 제외** (이미 확인된 건 제외)
  */
@@ -75,6 +76,10 @@ const PROCESS_TYPES: AccidentProcessType[] = ["HIPOT", "BURNIN", "ATE"];
 interface LineSummaryRow {
   LINE_CODE: string;
   NG_COUNT: number;
+  /** 수리 판정 완료 건수 */
+  JUDGED_COUNT: number;
+  /** 수리 등록됐지만 미판정 건수 */
+  PENDING_COUNT: number;
   LAST_INSPECT: string;
 }
 
@@ -95,7 +100,12 @@ interface NgDetailRow {
   DEFECT_ITEM_CODE: string;
 }
 
-/** LINE별 NG 건수 집계 */
+/**
+ * LINE별 NG 건수 집계 + 수리 판정 상태 분류
+ * - NG_COUNT: 전체 NG 건수
+ * - JUDGED_COUNT: 수리 등록 + 판정 완료 건수 (등급 산정 기준)
+ * - PENDING_COUNT: 수리 등록됐지만 미판정 건수
+ */
 async function getLineSummary(
   config: ProcessConfig,
   timeRange: { startStr: string; endStr: string },
@@ -107,10 +117,20 @@ async function getLineSummary(
   const sql = `
     SELECT t.LINE_CODE,
            COUNT(*) AS NG_COUNT,
+           COUNT(CASE WHEN r.RECEIPT_DEFICIT = '2'
+                       AND r.REPAIR_RESULT_CODE IS NOT NULL
+                       AND r.REPAIR_RESULT_CODE <> '-'
+                      THEN 1 END) AS JUDGED_COUNT,
+           COUNT(CASE WHEN r.RECEIPT_DEFICIT = '2'
+                       AND (r.REPAIR_RESULT_CODE IS NULL OR r.REPAIR_RESULT_CODE = '-')
+                      THEN 1 END) AS PENDING_COUNT,
            MAX(t.${config.dateCol}) AS LAST_INSPECT
     FROM ${config.table} t
     JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
       AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
+    LEFT JOIN IP_PRODUCT_WORK_QC r
+      ON r.SERIAL_NO = t.${config.pidCol}
+      AND r.RECEIPT_DEFICIT = '2'
     WHERE ${condition}
       AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
       AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN <> 'Y')
@@ -212,10 +232,10 @@ async function getLineNames(lineCodes: string[]): Promise<Map<string, string>> {
   return map;
 }
 
-/** NG 건수 → 등급 판정 */
-function determineGrade(ngCount: number, config: ProcessConfig): AccidentGrade {
-  if (ngCount >= config.aThreshold) return "A";
-  if (config.bThreshold > 0 && ngCount >= config.bThreshold) return "B";
+/** 수리 판정 완료 건수 → 등급 판정 (미판정 건은 등급에 반영하지 않음) */
+function determineGrade(judgedCount: number, config: ProcessConfig): AccidentGrade {
+  if (judgedCount >= config.aThreshold) return "A";
+  if (config.bThreshold > 0 && judgedCount >= config.bThreshold) return "B";
   return "OK";
 }
 
@@ -275,13 +295,17 @@ export async function GET(request: NextRequest) {
       for (const pt of PROCESS_TYPES) {
         const summary = summaryByProcess.get(pt)?.get(lineCode);
         const ngCount = summary?.NG_COUNT ?? 0;
-        const grade = determineGrade(ngCount, PROCESS_CONFIG[pt]);
+        const judgedCount = summary?.JUDGED_COUNT ?? 0;
+        const pendingCount = summary?.PENDING_COUNT ?? 0;
+        const grade = determineGrade(judgedCount, PROCESS_CONFIG[pt]);
 
         let detail: string | null = null;
         if (grade === "A") {
-          detail = `NG:${ngCount}(A)`;
+          detail = `NG:${judgedCount}(A)`;
         } else if (grade === "B") {
-          detail = `NG:${ngCount}(B)`;
+          detail = `NG:${judgedCount}(B)`;
+        } else if (ngCount > 0) {
+          detail = `NG:${ngCount}`;
         }
 
         const details = detailsByProcess.get(pt)?.get(lineCode) ?? [];
@@ -290,6 +314,8 @@ export async function GET(request: NextRequest) {
           processLabel: PROCESS_LABELS[pt],
           grade,
           ngCount,
+          judgedCount,
+          pendingCount,
           detail,
           lastInspectDate: lastInspectByProcess.get(pt)?.get(lineCode) ?? null,
           ngDetails: details.map((d) => ({

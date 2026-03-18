@@ -172,6 +172,7 @@ const en: TranslationKeys = {
     recentNgDetail: "Recent NG Details",
     ngDetail: "NG Details",
     ngAll: "All NG",
+    pendingJudgment: "Pending",
     time: "Time",
     model: "Model",
     category: "Type",

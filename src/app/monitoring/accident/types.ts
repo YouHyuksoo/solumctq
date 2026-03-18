@@ -32,6 +32,10 @@ export interface AccidentProcessStatus {
   processLabel: string;
   grade: AccidentGrade;
   ngCount: number;
+  /** 수리 판정 완료 건수 (등급 산정 기준) */
+  judgedCount: number;
+  /** 수리 판정 대기 건수 (등록됐지만 미판정) */
+  pendingCount: number;
   detail: string | null;
   lastInspectDate: string | null;
   ngDetails: NgDetailRecord[];

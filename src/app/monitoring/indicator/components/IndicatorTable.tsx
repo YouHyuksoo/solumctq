@@ -1,6 +1,6 @@
 /**
  * @file src/app/monitoring/indicator/components/IndicatorTable.tsx
- * @description 지표 테이블 — 모델 × 공정 매트릭스, 3기간 비교 (주간/월간)
+ * @description 지표 테이블 — 모델 × 공정 매트릭스, 3기간 PPM 비교 (주간/월간)
  *
  * 초보자 가이드:
  * 1. 2단 헤더: 1행=공정명(colspan=3), 2행=전전주/전주/금주 또는 전전월/전월/당월
@@ -37,17 +37,22 @@ function getRatioColor(prev: number, curr: number): string {
   return "text-green-400";
 }
 
-/** 비율 텍스트 생성 */
+/** PPM 숫자 포맷 (천 단위 콤마) */
+function formatPpm(ppm: number): string {
+  return ppm.toLocaleString();
+}
+
+/** 비율 텍스트 생성 (PPM + 전기 대비 비율) */
 function getRatioText(
   prev: number,
   curr: number,
   newLabel: string
 ): string {
   if (prev === 0 && curr === 0) return "0";
-  if (prev === 0 && curr > 0) return `${curr} (${newLabel})`;
+  if (prev === 0 && curr > 0) return `${formatPpm(curr)} (${newLabel})`;
   if (curr === 0) return "0 (0%)";
   const ratio = Math.round((curr / prev) * 100);
-  return `${curr} (${ratio}%)`;
+  return `${formatPpm(curr)} (${ratio}%)`;
 }
 
 /** 공정 그룹 첫 번째 셀(전전주)에 왼쪽 굵은 보더 */
@@ -142,7 +147,7 @@ function ProcessCells({ data, newLabel }: { data: WeeklyNgData; newLabel: string
       <td className={`px-2 py-1.5 text-center border border-gray-800 ${GROUP_BORDER} ${
         data.weekBefore > 0 ? "text-gray-300" : "text-gray-600"
       }`}>
-        {data.weekBefore}
+        {formatPpm(data.weekBefore)}
       </td>
       {/* 전주: indigo 배경 */}
       <td className={`px-2 py-1.5 text-center border border-gray-800 whitespace-nowrap bg-indigo-950/60 ${lastWeekColor}`}>

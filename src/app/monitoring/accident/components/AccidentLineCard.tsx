@@ -102,7 +102,14 @@ export default function AccidentLineCard({ line }: { line: AccidentLineCardData 
                 onClick={() => p.ngCount > 0 && setModal({ process: p.process, label: p.processLabel })}
               >
                 {p.ngCount > 0 ? (
-                  <span className="text-red-400 font-bold cursor-pointer">{p.ngCount}</span>
+                  <span className="text-red-400 font-bold cursor-pointer">
+                    {p.ngCount}
+                    {p.pendingCount > 0 && (
+                      <span className="text-orange-400 text-xs ml-0.5" title={t("table.pendingJudgment") as string}>
+                        ({p.pendingCount})
+                      </span>
+                    )}
+                  </span>
                 ) : (
                   <span className="text-gray-600">0</span>
                 )}

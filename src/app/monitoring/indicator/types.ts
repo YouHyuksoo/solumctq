@@ -15,7 +15,7 @@ export type PeriodType = "weekly" | "monthly";
 export type IndicatorProcessKey =
   | "ICT" | "HIPOT" | "FT" | "BURNIN" | "ATE" | "IMAGE" | "SET";
 
-/** 공정별 3기간 불량 데이터 (주간/월간 공용) */
+/** 공정별 3기간 PPM 데이터 (주간/월간 공용) */
 export interface WeeklyNgData {
   weekBefore: number;
   lastWeek: number;

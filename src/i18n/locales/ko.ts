@@ -175,6 +175,7 @@ const ko = {
     recentNgDetail: "최근 NG 상세",
     ngDetail: "NG 상세",
     ngAll: "NG 전체",
+    pendingJudgment: "판정대기",
     time: "시간",
     model: "품목",
     category: "구분",
