@@ -12,7 +12,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-export function usePersistedState<T>(key: string, defaultValue: T): [T, (value: T) => void] {
+export function usePersistedState<T>(key: string, defaultValue: T): [T, (value: T | ((prev: T) => T)) => void] {
   const [state, setState] = useState<T>(() => {
     if (typeof window === "undefined") return defaultValue;
     try {
@@ -29,7 +29,7 @@ export function usePersistedState<T>(key: string, defaultValue: T): [T, (value: 
     } catch { /* ignore */ }
   }, [key, state]);
 
-  const setValue = useCallback((value: T) => {
+  const setValue = useCallback((value: T | ((prev: T) => T)) => {
     setState(value);
   }, []);
 
