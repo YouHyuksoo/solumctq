@@ -256,7 +256,7 @@ const en: TranslationKeys = {
       refreshBtn: "Refresh",
     },
     fpy: {
-      title: "FPY Monitoring",
+      title: "FPY",
       gradeALabel: "Grade A (Line Stop)",
       gradeDesc: "FPY below 90% → Line Stop",
       noData: "No inspection data matching the current criteria.",

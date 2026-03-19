@@ -12,7 +12,8 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { usePersistedState } from "../hooks/usePersistedState";
 import { useLineFilter } from "../contexts/LineFilterContext";
 import { useIndicator } from "./hooks/useIndicator";
 import type { PeriodType } from "./types";
@@ -25,8 +26,8 @@ import { useLocale } from "@/i18n";
 export default function IndicatorPage() {
   const { t, dateLocale } = useLocale();
   const { selectedLines } = useLineFilter();
-  const [period, setPeriod] = useState<PeriodType>("weekly");
-  const [includeThisWeek, setIncludeThisWeek] = useState(false);
+  const [period, setPeriod] = usePersistedState<PeriodType>("indicator-period", "weekly");
+  const [includeThisWeek, setIncludeThisWeek] = usePersistedState<boolean>("indicator-includeThisWeek", false);
   const { data, error, loading, fetchData } = useIndicator(selectedLines, period);
 
   /* 초기 로딩 + 라인 필터 변경 시 재조회 */

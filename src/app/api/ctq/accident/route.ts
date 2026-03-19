@@ -15,7 +15,7 @@
 import { NextResponse } from "next/server";
 import { type NextRequest } from "next/server";
 import { executeQuery } from "@/lib/oracle";
-import { parseLines, buildLineInClause, getVietnamTimeRange } from "@/lib/line-filter";
+import { parseLines, buildLineInClause, getWorkDayRange } from "@/lib/line-filter";
 import type {
   AccidentProcessType,
   AccidentProcessStatus,
@@ -248,7 +248,7 @@ export async function GET(request: NextRequest) {
   try {
     const lines = parseLines(request);
     const lineFilter = buildLineInClause(lines, "t", "ln");
-    const timeRange = getVietnamTimeRange();
+    const timeRange = await getWorkDayRange();
 
     /* 1. 3공정 병렬 쿼리 */
     const [summaries, ngDetails, lastInspects] = await Promise.all([

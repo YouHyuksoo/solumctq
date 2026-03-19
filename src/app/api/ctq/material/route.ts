@@ -14,7 +14,7 @@
 import { NextResponse } from "next/server";
 import { type NextRequest } from "next/server";
 import { executeQuery } from "@/lib/oracle";
-import { parseLines, buildLineInClause, getVietnamTimeRange } from "@/lib/line-filter";
+import { parseLines, buildLineInClause, getWorkDayRange } from "@/lib/line-filter";
 import type {
   MaterialDefectItem,
   MaterialLineCardData,
@@ -49,28 +49,15 @@ let cache: CachedResult | null = null;
 let isFetching = false;
 const CACHE_TTL_MS = 60_000;
 
-/** 시간 범위: 당일 08:00~, 90일 시작 */
-function getTimeRanges() {
-  const now = new Date();
-  if (now.getHours() < 8) {
-    now.setDate(now.getDate() - 1);
-  }
-  const y = now.getFullYear();
-  const m = now.getMonth();
-  const d = now.getDate();
-
-  const fmt = (dt: Date) => {
-    const yy = dt.getFullYear();
-    const mm = String(dt.getMonth() + 1).padStart(2, "0");
-    const dd = String(dt.getDate()).padStart(2, "0");
-    return `${yy}/${mm}/${dd} 08:00:00`;
-  };
-
-  return {
-    dayStart: fmt(new Date(y, m, d)),
-    dayEnd: fmt(new Date(y, m, d + 1)),
-    start90: fmt(new Date(y, m, d - 90)),
-  };
+/** 시간 범위: 당일 10:00~ (DB SYSDATE 기준, 10시 근무일 경계) */
+async function getTimeRanges() {
+  const rows = await executeQuery<{ DAY_START: string; DAY_END: string; START90: string }>(
+    `SELECT TO_CHAR(TRUNC(SYSDATE-10/24), 'YYYY/MM/DD') || ' 10:00:00' AS DAY_START,
+            TO_CHAR(TRUNC(SYSDATE-10/24)+1, 'YYYY/MM/DD') || ' 10:00:00' AS DAY_END,
+            TO_CHAR(TRUNC(SYSDATE-10/24)-90, 'YYYY/MM/DD') || ' 10:00:00' AS START90
+     FROM DUAL`, {}
+  );
+  return { dayStart: rows[0].DAY_START, dayEnd: rows[0].DAY_END, start90: rows[0].START90 };
 }
 
 interface DefectRow {
@@ -117,7 +104,7 @@ async function getLineNames(lineCodes: string[]): Promise<Map<string, string>> {
 async function getNgDetailsByDefect(
   lineFilter: { clause: string; params: Record<string, string> } = { clause: "", params: {} }
 ): Promise<NgDetailRow[]> {
-  const times = getTimeRanges();
+  const times = await getTimeRanges();
   const sql = `
     SELECT LINE_CODE, DEFECT_ITEM, QC_TIME, SERIAL_NO, MODEL_NAME,
            RECEIPT_DEFICIT, LOCATION_CODE, REPAIR_RESULT_CODE, QC_INSPECT_HANDLING
@@ -157,7 +144,7 @@ async function fetchFromDB(
   lineFilter: { clause: string; params: Record<string, string> } = { clause: "", params: {} },
   selectedLines: string[] = []
 ): Promise<CachedResult> {
-  const times = getTimeRanges();
+  const times = await getTimeRanges();
 
   const sql = `
     SELECT t.LINE_CODE,

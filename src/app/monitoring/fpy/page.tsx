@@ -52,7 +52,7 @@ export default function FpyPage() {
             <div className="flex items-center gap-3 text-gray-500">
               <span>직행율 = 제품별 최초검사 PASS수 / 고유제품수 x 100 (재검사 제외)</span>
               <span className="text-gray-600">|</span>
-              <span>전일: 08:00~08:00 | 당일: 10:00~익일 08:00 (VN)</span>
+              <span>전일: 10:00~10:00 | 당일: 10:00~익일 10:00 (VN)</span>
             </div>
             {data?.dateRange && (
               <div className="flex items-center gap-3 text-gray-500">

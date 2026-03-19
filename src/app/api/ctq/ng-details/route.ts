@@ -11,7 +11,7 @@
 import { NextResponse } from "next/server";
 import { type NextRequest } from "next/server";
 import { executeQuery } from "@/lib/oracle";
-import { getVietnamTimeRange } from "@/lib/line-filter";
+import { getWorkDayRange } from "@/lib/line-filter";
 
 export const dynamic = "force-dynamic";
 
@@ -45,16 +45,14 @@ interface NgRow {
   BAD_REASON_NAME: string;
 }
 
-function getTimeRanges90() {
-  const now = new Date();
-  if (now.getHours() < 8) now.setDate(now.getDate() - 1);
-  const y = now.getFullYear();
-  const m = now.getMonth();
-  const d = now.getDate();
-  const fmt = (dt: Date) => {
-    return `${dt.getFullYear()}/${String(dt.getMonth() + 1).padStart(2, "0")}/${String(dt.getDate()).padStart(2, "0")} 08:00:00`;
-  };
-  return { start90: fmt(new Date(y, m, d - 90)), dayEnd: fmt(new Date(y, m, d + 1)) };
+/** 시간 범위: 90일 전 ~ 익일 10:00 (DB SYSDATE 기준, 10시 근무일 경계) */
+async function getTimeRanges90() {
+  const rows = await executeQuery<{ START90: string; DAY_END: string }>(
+    `SELECT TO_CHAR(TRUNC(SYSDATE-10/24)-90, 'YYYY/MM/DD') || ' 10:00:00' AS START90,
+            TO_CHAR(TRUNC(SYSDATE-10/24)+1, 'YYYY/MM/DD') || ' 10:00:00' AS DAY_END
+     FROM DUAL`, {}
+  );
+  return { start90: rows[0].START90, dayEnd: rows[0].DAY_END };
 }
 
 export async function GET(request: NextRequest) {
@@ -72,7 +70,7 @@ export async function GET(request: NextRequest) {
     let rows: NgRow[];
 
     if (type === "material") {
-      const times = getTimeRanges90();
+      const times = await getTimeRanges90();
       const sql = `
         SELECT TO_CHAR(t.QC_DATE, 'YYYY/MM/DD HH24:MI:SS') AS INSPECT_TIME,
                t.SERIAL_NO AS PID,
@@ -100,7 +98,7 @@ export async function GET(request: NextRequest) {
         defectItem: defectItem ?? "",
       });
     } else if (type === "open-short") {
-      const tr = getVietnamTimeRange();
+      const tr = await getWorkDayRange();
       const sql = `
         SELECT TO_CHAR(t.QC_DATE, 'YYYY/MM/DD HH24:MI:SS') AS INSPECT_TIME,
                t.SERIAL_NO AS PID,
@@ -130,7 +128,7 @@ export async function GET(request: NextRequest) {
       if (!config) {
         return NextResponse.json({ error: `알 수 없는 type: ${type}` }, { status: 400 });
       }
-      const tr = getVietnamTimeRange();
+      const tr = await getWorkDayRange();
       const dateCondition = config.dateType === "varchar"
         ? `t.${config.dateCol} >= :tsStart AND t.${config.dateCol} < :tsEnd`
         : `t.${config.dateCol} >= TO_DATE(:tsStart, 'YYYY/MM/DD HH24:MI:SS') AND t.${config.dateCol} < TO_DATE(:tsEnd, 'YYYY/MM/DD HH24:MI:SS')`;

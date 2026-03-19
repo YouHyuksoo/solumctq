@@ -43,10 +43,10 @@ export default function FpyLineCard({ line, dateRange }: FpyLineCardProps) {
     <div className="rounded-lg border-2 border-gray-700 bg-gray-900/50 overflow-hidden">
       <div className="flex items-center justify-between px-3 py-2 bg-gray-600/50">
         <div>
-          <span className="font-bold text-white text-sm">{line.lineName}</span>
-          <span className="ml-1.5 text-[10px] text-gray-500">({line.lineCode})</span>
+          <span className="font-bold text-white text-base">{line.lineName}</span>
+          <span className="ml-1.5 text-xs text-gray-500">({line.lineCode})</span>
         </div>
-        <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+        <span className={`px-2 py-0.5 rounded text-sm font-bold ${
           line.overallGrade === "A" ? "bg-red-600 text-white" : "bg-green-700 text-white"
         }`}>
           {line.overallGrade === "A" ? t("grade.lineStop") as string : "OK"}
@@ -54,6 +54,16 @@ export default function FpyLineCard({ line, dateRange }: FpyLineCardProps) {
       </div>
 
       <div className="px-3 py-2 space-y-1.5">
+        <div className="flex items-center gap-2 text-xs text-gray-500 pb-0.5 border-b border-gray-700/50">
+          <span className="w-14 shrink-0">{t("table.process") as string}</span>
+          <div className="flex-1 flex items-center gap-1.5">
+            <span className="w-10 shrink-0" />
+            <span className="w-20 shrink-0 text-center">{t("pages.fpy.title") as string}</span>
+            <span className="w-14 shrink-0" />
+            <span className="shrink-0">Pass/Total</span>
+          </div>
+          <span className="w-12 shrink-0 text-right">증감</span>
+        </div>
         {!hasAnyProcess && (
           <div className="text-center text-gray-600 text-sm py-4">
             {t("table.noDefects") as string}
@@ -72,19 +82,19 @@ export default function FpyLineCard({ line, dateRange }: FpyLineCardProps) {
 function GaugeBar({ data, label, barColorClass }: { data: FpyProcessData; label: string; barColorClass: string }) {
   const color = getYieldColor(data.yield);
   return (
-    <div className="flex items-center gap-1">
-      <span className="w-8 text-[10px] text-gray-500 shrink-0 text-right">{label}</span>
-      <div className="w-16 h-2.5 bg-gray-800 rounded-full overflow-hidden relative shrink-0">
+    <div className="flex items-center gap-1.5">
+      <span className="w-10 text-xs text-gray-500 shrink-0 text-right">{label}</span>
+      <div className="w-20 h-3 bg-gray-800 rounded-full overflow-hidden relative shrink-0">
         <div
           className={`h-full ${barColorClass} rounded-full transition-all duration-500`}
           style={{ width: `${Math.min(data.yield, 100)}%` }}
         />
         <div className="absolute top-0 bottom-0 border-l border-dashed border-red-500/40" style={{ left: "90%" }} />
       </div>
-      <span className={`w-12 text-right text-[10px] font-bold shrink-0 ${color.text}`}>
+      <span className={`w-14 text-right text-xs font-bold shrink-0 ${color.text}`}>
         {data.yield.toFixed(1)}%
       </span>
-      <span className="text-right text-[10px] text-gray-500 shrink-0">
+      <span className="text-right text-xs text-gray-500 shrink-0">
         {data.pass}/{data.total}
       </span>
     </div>
@@ -105,30 +115,30 @@ function ProcessRow({ processKey, data, dateRange }: { processKey: FpyProcessKey
 
   return (
     <div className="flex items-start gap-2">
-      <div className="w-12 text-xs font-medium text-gray-300 shrink-0 pt-0.5">
+      <div className="w-14 text-sm font-medium text-gray-300 shrink-0 pt-0.5">
         {PROCESS_LABELS[processKey]}
       </div>
       <div className="flex-1 space-y-0.5">
         {yesterday ? (
           <GaugeBar data={yesterday} label={ydLabel} barColorClass="bg-gray-500" />
         ) : (
-          <div className="flex items-center gap-1 h-2.5">
-            <span className="w-8 text-[10px] text-gray-600 shrink-0 text-right">{ydLabel}</span>
-            <span className="text-[10px] text-gray-600">—</span>
+          <div className="flex items-center gap-1.5 h-3">
+            <span className="w-10 text-xs text-gray-600 shrink-0 text-right">{ydLabel}</span>
+            <span className="text-xs text-gray-600">—</span>
           </div>
         )}
         {today ? (
           <GaugeBar data={today} label={tdLabel} barColorClass={getYieldColor(today.yield).bar} />
         ) : (
-          <div className="flex items-center gap-1 h-2.5">
-            <span className="w-8 text-[10px] text-gray-600 shrink-0 text-right">{tdLabel}</span>
-            <span className="text-[10px] text-gray-600">—</span>
+          <div className="flex items-center gap-1.5 h-3">
+            <span className="w-10 text-xs text-gray-600 shrink-0 text-right">{tdLabel}</span>
+            <span className="text-xs text-gray-600">—</span>
           </div>
         )}
       </div>
-      <div className="w-10 shrink-0 text-right pt-0.5">
+      <div className="w-12 shrink-0 text-right pt-0.5">
         {yieldDiff !== null ? (
-          <span className={`text-[10px] font-bold ${yieldDiff >= 0 ? "text-green-500" : "text-red-400"}`}>
+          <span className={`text-xs font-bold ${yieldDiff >= 0 ? "text-green-500" : "text-red-400"}`}>
             {yieldDiff >= 0 ? "▲" : "▼"}{Math.abs(yieldDiff).toFixed(1)}
           </span>
         ) : null}

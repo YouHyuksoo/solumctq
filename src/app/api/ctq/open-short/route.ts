@@ -43,19 +43,14 @@ const BAD_REASON_MAP: Record<string, OpenShortDefectType> = {
   B2030: "SHORT",
 };
 
-/** 시간 범위: 당일 08:00~ */
-function getDayRange() {
-  const now = new Date();
-  if (now.getHours() < 8) {
-    now.setDate(now.getDate() - 1);
-  }
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return {
-    dayStart: `${y}/${m}/${d} 08:00:00`,
-    dayEnd: `${y}/${m}/${String(now.getDate() + 1).padStart(2, "0")} 08:00:00`,
-  };
+/** 시간 범위: 당일 10:00~ (DB SYSDATE 기준, 10시 근무일 경계) */
+async function getDayRange() {
+  const rows = await executeQuery<{ DAY_START: string; DAY_END: string }>(
+    `SELECT TO_CHAR(TRUNC(SYSDATE-10/24), 'YYYY/MM/DD') || ' 10:00:00' AS DAY_START,
+            TO_CHAR(TRUNC(SYSDATE-10/24)+1, 'YYYY/MM/DD') || ' 10:00:00' AS DAY_END
+     FROM DUAL`, {}
+  );
+  return { dayStart: rows[0].DAY_START, dayEnd: rows[0].DAY_END };
 }
 
 interface DefectRow {
@@ -103,7 +98,7 @@ export async function GET(request: NextRequest) {
   try {
     const lines = parseLines(request);
     const lineFilter = buildLineInClause(lines, "t", "ln");
-    const { dayStart } = getDayRange();
+    const { dayStart } = await getDayRange();
 
     const sql = `
       SELECT t.LINE_CODE,

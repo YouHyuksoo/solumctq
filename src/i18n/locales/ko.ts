@@ -260,7 +260,7 @@ const ko = {
       refreshBtn: "새로고침",
     },
     fpy: {
-      title: "직행율 모니터링",
+      title: "직행율",
       gradeALabel: "A급 (Line Stop)",
       gradeDesc: "직행율 90% 미만 → Line Stop",
       noData: "현재 조건에 해당하는 검사 데이터가 없습니다.",

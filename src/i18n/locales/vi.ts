@@ -256,7 +256,7 @@ const vi: TranslationKeys = {
       refreshBtn: "Làm mới",
     },
     fpy: {
-      title: "Giám sát tỷ lệ đạt",
+      title: "Tỷ lệ đạt",
       gradeALabel: "Cấp A (Dừng Line)",
       gradeDesc: "Tỷ lệ đạt dưới 90% → Dừng Line",
       noData: "Không có dữ liệu kiểm tra phù hợp với tiêu chí hiện tại.",

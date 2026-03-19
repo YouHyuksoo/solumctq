@@ -28,11 +28,11 @@ interface ProcessConfig {
 }
 
 const PROCESS_CONFIG: Record<FpyProcessKey, ProcessConfig> = {
-  ICT:    { table: "IQ_MACHINE_ICT_SERVER_DATA_RAW",    dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"], extraWhere: "AND t.LAST_FLAG = 'Y'" },
-  HIPOT:  { table: "IQ_MACHINE_HIPOT_POWER_DATA_RAW",   dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"], extraWhere: "AND t.LAST_FLAG = 'Y'" },
-  FT:     { table: "IQ_MACHINE_FT1_SMPS_DATA_RAW",      dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"], extraWhere: "AND t.LAST_FLAG = 'Y'" },
-  BURNIN: { table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW",   dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"], extraWhere: "AND t.LAST_FLAG = 'Y'" },
-  ATE:    { table: "IQ_MACHINE_ATE_SERVER_DATA_RAW",     dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"], extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  ICT:    { table: "IQ_MACHINE_ICT_SERVER_DATA_RAW",    dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"], extraWhere: "" },
+  HIPOT:  { table: "IQ_MACHINE_HIPOT_POWER_DATA_RAW",   dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"], extraWhere: "" },
+  FT:     { table: "IQ_MACHINE_FT1_SMPS_DATA_RAW",      dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"], extraWhere: "" },
+  BURNIN: { table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW",   dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"], extraWhere: "" },
+  ATE:    { table: "IQ_MACHINE_ATE_SERVER_DATA_RAW",     dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"], extraWhere: "" },
 };
 
 const PROCESS_KEYS: FpyProcessKey[] = ["ICT", "HIPOT", "FT", "BURNIN", "ATE"];
@@ -49,23 +49,24 @@ interface LineNameRow {
 }
 
 /**
- * 2일치 날짜 범위 WHERE 절 (전일 08:00 ~ 익일 08:00)
+ * 2일치 날짜 범위 WHERE 절 (전일 10:00 ~ 당일+1 10:00)
+ * 근무일 기준: TRUNC(SYSDATE-10/24) — 10시를 일 경계로 사용
+ * (새벽 4시 → 어제 기준, 오전 11시 → 오늘 기준)
  * 튜닝: 전일+당일을 1쿼리로 합쳐 DB 라운드트립 14→7회로 감소
- * 당일 직행율은 10:00부터 집계 (08:00~10:00 데이터는 전일·당일 모두 제외)
  */
 function buildDateRange2Days(col: string, dateType: "varchar" | "date"): string {
   if (dateType === "varchar") {
-    return `${col} >= TO_CHAR(TRUNC(SYSDATE)-1, 'YYYY/MM/DD') || ' 08:00:00' AND ${col} < TO_CHAR(TRUNC(SYSDATE)+1, 'YYYY/MM/DD') || ' 08:00:00'`;
+    return `${col} >= TO_CHAR(TRUNC(SYSDATE-10/24)-1, 'YYYY/MM/DD') || ' 10:00:00' AND ${col} < TO_CHAR(TRUNC(SYSDATE-10/24)+1, 'YYYY/MM/DD') || ' 10:00:00'`;
   }
-  return `${col} >= TRUNC(SYSDATE)-1 + 8/24 AND ${col} < TRUNC(SYSDATE)+1 + 8/24`;
+  return `${col} >= TRUNC(SYSDATE-10/24)-1 + 10/24 AND ${col} < TRUNC(SYSDATE-10/24)+1 + 10/24`;
 }
 
-/** DAY_TYPE 분류 CASE 절 (Y=전일, T=당일, X=제외) — 전일 08~08, 당일 10~ */
+/** DAY_TYPE 분류 CASE 절 (Y=전일, T=당일) — 전일 10~10, 당일 10~10 */
 function buildDayCase(col: string, dateType: "varchar" | "date"): string {
   if (dateType === "varchar") {
-    return `CASE WHEN ${col} < TO_CHAR(TRUNC(SYSDATE), 'YYYY/MM/DD') || ' 08:00:00' THEN 'Y' WHEN ${col} >= TO_CHAR(TRUNC(SYSDATE), 'YYYY/MM/DD') || ' 10:00:00' THEN 'T' ELSE 'X' END`;
+    return `CASE WHEN ${col} < TO_CHAR(TRUNC(SYSDATE-10/24), 'YYYY/MM/DD') || ' 10:00:00' THEN 'Y' ELSE 'T' END`;
   }
-  return `CASE WHEN ${col} < TRUNC(SYSDATE) + 8/24 THEN 'Y' WHEN ${col} >= TRUNC(SYSDATE) + 10/24 THEN 'T' ELSE 'X' END`;
+  return `CASE WHEN ${col} < TRUNC(SYSDATE-10/24) + 10/24 THEN 'Y' ELSE 'T' END`;
 }
 
 interface FpyRow2Days extends FpyRow {
@@ -138,17 +139,15 @@ export async function GET(request: NextRequest) {
     const lines = parseLines(request);
     const lineFilter = buildLineInClause(lines, "t", "ln");
 
-    /* DB 기준 날짜 범위 + 현재 시간 조회 (베트남 SYSDATE 기준) */
-    const dateRangeRows = await executeQuery<{ YD_START: string; YD_END: string; TD_START: string; TD_END: string; VN_HOUR: number }>(
-      `SELECT TO_CHAR(TRUNC(SYSDATE)-1, 'MM/DD') || ' 08:00' AS YD_START,
-              TO_CHAR(TRUNC(SYSDATE),   'MM/DD') || ' 08:00' AS YD_END,
-              TO_CHAR(TRUNC(SYSDATE),   'MM/DD') || ' 10:00' AS TD_START,
-              TO_CHAR(TRUNC(SYSDATE)+1, 'MM/DD') || ' 08:00' AS TD_END,
-              TO_NUMBER(TO_CHAR(SYSDATE, 'HH24')) AS VN_HOUR
+    /* DB 기준 날짜 범위 조회 (베트남 SYSDATE 기준, 10시 근무일 경계) */
+    const dateRangeRows = await executeQuery<{ YD_START: string; YD_END: string; TD_START: string; TD_END: string }>(
+      `SELECT TO_CHAR(TRUNC(SYSDATE-10/24)-1, 'MM/DD') || ' 10:00' AS YD_START,
+              TO_CHAR(TRUNC(SYSDATE-10/24),   'MM/DD') || ' 10:00' AS YD_END,
+              TO_CHAR(TRUNC(SYSDATE-10/24),   'MM/DD') || ' 10:00' AS TD_START,
+              TO_CHAR(TRUNC(SYSDATE-10/24)+1, 'MM/DD') || ' 10:00' AS TD_END
        FROM DUAL`, {}
     );
     const dr = dateRangeRows[0];
-    const isBeforeTodayStart = dr.VN_HOUR < 10;
 
     /* 5공정 × 2일치를 1쿼리씩 병렬 조회 (10→5 DB 호출) */
     const allResults = await Promise.all(
@@ -193,19 +192,6 @@ export async function GET(request: NextRequest) {
         } else if (row.DAY_TYPE === "T") {
           line.processes[key]!.today = pd;
           if (pd.yield < 90) line.overallGrade = "A";
-        }
-        /* DAY_TYPE='X' (08:00~10:00) 데이터는 전일·당일 모두 제외 */
-      }
-    }
-
-    /* 10시 이전이면 당일 직행율을 0으로 강제 표시 */
-    if (isBeforeTodayStart) {
-      const zeroData: FpyProcessData = { total: 0, pass: 0, ng: 0, yield: 0 };
-      for (const line of lineMap.values()) {
-        for (const key of PROCESS_KEYS) {
-          if (line.processes[key]?.yesterday) {
-            line.processes[key]!.today = zeroData;
-          }
         }
       }
     }

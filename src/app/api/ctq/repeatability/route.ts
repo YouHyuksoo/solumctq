@@ -18,7 +18,7 @@
 import { NextResponse } from "next/server";
 import { type NextRequest } from "next/server";
 import { executeQuery } from "@/lib/oracle";
-import { parseLines, buildLineInClause, getVietnamTimeRange } from "@/lib/line-filter";
+import { parseLines, buildLineInClause, getWorkDayRange } from "@/lib/line-filter";
 import type {
   RepeatProcessType,
   RepeatProcessStatus,
@@ -250,7 +250,7 @@ export async function GET(request: NextRequest) {
   try {
     const lines = parseLines(request);
     const lineFilter = buildLineInClause(lines, "t", "ln");
-    const timeRange = getVietnamTimeRange();
+    const timeRange = await getWorkDayRange();
 
     /* 1. 2공정 × 3쿼리 = 6개 쿼리 병렬 실행 (요약 + 반복Location + 마지막검사) */
     const [summaries, repeatLocs, lastInspects] = await Promise.all([
