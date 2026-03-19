@@ -11,7 +11,7 @@
 "use client";
 
 import { useLocale } from "@/i18n";
-import type { MonitorSummary, MonitorKey } from "../types";
+import type { MonitorSummary, MonitorKey, AbnormalLine } from "../types";
 
 const SECTION_ORDER: MonitorKey[] = [
   "repeatability", "nonConsecutive", "accident", "material",
@@ -80,6 +80,8 @@ export default function DetailReport({ summaries }: Props) {
                   </svg>
                   {noIssues}
                 </p>
+              ) : key === "indicator" ? (
+                <IndicatorMatrix lines={s.abnormalLines} />
               ) : (
                 <table className="w-full text-xs">
                   <thead>
@@ -107,7 +109,7 @@ export default function DetailReport({ summaries }: Props) {
                                 {d.grade}
                               </span>
                             </td>
-                            <td className="py-1.5 px-2 text-right text-gray-300">{d.ngCount}</td>
+                            <td className="py-1.5 px-2 text-right text-gray-300">{d.ngCount.toLocaleString()}</td>
                             <td className="py-1.5 px-2 text-gray-500 text-[11px]">{d.detail}</td>
                           </tr>
                         ))
@@ -133,5 +135,41 @@ export default function DetailReport({ summaries }: Props) {
         );
       })}
     </div>
+  );
+}
+
+const IND_PROCESSES = ["ICT", "HIPOT", "FT", "BURNIN", "ATE"];
+
+/** 지표 전용 매트릭스 테이블: 모델(행) × 공정(열) */
+function IndicatorMatrix({ lines }: { lines: AbnormalLine[] }) {
+  return (
+    <table className="w-full text-xs">
+      <thead>
+        <tr className="text-gray-500 border-b border-gray-800">
+          <th className="text-left py-1.5 px-2">{lines.length > 0 ? "Model" : ""}</th>
+          {IND_PROCESSES.map((p) => (
+            <th key={p} className="text-center py-1.5 px-2">{p} <span className="text-gray-600">PPM</span></th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {lines.map((line, li) => {
+          const detailMap = new Map(line.details.map((d) => [d.process, d]));
+          return (
+            <tr key={li} className="border-b border-gray-800/50">
+              <td className="py-1.5 px-2 text-gray-300 font-medium whitespace-nowrap">{line.lineName}</td>
+              {IND_PROCESSES.map((p) => {
+                const d = detailMap.get(p);
+                return (
+                  <td key={p} className={`py-1.5 px-2 text-center ${d ? "text-red-400 font-bold" : "text-gray-700"}`}>
+                    {d ? `${d.ngCount.toLocaleString()} ${d.detail}` : "-"}
+                  </td>
+                );
+              })}
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }

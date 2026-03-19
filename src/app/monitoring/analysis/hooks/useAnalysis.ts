@@ -112,7 +112,9 @@ function parseEquipmentResponse(json: any): { highestGrade: string; abnormalLine
   return { highestGrade: highest, abnormalLines: abnormal };
 }
 
-/** 지표 응답 파싱 — 전월 대비 200%+ 또는 신규불량(0→N) = Grade C */
+/** 지표 응답 파싱 — 전월 대비 200%+ = Grade C */
+const INDICATOR_PROCESS_ORDER: Record<string, number> = { ICT: 0, HIPOT: 1, FT: 2, BURNIN: 3, ATE: 4 };
+
 function parseIndicatorResponse(json: any): { highestGrade: string; abnormalLines: AbnormalLine[] } {
   const models = json.models ?? [];
   let highest = "OK";
@@ -126,17 +128,18 @@ function parseIndicatorResponse(json: any): { highestGrade: string; abnormalLine
       if (!val) continue;
       const last = val.lastWeek ?? 0;
       const curr = val.thisWeek ?? 0;
-      const isGradeC = (last === 0 && curr > 0) || (last > 0 && curr >= last * 2);
-      if (isGradeC) {
-        const rate = last > 0 ? Math.round((curr / last) * 100) : -1;
+      if (last > 0 && curr >= last * 2) {
+        const rate = Math.round((curr / last) * 100);
         details.push({
           process: key,
           grade: "C",
           ngCount: curr,
-          detail: rate === -1 ? `신규 (0→${curr})` : `${rate}%`,
+          detail: `${rate}%`,
         });
       }
     }
+
+    details.sort((a, b) => (INDICATOR_PROCESS_ORDER[a.process] ?? 99) - (INDICATOR_PROCESS_ORDER[b.process] ?? 99));
 
     if (details.length > 0) {
       highest = higherGrade(highest, "C");
@@ -177,7 +180,7 @@ export function useAnalysis(selectedLines: string[] = []) {
     const results = await Promise.allSettled(
       API_ENDPOINTS.map(async ({ key, path }) => {
         const controller = new AbortController();
-        const timeoutMs = key === "indicator" ? 60000 : 30000;
+        const timeoutMs = key === "indicator" ? 120000 : 30000;
         const timeout = setTimeout(() => controller.abort(), timeoutMs);
         try {
           const res = await fetch(buildUrl(path, key), { signal: controller.signal });

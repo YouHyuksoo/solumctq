@@ -43,17 +43,27 @@ function formatPpm(ppm: number): string {
   return ppm.toLocaleString();
 }
 
-/** 비율 텍스트 생성 (PPM + 전기 대비 비율) */
+/** PPM + 건수 포맷: "PPM (NG건/전체건)" */
+function formatPpmWithCount(ppm: number, total: number): string {
+  if (total === 0) return "0";
+  const ng = Math.round((ppm / 1_000_000) * total);
+  return `${ppm.toLocaleString()} (${ng}/${total.toLocaleString()})`;
+}
+
+/** 비율 텍스트 생성 (PPM + 건수 + 전기 대비 비율) */
 function getRatioText(
   prev: number,
   curr: number,
+  currTotal: number,
   newLabel: string
 ): string {
   if (prev === 0 && curr === 0) return "0";
-  if (prev === 0 && curr > 0) return `${formatPpm(curr)} (${newLabel})`;
+  const ng = currTotal > 0 ? Math.round((curr / 1_000_000) * currTotal) : 0;
+  const countStr = currTotal > 0 ? ` (${ng}/${currTotal.toLocaleString()})` : "";
+  if (prev === 0 && curr > 0) return `${formatPpm(curr)}${countStr} ${newLabel}`;
   if (curr === 0) return "0 (0%)";
   const ratio = Math.round((curr / prev) * 100);
-  return `${formatPpm(curr)} (${ratio}%)`;
+  return `${formatPpm(curr)}${countStr} ${ratio}%`;
 }
 
 /** 소량 모수용 텍스트: NG건/전체건 으로 표시 */
@@ -70,9 +80,10 @@ interface Props {
   models: IndicatorModelData[];
   thisWeekDays: number;
   period: PeriodType;
+  includeThisWeek?: boolean;
 }
 
-export default function IndicatorTable({ models, thisWeekDays, period }: Props) {
+export default function IndicatorTable({ models, thisWeekDays, period, includeThisWeek = false }: Props) {
   const { t } = useLocale();
   const newLabel = t("pages.indicator.newDefect") as string;
 
@@ -92,15 +103,15 @@ export default function IndicatorTable({ models, thisWeekDays, period }: Props) 
               <th
                 key={key}
                 className={`text-center px-1 py-1.5 border border-gray-700 bg-gray-800 font-bold ${GROUP_BORDER}`}
-                colSpan={3}
+                colSpan={includeThisWeek ? 3 : 2}
               >
-                {PROCESS_LABELS[key]}
+                {PROCESS_LABELS[key]} <span className="text-gray-400 font-normal text-xs">PPM</span>
               </th>
             ))}
           </tr>
           <tr className="text-xs bg-gray-800">
             {PROCESS_KEYS.map((key) => (
-              <SubHeaders key={key} thisWeekDays={thisWeekDays} period={period} />
+              <SubHeaders key={key} thisWeekDays={thisWeekDays} period={period} includeThisWeek={includeThisWeek} />
             ))}
           </tr>
         </thead>
@@ -116,7 +127,7 @@ export default function IndicatorTable({ models, thisWeekDays, period }: Props) 
                   weekBeforeTotal: 0, lastWeekTotal: 0, thisWeekTotal: 0,
                 };
                 return (
-                  <ProcessCells key={key} data={d} newLabel={newLabel} />
+                  <ProcessCells key={key} data={d} newLabel={newLabel} includeThisWeek={includeThisWeek} />
                 );
               })}
             </tr>
@@ -128,7 +139,7 @@ export default function IndicatorTable({ models, thisWeekDays, period }: Props) 
 }
 
 /** 공정별 서브헤더 (전전주/전주/금주 또는 전전월/전월/당월) */
-function SubHeaders({ thisWeekDays, period }: { thisWeekDays: number; period: PeriodType }) {
+function SubHeaders({ thisWeekDays, period, includeThisWeek }: { thisWeekDays: number; period: PeriodType; includeThisWeek: boolean }) {
   const { t } = useLocale();
   const isMonthly = period === "monthly";
   return (
@@ -139,10 +150,12 @@ function SubHeaders({ thisWeekDays, period }: { thisWeekDays: number; period: Pe
       <th className="px-1 py-1 border border-gray-700 whitespace-nowrap bg-indigo-900 text-indigo-200">
         {t(`pages.indicator.${isMonthly ? "lastMonth" : "lastWeek"}`) as string}
       </th>
-      <th className="px-1 py-1 border border-gray-700 whitespace-nowrap bg-teal-900 text-teal-200">
-        {t(`pages.indicator.${isMonthly ? "thisMonth" : "thisWeek"}`) as string}
-        <span className="text-teal-400/70 ml-0.5">({thisWeekDays}{t(`pages.indicator.${isMonthly ? "thisMonthDays" : "thisWeekDays"}`) as string})</span>
-      </th>
+      {includeThisWeek && (
+        <th className="px-1 py-1 border border-gray-700 whitespace-nowrap bg-teal-900 text-teal-200">
+          {t(`pages.indicator.${isMonthly ? "thisMonth" : "thisWeek"}`) as string}
+          <span className="text-teal-400/70 ml-0.5">({thisWeekDays}{t(`pages.indicator.${isMonthly ? "thisMonthDays" : "thisWeekDays"}`) as string})</span>
+        </th>
+      )}
     </>
   );
 }
@@ -161,11 +174,11 @@ function PpmCell({
       </td>
     );
   }
-  return <td className={className}>{ratioText ?? formatPpm(ppm)}</td>;
+  return <td className={className}>{ratioText ?? formatPpmWithCount(ppm, total)}</td>;
 }
 
 /** 공정별 3셀 (전전주/전주/금주) */
-function ProcessCells({ data, newLabel }: { data: WeeklyNgData; newLabel: string }) {
+function ProcessCells({ data, newLabel, includeThisWeek }: { data: WeeklyNgData; newLabel: string; includeThisWeek: boolean }) {
   const lastWeekColor = getRatioColor(data.weekBefore, data.lastWeek);
   const thisWeekColor = getRatioColor(data.lastWeek, data.thisWeek);
 
@@ -184,15 +197,17 @@ function ProcessCells({ data, newLabel }: { data: WeeklyNgData; newLabel: string
         ppm={data.lastWeek}
         total={data.lastWeekTotal}
         className={`px-2 py-1.5 text-center border border-gray-800 whitespace-nowrap bg-indigo-950/60 ${lastWeekColor}`}
-        ratioText={getRatioText(data.weekBefore, data.lastWeek, newLabel)}
+        ratioText={getRatioText(data.weekBefore, data.lastWeek, data.lastWeekTotal, newLabel)}
       />
       {/* 금주: teal 배경 */}
-      <PpmCell
-        ppm={data.thisWeek}
-        total={data.thisWeekTotal}
-        className={`px-2 py-1.5 text-center border border-gray-800 whitespace-nowrap bg-teal-950/60 ${thisWeekColor}`}
-        ratioText={getRatioText(data.lastWeek, data.thisWeek, newLabel)}
-      />
+      {includeThisWeek && (
+        <PpmCell
+          ppm={data.thisWeek}
+          total={data.thisWeekTotal}
+          className={`px-2 py-1.5 text-center border border-gray-800 whitespace-nowrap bg-teal-950/60 ${thisWeekColor}`}
+          ratioText={getRatioText(data.lastWeek, data.thisWeek, data.thisWeekTotal, newLabel)}
+        />
+      )}
     </>
   );
 }

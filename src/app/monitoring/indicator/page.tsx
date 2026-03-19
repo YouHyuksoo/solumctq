@@ -26,6 +26,7 @@ export default function IndicatorPage() {
   const { t, dateLocale } = useLocale();
   const { selectedLines } = useLineFilter();
   const [period, setPeriod] = useState<PeriodType>("weekly");
+  const [includeThisWeek, setIncludeThisWeek] = useState(false);
   const { data, error, loading, fetchData } = useIndicator(selectedLines, period);
 
   /* 초기 로딩 + 라인 필터 변경 시 재조회 */
@@ -87,6 +88,19 @@ export default function IndicatorPage() {
                 {t("pages.indicator.periodMonthly") as string}
               </button>
             </div>
+            {/* 금주/당월 포함 토글 */}
+            <button
+              onClick={() => setIncludeThisWeek((v) => !v)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
+                includeThisWeek
+                  ? "bg-teal-600 border-teal-500 text-white"
+                  : "bg-gray-800 border-gray-600 text-gray-400 hover:text-white hover:bg-gray-700"
+              }`}
+            >
+              {period === "monthly"
+                ? (includeThisWeek ? "당월 포함" : "당월 미포함")
+                : (includeThisWeek ? "금주 포함" : "금주 미포함")}
+            </button>
             <button
               onClick={fetchData}
               disabled={loading}
@@ -141,6 +155,7 @@ export default function IndicatorPage() {
             models={data.models}
             thisWeekDays={data.thisWeekDays}
             period={period}
+            includeThisWeek={includeThisWeek}
           />
         )}
       </main>
