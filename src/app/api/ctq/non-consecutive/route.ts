@@ -3,7 +3,7 @@
  * @description B급 모니터링 API - 동일위치 비연속불량
  *
  * 초보자 가이드:
- * 1. **대상 공정**: FT, ATE, IMAGE, SETTV
+ * 1. **대상 공정**: FT, ATE
  * 2. **판정 기준**: 동일 Location 2건 이상이지만 연속은 아닌 경우 → B급
  * 3. **A급 제외**: 연속불량(A급)에 해당하는 Location은 B급에서 제외
  * 4. **매일 08:00 ~ 다음날 08:00** 하루치만 대상
@@ -38,6 +38,7 @@ const PROCESS_CONFIG: Record<RepeatProcessType, ProcessConfig> = {
     dateCol: "INSPECT_DATE",
     resultCol: "INSPECT_RESULT",
     dateType: "varchar",
+    extraWhere: "AND t.LAST_FLAG = 'Y'",
   },
   ATE: {
     table: "IQ_MACHINE_ATE_SERVER_DATA_RAW",
@@ -45,21 +46,6 @@ const PROCESS_CONFIG: Record<RepeatProcessType, ProcessConfig> = {
     dateCol: "INSPECT_DATE",
     resultCol: "INSPECT_RESULT",
     dateType: "varchar",
-  },
-  IMAGE: {
-    table: "IQ_MACHINE_INSPECT_DATA_PBA_FT",
-    pidCol: "BARCODE",
-    dateCol: "STARTTIME",
-    resultCol: "RESULT",
-    dateType: "date",
-    extraWhere: "AND t.LAST_FLAG = 'Y'",
-  },
-  SETTV: {
-    table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET",
-    pidCol: "BARCODE",
-    dateCol: "INSPECT_TIME",
-    resultCol: "INSPECT_RESULT",
-    dateType: "date",
     extraWhere: "AND t.LAST_FLAG = 'Y'",
   },
 };
@@ -67,11 +53,9 @@ const PROCESS_CONFIG: Record<RepeatProcessType, ProcessConfig> = {
 const PROCESS_LABELS: Record<RepeatProcessType, string> = {
   FT: "FT#1",
   ATE: "ATE",
-  IMAGE: "IMAGE",
-  SETTV: "SET",
 };
 
-const PROCESS_TYPES: RepeatProcessType[] = ["FT", "ATE", "IMAGE", "SETTV"];
+const PROCESS_TYPES: RepeatProcessType[] = ["FT", "ATE"];
 
 interface LineSummaryRow {
   LINE_CODE: string;
@@ -121,6 +105,7 @@ async function getLineSummary(
     JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
       AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
     WHERE ${condition}
+      AND (t.${config.pidCol} LIKE 'VN07%' OR t.${config.pidCol} LIKE 'VNL1%' OR t.${config.pidCol} LIKE 'VNA2%')
       AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
       AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')
       ${config.extraWhere ?? ""}
@@ -164,6 +149,7 @@ async function getNonConsecutiveLocations(
         JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
           AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
         WHERE ${condition}
+          AND (t.${config.pidCol} LIKE 'VN07%' OR t.${config.pidCol} LIKE 'VNL1%' OR t.${config.pidCol} LIKE 'VNA2%')
           AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
           AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')
           ${config.extraWhere ?? ""}
@@ -196,6 +182,7 @@ async function getNonConsecutiveLocations(
           JOIN IP_PRODUCT_2D_BARCODE b2 ON b2.SERIAL_NO = t2.${config.pidCol}
             AND b2.ITEM_CODE IS NOT NULL AND b2.ITEM_CODE <> '*'
           WHERE ${conditionSub}
+            AND (t2.${config.pidCol} LIKE 'VN07%' OR t2.${config.pidCol} LIKE 'VNL1%' OR t2.${config.pidCol} LIKE 'VNA2%')
             AND t2.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
             AND (t2.QC_CONFIRM_YN IS NULL OR t2.QC_CONFIRM_YN != 'Y')
             ${(config.extraWhere ?? "").replace(/t\./g, "t2.")}
@@ -274,7 +261,7 @@ export async function GET(request: NextRequest) {
     const lineFilter = buildLineInClause(lines, "t", "ln");
     const timeRange = getVietnamTimeRange();
 
-    /* 1. 4공정 × 3쿼리 병렬 실행 */
+    /* 1. 2공정 × 3쿼리 병렬 실행 */
     const [summaries, bLocations, lastInspects] = await Promise.all([
       Promise.all(PROCESS_TYPES.map((pt) => getLineSummary(PROCESS_CONFIG[pt], timeRange, lineFilter))),
       Promise.all(PROCESS_TYPES.map((pt) => getNonConsecutiveLocations(PROCESS_CONFIG[pt], timeRange, lineFilter))),

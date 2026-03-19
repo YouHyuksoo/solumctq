@@ -9,7 +9,7 @@
  */
 
 /** 반복성 대상 공정 */
-export type RepeatProcessType = "FT" | "ATE" | "IMAGE" | "SETTV";
+export type RepeatProcessType = "FT" | "ATE";
 
 /** 등급 */
 export type RepeatGrade = "A" | "B" | "OK";

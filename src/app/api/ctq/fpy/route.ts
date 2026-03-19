@@ -3,7 +3,7 @@
  * @description 직행율(First Pass Yield) API — 라인별 × 공정별 전일/당일 직행율 조회
  *
  * 초보자 가이드:
- * 1. 7개 RAW 테이블에서 제품(PID/BARCODE)별 최초 검사 결과만 추출
+ * 1. 5개 RAW 테이블에서 제품(PID)별 최초 검사 결과만 추출
  * 2. 직행율 = 최초검사 PASS 제품수 / 고유 제품수 × 100
  * 3. 당일 기준 90% 미만이면 A급
  * 4. ROW_NUMBER()로 제품별 첫 번째 검사만 필터링 (재검사 제외)
@@ -28,16 +28,14 @@ interface ProcessConfig {
 }
 
 const PROCESS_CONFIG: Record<FpyProcessKey, ProcessConfig> = {
-  ICT:    { table: "IQ_MACHINE_ICT_SERVER_DATA_RAW",    dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"] },
-  HIPOT:  { table: "IQ_MACHINE_HIPOT_POWER_DATA_RAW",   dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"] },
-  FT:     { table: "IQ_MACHINE_FT1_SMPS_DATA_RAW",      dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"] },
-  BURNIN: { table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW",   dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"] },
-  ATE:    { table: "IQ_MACHINE_ATE_SERVER_DATA_RAW",     dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"] },
-  IMAGE:  { table: "IQ_MACHINE_INSPECT_DATA_PBA_FT",    dateCol: "STARTTIME",    pidCol: "BARCODE", resultCol: "RESULT",         dateType: "date", passValues: ["PASS", "GOOD", "OK", "Y"], extraWhere: "AND t.LAST_FLAG = 'Y'" },
-  SET:    { table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET",  dateCol: "INSPECT_TIME", pidCol: "BARCODE", resultCol: "INSPECT_RESULT", dateType: "date", passValues: ["PASS", "GOOD", "OK", "Y"], extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  ICT:    { table: "IQ_MACHINE_ICT_SERVER_DATA_RAW",    dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"], extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  HIPOT:  { table: "IQ_MACHINE_HIPOT_POWER_DATA_RAW",   dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"], extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  FT:     { table: "IQ_MACHINE_FT1_SMPS_DATA_RAW",      dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"], extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  BURNIN: { table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW",   dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"], extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  ATE:    { table: "IQ_MACHINE_ATE_SERVER_DATA_RAW",     dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", passValues: ["PASS", "GOOD", "OK", "Y"], extraWhere: "AND t.LAST_FLAG = 'Y'" },
 };
 
-const PROCESS_KEYS: FpyProcessKey[] = ["ICT", "HIPOT", "FT", "BURNIN", "ATE", "IMAGE", "SET"];
+const PROCESS_KEYS: FpyProcessKey[] = ["ICT", "HIPOT", "FT", "BURNIN", "ATE"];
 
 interface FpyRow {
   LINE_CODE: string;
@@ -102,6 +100,7 @@ async function queryProcess2Days(
         ${config.extraWhere ?? ""}
         AND t.LINE_CODE IS NOT NULL
         ${lineFilter.clause}
+        AND (t.${config.pidCol} LIKE 'VN07%' OR t.${config.pidCol} LIKE 'VNL1%' OR t.${config.pidCol} LIKE 'VNA2%')
         AND EXISTS (
           SELECT 1 FROM IP_PRODUCT_2D_BARCODE b
           WHERE b.SERIAL_NO = t.${config.pidCol}
@@ -151,7 +150,7 @@ export async function GET(request: NextRequest) {
     const dr = dateRangeRows[0];
     const isBeforeTodayStart = dr.VN_HOUR < 10;
 
-    /* 7공정 × 2일치를 1쿼리씩 병렬 조회 (14→7 DB 호출) */
+    /* 5공정 × 2일치를 1쿼리씩 병렬 조회 (10→5 DB 호출) */
     const allResults = await Promise.all(
       PROCESS_KEYS.map((key) => queryProcess2Days(key, PROCESS_CONFIG[key], lineFilter)),
     );

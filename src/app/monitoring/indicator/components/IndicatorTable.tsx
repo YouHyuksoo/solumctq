@@ -14,7 +14,7 @@
 import { useLocale } from "@/i18n";
 import type { IndicatorModelData, IndicatorProcessKey, PeriodType, WeeklyNgData } from "../types";
 
-const PROCESS_KEYS: IndicatorProcessKey[] = ["ICT", "HIPOT", "FT", "BURNIN", "ATE", "IMAGE", "SET"];
+const PROCESS_KEYS: IndicatorProcessKey[] = ["ICT", "HIPOT", "FT", "BURNIN", "ATE"];
 
 const PROCESS_LABELS: Record<IndicatorProcessKey, string> = {
   ICT: "ICT",
@@ -22,9 +22,10 @@ const PROCESS_LABELS: Record<IndicatorProcessKey, string> = {
   FT: "FT",
   BURNIN: "Burn-In",
   ATE: "ATE",
-  IMAGE: "IMAGE",
-  SET: "SET",
 };
+
+/** PPM이 의미 있으려면 최소 이 건수 이상이어야 함 */
+const MIN_SAMPLE_SIZE = 30;
 
 /** 비율에 따른 색상 클래스 반환 */
 function getRatioColor(prev: number, curr: number): string {
@@ -53,6 +54,13 @@ function getRatioText(
   if (curr === 0) return "0 (0%)";
   const ratio = Math.round((curr / prev) * 100);
   return `${formatPpm(curr)} (${ratio}%)`;
+}
+
+/** 소량 모수용 텍스트: NG건/전체건 으로 표시 */
+function getSmallSampleText(ppm: number, total: number): string {
+  if (total === 0) return "-";
+  const ng = Math.round((ppm / 1_000_000) * total);
+  return `${ng}/${total}`;
 }
 
 /** 공정 그룹 첫 번째 셀(전전주)에 왼쪽 굵은 보더 */
@@ -103,7 +111,10 @@ export default function IndicatorTable({ models, thisWeekDays, period }: Props) 
                 {model.itemCode}
               </td>
               {PROCESS_KEYS.map((key) => {
-                const d: WeeklyNgData = model.processes[key] ?? { weekBefore: 0, lastWeek: 0, thisWeek: 0 };
+                const d: WeeklyNgData = model.processes[key] ?? {
+                  weekBefore: 0, lastWeek: 0, thisWeek: 0,
+                  weekBeforeTotal: 0, lastWeekTotal: 0, thisWeekTotal: 0,
+                };
                 return (
                   <ProcessCells key={key} data={d} newLabel={newLabel} />
                 );
@@ -136,6 +147,23 @@ function SubHeaders({ thisWeekDays, period }: { thisWeekDays: number; period: Pe
   );
 }
 
+/** 소량 모수 여부에 따라 셀 내용 렌더링 */
+function PpmCell({
+  ppm, total, className, ratioText,
+}: {
+  ppm: number; total: number; className: string; ratioText?: string;
+}) {
+  const isSmall = total > 0 && total < MIN_SAMPLE_SIZE;
+  if (isSmall) {
+    return (
+      <td className={`${className} text-orange-400/80 italic`} title={`PPM: ${formatPpm(ppm)} (모수 ${total}건 — 신뢰도 낮음)`}>
+        {getSmallSampleText(ppm, total)}
+      </td>
+    );
+  }
+  return <td className={className}>{ratioText ?? formatPpm(ppm)}</td>;
+}
+
 /** 공정별 3셀 (전전주/전주/금주) */
 function ProcessCells({ data, newLabel }: { data: WeeklyNgData; newLabel: string }) {
   const lastWeekColor = getRatioColor(data.weekBefore, data.lastWeek);
@@ -144,19 +172,27 @@ function ProcessCells({ data, newLabel }: { data: WeeklyNgData; newLabel: string
   return (
     <>
       {/* 전전주: 기준값 — 배경 없음 */}
-      <td className={`px-2 py-1.5 text-center border border-gray-800 ${GROUP_BORDER} ${
-        data.weekBefore > 0 ? "text-gray-300" : "text-gray-600"
-      }`}>
-        {formatPpm(data.weekBefore)}
-      </td>
+      <PpmCell
+        ppm={data.weekBefore}
+        total={data.weekBeforeTotal}
+        className={`px-2 py-1.5 text-center border border-gray-800 ${GROUP_BORDER} ${
+          data.weekBefore > 0 ? "text-gray-300" : "text-gray-600"
+        }`}
+      />
       {/* 전주: indigo 배경 */}
-      <td className={`px-2 py-1.5 text-center border border-gray-800 whitespace-nowrap bg-indigo-950/60 ${lastWeekColor}`}>
-        {getRatioText(data.weekBefore, data.lastWeek, newLabel)}
-      </td>
+      <PpmCell
+        ppm={data.lastWeek}
+        total={data.lastWeekTotal}
+        className={`px-2 py-1.5 text-center border border-gray-800 whitespace-nowrap bg-indigo-950/60 ${lastWeekColor}`}
+        ratioText={getRatioText(data.weekBefore, data.lastWeek, newLabel)}
+      />
       {/* 금주: teal 배경 */}
-      <td className={`px-2 py-1.5 text-center border border-gray-800 whitespace-nowrap bg-teal-950/60 ${thisWeekColor}`}>
-        {getRatioText(data.lastWeek, data.thisWeek, newLabel)}
-      </td>
+      <PpmCell
+        ppm={data.thisWeek}
+        total={data.thisWeekTotal}
+        className={`px-2 py-1.5 text-center border border-gray-800 whitespace-nowrap bg-teal-950/60 ${thisWeekColor}`}
+        ratioText={getRatioText(data.lastWeek, data.thisWeek, newLabel)}
+      />
     </>
   );
 }

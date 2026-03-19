@@ -30,16 +30,14 @@ interface ProcessConfig {
 }
 
 const PROCESS_CONFIG: Record<IndicatorProcessKey, ProcessConfig> = {
-  ICT:    { table: "IQ_MACHINE_ICT_SERVER_DATA_RAW",    dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar" },
-  HIPOT:  { table: "IQ_MACHINE_HIPOT_POWER_DATA_RAW",   dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar" },
-  FT:     { table: "IQ_MACHINE_FT1_SMPS_DATA_RAW",      dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar" },
-  BURNIN: { table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW",   dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar" },
-  ATE:    { table: "IQ_MACHINE_ATE_SERVER_DATA_RAW",     dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar" },
-  IMAGE:  { table: "IQ_MACHINE_INSPECT_DATA_PBA_FT",    dateCol: "STARTTIME",    pidCol: "BARCODE", resultCol: "RESULT",         dateType: "date", extraWhere: "AND t.LAST_FLAG = 'Y'" },
-  SET:    { table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET",  dateCol: "INSPECT_TIME", pidCol: "BARCODE", resultCol: "INSPECT_RESULT", dateType: "date", extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  ICT:    { table: "IQ_MACHINE_ICT_SERVER_DATA_RAW",    dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  HIPOT:  { table: "IQ_MACHINE_HIPOT_POWER_DATA_RAW",   dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  FT:     { table: "IQ_MACHINE_FT1_SMPS_DATA_RAW",      dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  BURNIN: { table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW",   dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  ATE:    { table: "IQ_MACHINE_ATE_SERVER_DATA_RAW",     dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", extraWhere: "AND t.LAST_FLAG = 'Y'" },
 };
 
-const PROCESS_KEYS: IndicatorProcessKey[] = ["ICT", "HIPOT", "FT", "BURNIN", "ATE", "IMAGE", "SET"];
+const PROCESS_KEYS: IndicatorProcessKey[] = ["ICT", "HIPOT", "FT", "BURNIN", "ATE"];
 
 /* ── 주간 범위 계산 (월요일 시작) ── */
 
@@ -209,6 +207,7 @@ async function queryProcess(
     FROM ${config.table} t
     JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
     WHERE ${buildWhereDate(col, ":wbStart", ":twEnd", dt)}
+      AND (t.${config.pidCol} LIKE 'VN07%' OR t.${config.pidCol} LIKE 'VNL1%' OR t.${config.pidCol} LIKE 'VNA2%')
       AND t.LINE_CODE IS NOT NULL
       AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
       ${config.extraWhere ?? ""}
@@ -259,6 +258,9 @@ export async function GET(request: NextRequest) {
           weekBefore: toPpm(row.WB_NG, row.WB_TOTAL),
           lastWeek: toPpm(row.LW_NG, row.LW_TOTAL),
           thisWeek: toPpm(row.TW_NG, row.TW_TOTAL),
+          weekBeforeTotal: row.WB_TOTAL,
+          lastWeekTotal: row.LW_TOTAL,
+          thisWeekTotal: row.TW_TOTAL,
         };
       }
     });

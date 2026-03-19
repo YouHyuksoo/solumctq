@@ -132,8 +132,10 @@ async function getLineSummary(
       ON r.SERIAL_NO = t.${config.pidCol}
       AND r.RECEIPT_DEFICIT = '2'
     WHERE ${condition}
+      AND (t.${config.pidCol} LIKE 'VN07%' OR t.${config.pidCol} LIKE 'VNL1%' OR t.${config.pidCol} LIKE 'VNA2%')
       AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
       AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN <> 'Y')
+      AND t.LAST_FLAG = 'Y'
       AND t.LINE_CODE IS NOT NULL
       ${lineFilter.clause}
     GROUP BY t.LINE_CODE
@@ -175,9 +177,11 @@ async function getNgDetails(
         ON r.SERIAL_NO = t.${config.pidCol}
         AND r.RECEIPT_DEFICIT = '2'
       WHERE ${condition}
+        AND (t.${config.pidCol} LIKE 'VN07%' OR t.${config.pidCol} LIKE 'VNL1%' OR t.${config.pidCol} LIKE 'VNA2%')
         AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
         AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN <> 'Y')
-        AND t.LINE_CODE IS NOT NULL
+        AND t.LAST_FLAG = 'Y'
+      AND t.LINE_CODE IS NOT NULL
         ${lineFilter.clause}
     ) WHERE RN <= 5
   `;
@@ -199,6 +203,7 @@ async function getLastInspectTime(
     SELECT t.LINE_CODE, MAX(t.${config.dateCol}) AS LAST_INSPECT
     FROM ${config.table} t
     WHERE ${col} >= :tsStart AND ${col} < :tsEnd
+      AND t.LAST_FLAG = 'Y'
       AND t.LINE_CODE IS NOT NULL
       ${lineFilter.clause}
     GROUP BY t.LINE_CODE
@@ -304,8 +309,6 @@ export async function GET(request: NextRequest) {
           detail = `NG:${judgedCount}(A)`;
         } else if (grade === "B") {
           detail = `NG:${judgedCount}(B)`;
-        } else if (ngCount > 0) {
-          detail = `NG:${ngCount}`;
         }
 
         const details = detailsByProcess.get(pt)?.get(lineCode) ?? [];

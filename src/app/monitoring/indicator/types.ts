@@ -13,13 +13,17 @@ export type PeriodType = "weekly" | "monthly";
 
 /** 대상 공정 키 */
 export type IndicatorProcessKey =
-  | "ICT" | "HIPOT" | "FT" | "BURNIN" | "ATE" | "IMAGE" | "SET";
+  | "ICT" | "HIPOT" | "FT" | "BURNIN" | "ATE";
 
 /** 공정별 3기간 PPM 데이터 (주간/월간 공용) */
 export interface WeeklyNgData {
   weekBefore: number;
   lastWeek: number;
   thisWeek: number;
+  /** 각 기간별 검사 건수 (소량 모수 판별용) */
+  weekBeforeTotal: number;
+  lastWeekTotal: number;
+  thisWeekTotal: number;
 }
 
 /** 모델별 데이터 */

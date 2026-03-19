@@ -44,7 +44,7 @@ export default function EquipmentPage() {
           </div>
           <div className="flex flex-col items-end gap-1">
             <div className="flex items-center gap-4 text-xs text-gray-400">
-              <span>{t("table.process") as string}: ICT, Hi-Pot, FT, Burn-In, ATE, IMAGE, SET</span>
+              <span>{t("table.process") as string}: ICT, Hi-Pot, FT, Burn-In, ATE</span>
               <span><span className="text-purple-400 font-bold">{t("grade.c") as string}</span>: {t("pages.equipment.gradeDesc") as string}</span>
             </div>
             <span className="text-xs text-gray-500">Solum Vietnam</span>
@@ -114,7 +114,7 @@ export default function EquipmentPage() {
                 <div className="font-bold text-gray-200 text-base mb-2">{t("navTooltip.criteria") as string}</div>
                 <p>· <span className="text-purple-400 font-bold">{t("grade.c") as string}</span>: {t("pages.equipment.gradeDesc") as string}</p>
                 <div className="border-t border-gray-700 pt-3 mt-3 text-gray-500">
-                  <p>· {t("table.process") as string}: ICT, Hi-Pot, FT, Burn-In, ATE, IMAGE, SET</p>
+                  <p>· {t("table.process") as string}: ICT, Hi-Pot, FT, Burn-In, ATE</p>
                   <p>· {t("pages.equipment.tableDesc") as string}</p>
                   <p>· {t("pages.equipment.periodDesc") as string}</p>
                 </div>

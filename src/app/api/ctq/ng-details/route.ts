@@ -25,12 +25,10 @@ interface ProcessConfig {
 }
 
 const RAW_CONFIGS: Record<string, ProcessConfig> = {
-  FT: { table: "IQ_MACHINE_FT1_SMPS_DATA_RAW", pidCol: "PID", dateCol: "INSPECT_DATE", resultCol: "INSPECT_RESULT", dateType: "varchar" },
-  ATE: { table: "IQ_MACHINE_ATE_SERVER_DATA_RAW", pidCol: "PID", dateCol: "INSPECT_DATE", resultCol: "INSPECT_RESULT", dateType: "varchar" },
-  IMAGE: { table: "IQ_MACHINE_INSPECT_DATA_PBA_FT", pidCol: "BARCODE", dateCol: "STARTTIME", resultCol: "RESULT", dateType: "date", extraWhere: "AND t.LAST_FLAG = 'Y'" },
-  SETTV: { table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET", pidCol: "BARCODE", dateCol: "INSPECT_TIME", resultCol: "INSPECT_RESULT", dateType: "date", extraWhere: "AND t.LAST_FLAG = 'Y'" },
-  HIPOT: { table: "IQ_MACHINE_HIPOT_POWER_DATA_RAW", pidCol: "PID", dateCol: "INSPECT_DATE", resultCol: "INSPECT_RESULT", dateType: "varchar" },
-  BURNIN: { table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW", pidCol: "PID", dateCol: "INSPECT_DATE", resultCol: "INSPECT_RESULT", dateType: "varchar" },
+  FT: { table: "IQ_MACHINE_FT1_SMPS_DATA_RAW", pidCol: "PID", dateCol: "INSPECT_DATE", resultCol: "INSPECT_RESULT", dateType: "varchar", extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  ATE: { table: "IQ_MACHINE_ATE_SERVER_DATA_RAW", pidCol: "PID", dateCol: "INSPECT_DATE", resultCol: "INSPECT_RESULT", dateType: "varchar", extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  HIPOT: { table: "IQ_MACHINE_HIPOT_POWER_DATA_RAW", pidCol: "PID", dateCol: "INSPECT_DATE", resultCol: "INSPECT_RESULT", dateType: "varchar", extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  BURNIN: { table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW", pidCol: "PID", dateCol: "INSPECT_DATE", resultCol: "INSPECT_RESULT", dateType: "varchar", extraWhere: "AND t.LAST_FLAG = 'Y'" },
 };
 
 interface NgRow {
@@ -159,6 +157,7 @@ export async function GET(request: NextRequest) {
           ON r.SERIAL_NO = t.${config.pidCol}
           AND r.RECEIPT_DEFICIT = '2'
         WHERE ${dateCondition}
+          AND (t.${config.pidCol} LIKE 'VN07%' OR t.${config.pidCol} LIKE 'VNL1%' OR t.${config.pidCol} LIKE 'VNA2%')
           AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
           AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')
           ${config.extraWhere ?? ""}

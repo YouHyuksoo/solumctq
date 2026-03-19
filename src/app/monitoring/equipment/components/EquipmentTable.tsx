@@ -3,7 +3,7 @@
  * @description 설비이상 테이블 — 라인 × 공정 매트릭스, 정지시간(분) 표시
  *
  * 초보자 가이드:
- * 1. 행=라인, 열=공정(ICT~SET)
+ * 1. 행=라인, 열=공정(ICT~ATE)
  * 2. 셀: 정지시간(분), 60분 이상 → C급(빨강)
  * 3. border-separate로 sticky thead 렌더링 이슈 방지
  */
@@ -13,7 +13,7 @@
 import { useLocale } from "@/i18n";
 import type { EquipmentLineData, EquipmentProcessKey, ProcessStopData } from "../types";
 
-const PROCESS_KEYS: EquipmentProcessKey[] = ["ICT", "HIPOT", "FT", "BURNIN", "ATE", "IMAGE", "SET"];
+const PROCESS_KEYS: EquipmentProcessKey[] = ["ICT", "HIPOT", "FT", "BURNIN", "ATE"];
 
 const PROCESS_LABELS: Record<EquipmentProcessKey, string> = {
   ICT: "ICT",
@@ -21,8 +21,6 @@ const PROCESS_LABELS: Record<EquipmentProcessKey, string> = {
   FT: "FT",
   BURNIN: "Burn-In",
   ATE: "ATE",
-  IMAGE: "IMAGE",
-  SET: "SET",
 };
 
 const GRADE_C_THRESHOLD = 60;

@@ -9,7 +9,7 @@
 
 /** 대상 공정 키 */
 export type FpyProcessKey =
-  | "ICT" | "HIPOT" | "FT" | "BURNIN" | "ATE" | "IMAGE" | "SET";
+  | "ICT" | "HIPOT" | "FT" | "BURNIN" | "ATE";
 
 /** 공정별 직행율 데이터 */
 export interface FpyProcessData {

@@ -3,7 +3,7 @@
  * @description CTQ B급 모니터링 - 동일위치 비연속불량
  *
  * 초보자 가이드:
- * 1. **대상 공정**: FT#1, ATE, IMAGE, SET검사
+ * 1. **대상 공정**: FT#1, ATE
  * 2. **판정 기준**: 동일 Location 2건+ 이지만 연속은 아닌 경우 → B급
  * 3. **30초 갱신, 10초 롤링** (설정 변경 가능)
  */
@@ -60,7 +60,7 @@ export default function NonConsecutivePage() {
           </div>
           <div className="flex flex-col items-end gap-1">
             <div className="flex items-center gap-4 text-xs text-gray-400">
-              <span>{t("table.process") as string}: FT#1, ATE, IMAGE, SET</span>
+              <span>{t("table.process") as string}: FT#1, ATE</span>
               <span><span className="text-orange-400 font-bold">{t("grade.b") as string}</span>: {t("pages.nonConsecutive.title") as string} — {t("table.sameLocationNg") as string} 2+</span>
             </div>
             <span className="text-xs text-gray-500">Solum Vietnam</span>

@@ -3,7 +3,7 @@
  * @description 직행율 라인 카드 — 공정별 전일/당일 2줄 게이지 비교
  *
  * 초보자 가이드:
- * 1. 라인별 카드에 7개 공정 직행율 표시
+ * 1. 라인별 카드에 5개 공정 직행율 표시
  * 2. 각 공정마다 전일(위) / 당일(아래) 2줄 게이지
  * 3. 90% 미만 → 빨간색(A급), 90~95% → 노란색, 95%+ → 초록색
  */
@@ -13,7 +13,7 @@
 import { useLocale } from "@/i18n";
 import type { FpyLineData, FpyProcessKey, FpyProcessData, FpyProcessDayData } from "../types";
 
-const PROCESS_KEYS: FpyProcessKey[] = ["ICT", "HIPOT", "FT", "BURNIN", "ATE", "IMAGE", "SET"];
+const PROCESS_KEYS: FpyProcessKey[] = ["ICT", "HIPOT", "FT", "BURNIN", "ATE"];
 
 const PROCESS_LABELS: Record<FpyProcessKey, string> = {
   ICT: "ICT",
@@ -21,8 +21,6 @@ const PROCESS_LABELS: Record<FpyProcessKey, string> = {
   FT: "FT",
   BURNIN: "Burn-In",
   ATE: "ATE",
-  IMAGE: "IMAGE",
-  SET: "SET",
 };
 
 function getYieldColor(yieldRate: number): { text: string; bar: string } {

@@ -3,7 +3,7 @@
  * @description 시스템 매뉴얼 콘텐츠 데이터 — 9개 페이지 × 7섹션 × 3개 언어
  *
  * 초보자 가이드:
- * 1. ManualPageData: 각 모니터링 페이지의 통일된 섹션 구조
+ * 1. ManualPageData: 각 모니터링 페이지의 통일된 섹션 구조 (5개 공정: ICT, HIPOT, FT, BURNIN, ATE)
  * 2. MANUAL_PAGES: 사이드바 메뉴 정의 (key + label)
  * 3. MANUAL_DATA: 언어별 전체 콘텐츠 (ko/en/vi)
  */
@@ -88,12 +88,10 @@ const ko: LangData = {
   },
   repeatability: {
     title: "반복성 (연속불량)",
-    overview: "FT#1, ATE, IMAGE, SET 검사 공정에서 동일 위치(Location)에 연속으로 NG가 발생하는지 감지합니다. 연속 동일위치 불량은 설비/지그 이상 가능성이 높아 즉시 라인 정지가 필요합니다.",
+    overview: "FT#1, ATE 검사 공정에서 동일 위치(Location)에 연속으로 NG가 발생하는지 감지합니다. 연속 동일위치 불량은 설비/지그 이상 가능성이 높아 즉시 라인 정지가 필요합니다.",
     processes: [
       { name: "FT#1", table: "IQ_MACHINE_FT1_SMPS_DATA_RAW", pidCol: "PID" },
       { name: "ATE", table: "IQ_MACHINE_ATE_SERVER_DATA_RAW", pidCol: "PID" },
-      { name: "IMAGE", table: "IQ_MACHINE_INSPECT_DATA_PBA_FT", pidCol: "BARCODE" },
-      { name: "SET", table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET", pidCol: "BARCODE" },
     ],
     criteria: [
       { grade: "A급", gradeColor: "bg-red-600", condition: "동일 Location 연속 NG 2건 이상", action: "Line Stop" },
@@ -123,8 +121,6 @@ const ko: LangData = {
     processes: [
       { name: "FT#1", table: "IQ_MACHINE_FT1_SMPS_DATA_RAW", pidCol: "PID" },
       { name: "ATE", table: "IQ_MACHINE_ATE_SERVER_DATA_RAW", pidCol: "PID" },
-      { name: "IMAGE", table: "IQ_MACHINE_INSPECT_DATA_PBA_FT", pidCol: "BARCODE" },
-      { name: "SET", table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET", pidCol: "BARCODE" },
     ],
     criteria: [
       { grade: "B급", gradeColor: "bg-orange-500", condition: "동일 Location 비연속 NG 2건 이상 (A급 제외)", action: "출하중지" },
@@ -237,8 +233,6 @@ const ko: LangData = {
       { name: "FT#1", table: "IQ_MACHINE_FT1_SMPS_DATA_RAW", pidCol: "PID" },
       { name: "BURN-IN", table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW", pidCol: "PID" },
       { name: "ATE", table: "IQ_MACHINE_ATE_SERVER_DATA_RAW", pidCol: "PID" },
-      { name: "IMAGE", table: "IQ_MACHINE_INSPECT_DATA_PBA_FT", pidCol: "BARCODE" },
-      { name: "SET", table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET", pidCol: "BARCODE" },
     ],
     criteria: [
       { grade: "C급", gradeColor: "bg-purple-500", condition: "전주 대비 200% 이상 또는 신규 불량", action: "불량개선" },
@@ -250,7 +244,7 @@ const ko: LangData = {
       { color: "bg-gray-500", label: "불량 없음 (0→0)" },
     ],
     dataFlow: [
-      "7개 공정 RAW 테이블에서 3주치 NG 집계",
+      "5개 공정 RAW 테이블에서 3주치 NG 집계",
       "IP_PRODUCT_2D_BARCODE JOIN → ITEM_CODE(모델) 취득",
       "CASE WHEN으로 전전주/전주/금주 분류",
       "전주 대비 2배 이상 → C급 판정",
@@ -267,8 +261,6 @@ const ko: LangData = {
       { name: "FT#1", table: "IQ_MACHINE_FT1_SMPS_DATA_RAW", pidCol: "PID" },
       { name: "BURN-IN", table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW", pidCol: "PID" },
       { name: "ATE", table: "IQ_MACHINE_ATE_SERVER_DATA_RAW", pidCol: "PID" },
-      { name: "IMAGE", table: "IQ_MACHINE_INSPECT_DATA_PBA_FT", pidCol: "BARCODE" },
-      { name: "SET", table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET", pidCol: "BARCODE" },
     ],
     criteria: [
       { grade: "A급", gradeColor: "bg-red-600", condition: "당일 직행율 90% 미만", action: "Line Stop" },
@@ -296,8 +288,6 @@ const ko: LangData = {
       { name: "FT", table: "IP_LINE_DAILY_OPERATION_HIST", pidCol: "-" },
       { name: "BURN-IN", table: "IP_LINE_DAILY_OPERATION_HIST", pidCol: "-" },
       { name: "ATE", table: "IP_LINE_DAILY_OPERATION_HIST", pidCol: "-" },
-      { name: "IMAGE", table: "IP_LINE_DAILY_OPERATION_HIST", pidCol: "-" },
-      { name: "SET", table: "IP_LINE_DAILY_OPERATION_HIST", pidCol: "-" },
     ],
     criteria: [
       { grade: "C급", gradeColor: "bg-purple-500", condition: "일 정지시간 60분 이상", action: "불량개선" },
@@ -338,12 +328,10 @@ const en: LangData = {
   },
   repeatability: {
     title: "Repeatability (Consecutive)",
-    overview: "Detects consecutive NG at the same location in FT#1, ATE, IMAGE, SET inspection processes. Consecutive same-location defects likely indicate equipment/jig issues requiring immediate line stop.",
+    overview: "Detects consecutive NG at the same location in FT#1, ATE inspection processes. Consecutive same-location defects likely indicate equipment/jig issues requiring immediate line stop.",
     processes: [
       { name: "FT#1", table: "IQ_MACHINE_FT1_SMPS_DATA_RAW", pidCol: "PID" },
       { name: "ATE", table: "IQ_MACHINE_ATE_SERVER_DATA_RAW", pidCol: "PID" },
-      { name: "IMAGE", table: "IQ_MACHINE_INSPECT_DATA_PBA_FT", pidCol: "BARCODE" },
-      { name: "SET", table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET", pidCol: "BARCODE" },
     ],
     criteria: [
       { grade: "Grade A", gradeColor: "bg-red-600", condition: "Same Location consecutive NG 2+", action: "Line Stop" },
@@ -373,8 +361,6 @@ const en: LangData = {
     processes: [
       { name: "FT#1", table: "IQ_MACHINE_FT1_SMPS_DATA_RAW", pidCol: "PID" },
       { name: "ATE", table: "IQ_MACHINE_ATE_SERVER_DATA_RAW", pidCol: "PID" },
-      { name: "IMAGE", table: "IQ_MACHINE_INSPECT_DATA_PBA_FT", pidCol: "BARCODE" },
-      { name: "SET", table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET", pidCol: "BARCODE" },
     ],
     criteria: [
       { grade: "Grade B", gradeColor: "bg-orange-500", condition: "Same Location non-consecutive NG 2+ (excl. Grade A)", action: "Ship Hold" },
@@ -487,8 +473,6 @@ const en: LangData = {
       { name: "FT#1", table: "IQ_MACHINE_FT1_SMPS_DATA_RAW", pidCol: "PID" },
       { name: "BURN-IN", table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW", pidCol: "PID" },
       { name: "ATE", table: "IQ_MACHINE_ATE_SERVER_DATA_RAW", pidCol: "PID" },
-      { name: "IMAGE", table: "IQ_MACHINE_INSPECT_DATA_PBA_FT", pidCol: "BARCODE" },
-      { name: "SET", table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET", pidCol: "BARCODE" },
     ],
     criteria: [
       { grade: "Grade C", gradeColor: "bg-purple-500", condition: "200%+ vs previous week or new defect", action: "Improve" },
@@ -500,7 +484,7 @@ const en: LangData = {
       { color: "bg-gray-500", label: "No defects (0→0)" },
     ],
     dataFlow: [
-      "Aggregate 3-week NG from 7 process RAW tables",
+      "Aggregate 3-week NG from 5 process RAW tables",
       "JOIN IP_PRODUCT_2D_BARCODE → Get ITEM_CODE (model)",
       "CASE WHEN classifies into 3 weeks",
       "2x or more vs previous week → Grade C",
@@ -517,8 +501,6 @@ const en: LangData = {
       { name: "FT#1", table: "IQ_MACHINE_FT1_SMPS_DATA_RAW", pidCol: "PID" },
       { name: "BURN-IN", table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW", pidCol: "PID" },
       { name: "ATE", table: "IQ_MACHINE_ATE_SERVER_DATA_RAW", pidCol: "PID" },
-      { name: "IMAGE", table: "IQ_MACHINE_INSPECT_DATA_PBA_FT", pidCol: "BARCODE" },
-      { name: "SET", table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET", pidCol: "BARCODE" },
     ],
     criteria: [
       { grade: "Grade A", gradeColor: "bg-red-600", condition: "Daily FPY below 90%", action: "Line Stop" },
@@ -546,8 +528,6 @@ const en: LangData = {
       { name: "FT", table: "IP_LINE_DAILY_OPERATION_HIST", pidCol: "-" },
       { name: "BURN-IN", table: "IP_LINE_DAILY_OPERATION_HIST", pidCol: "-" },
       { name: "ATE", table: "IP_LINE_DAILY_OPERATION_HIST", pidCol: "-" },
-      { name: "IMAGE", table: "IP_LINE_DAILY_OPERATION_HIST", pidCol: "-" },
-      { name: "SET", table: "IP_LINE_DAILY_OPERATION_HIST", pidCol: "-" },
     ],
     criteria: [
       { grade: "Grade C", gradeColor: "bg-purple-500", condition: "Daily stop time 60min+", action: "Improve" },
@@ -588,12 +568,10 @@ const vi: LangData = {
   },
   repeatability: {
     title: "Lặp lại (Liên tiếp)",
-    overview: "Phát hiện NG liên tiếp tại cùng vị trí (Location) trong các công đoạn kiểm tra FT#1, ATE, IMAGE, SET. Lỗi liên tiếp cùng vị trí có khả năng cao là do thiết bị/jig cần dừng line ngay.",
+    overview: "Phát hiện NG liên tiếp tại cùng vị trí (Location) trong các công đoạn kiểm tra FT#1, ATE. Lỗi liên tiếp cùng vị trí có khả năng cao là do thiết bị/jig cần dừng line ngay.",
     processes: [
       { name: "FT#1", table: "IQ_MACHINE_FT1_SMPS_DATA_RAW", pidCol: "PID" },
       { name: "ATE", table: "IQ_MACHINE_ATE_SERVER_DATA_RAW", pidCol: "PID" },
-      { name: "IMAGE", table: "IQ_MACHINE_INSPECT_DATA_PBA_FT", pidCol: "BARCODE" },
-      { name: "SET", table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET", pidCol: "BARCODE" },
     ],
     criteria: [
       { grade: "Cấp A", gradeColor: "bg-red-600", condition: "Cùng Location NG liên tiếp 2+", action: "Dừng Line" },
@@ -623,8 +601,6 @@ const vi: LangData = {
     processes: [
       { name: "FT#1", table: "IQ_MACHINE_FT1_SMPS_DATA_RAW", pidCol: "PID" },
       { name: "ATE", table: "IQ_MACHINE_ATE_SERVER_DATA_RAW", pidCol: "PID" },
-      { name: "IMAGE", table: "IQ_MACHINE_INSPECT_DATA_PBA_FT", pidCol: "BARCODE" },
-      { name: "SET", table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET", pidCol: "BARCODE" },
     ],
     criteria: [
       { grade: "Cấp B", gradeColor: "bg-orange-500", condition: "Cùng Location không liên tiếp NG 2+ (trừ Cấp A)", action: "Tạm dừng XK" },
@@ -737,8 +713,6 @@ const vi: LangData = {
       { name: "FT#1", table: "IQ_MACHINE_FT1_SMPS_DATA_RAW", pidCol: "PID" },
       { name: "BURN-IN", table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW", pidCol: "PID" },
       { name: "ATE", table: "IQ_MACHINE_ATE_SERVER_DATA_RAW", pidCol: "PID" },
-      { name: "IMAGE", table: "IQ_MACHINE_INSPECT_DATA_PBA_FT", pidCol: "BARCODE" },
-      { name: "SET", table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET", pidCol: "BARCODE" },
     ],
     criteria: [
       { grade: "Cấp C", gradeColor: "bg-purple-500", condition: "200%+ so với tuần trước hoặc lỗi mới", action: "Cải thiện" },
@@ -750,7 +724,7 @@ const vi: LangData = {
       { color: "bg-gray-500", label: "Không có lỗi (0→0)" },
     ],
     dataFlow: [
-      "Tổng hợp NG 3 tuần từ 7 bảng RAW công đoạn",
+      "Tổng hợp NG 3 tuần từ 5 bảng RAW công đoạn",
       "JOIN IP_PRODUCT_2D_BARCODE → Lấy ITEM_CODE (model)",
       "CASE WHEN phân loại 3 tuần",
       "Gấp 2 lần trở lên so với tuần trước → Cấp C",
@@ -767,8 +741,6 @@ const vi: LangData = {
       { name: "FT#1", table: "IQ_MACHINE_FT1_SMPS_DATA_RAW", pidCol: "PID" },
       { name: "BURN-IN", table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW", pidCol: "PID" },
       { name: "ATE", table: "IQ_MACHINE_ATE_SERVER_DATA_RAW", pidCol: "PID" },
-      { name: "IMAGE", table: "IQ_MACHINE_INSPECT_DATA_PBA_FT", pidCol: "BARCODE" },
-      { name: "SET", table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET", pidCol: "BARCODE" },
     ],
     criteria: [
       { grade: "Cấp A", gradeColor: "bg-red-600", condition: "FPY trong ngày dưới 90%", action: "Dừng Line" },
@@ -796,8 +768,6 @@ const vi: LangData = {
       { name: "FT", table: "IP_LINE_DAILY_OPERATION_HIST", pidCol: "-" },
       { name: "BURN-IN", table: "IP_LINE_DAILY_OPERATION_HIST", pidCol: "-" },
       { name: "ATE", table: "IP_LINE_DAILY_OPERATION_HIST", pidCol: "-" },
-      { name: "IMAGE", table: "IP_LINE_DAILY_OPERATION_HIST", pidCol: "-" },
-      { name: "SET", table: "IP_LINE_DAILY_OPERATION_HIST", pidCol: "-" },
     ],
     criteria: [
       { grade: "Cấp C", gradeColor: "bg-purple-500", condition: "Dừng 60 phút+ trong ngày", action: "Cải thiện" },

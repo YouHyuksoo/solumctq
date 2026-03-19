@@ -3,12 +3,9 @@
  * @description 반복성 모니터링 API - 동일불량 연속발생 동일 Location
  *
  * 초보자 가이드:
- * 1. **대상 공정**: FT, ATE, IMAGE, SETTV
+ * 1. **대상 공정**: FT, ATE
  * 2. **판정 기준**: 수리등록된 NG 중 시간순 연속 2건이 동일 Location → A급, 아니면 OK
- * 3. **테이블/컬럼 차이**:
- *    - FT/ATE: PID + INSPECT_DATE(VARCHAR, 시간포함)
- *    - IMAGE: BARCODE + STARTTIME(DATE, 시간포함, 인덱스)
- *    - SETTV: BARCODE + INSPECT_TIME(DATE, 시간포함, PK)
+ * 3. **테이블/컬럼**: FT/ATE: PID + INSPECT_DATE(VARCHAR, 시간포함)
  * 4. **매일 08:00 ~ 다음날 08:00** 하루치만 대상, QC_CONFIRM_YN='Y' 제외
  *
  * 성능 최적화:
@@ -47,6 +44,7 @@ const PROCESS_CONFIG: Record<RepeatProcessType, ProcessConfig> = {
     dateCol: "INSPECT_DATE",
     resultCol: "INSPECT_RESULT",
     dateType: "varchar",
+    extraWhere: "AND t.LAST_FLAG = 'Y'",
   },
   ATE: {
     table: "IQ_MACHINE_ATE_SERVER_DATA_RAW",
@@ -54,21 +52,6 @@ const PROCESS_CONFIG: Record<RepeatProcessType, ProcessConfig> = {
     dateCol: "INSPECT_DATE",
     resultCol: "INSPECT_RESULT",
     dateType: "varchar",
-  },
-  IMAGE: {
-    table: "IQ_MACHINE_INSPECT_DATA_PBA_FT",
-    pidCol: "BARCODE",
-    dateCol: "STARTTIME",
-    resultCol: "RESULT",
-    dateType: "date",
-    extraWhere: "AND t.LAST_FLAG = 'Y'",
-  },
-  SETTV: {
-    table: "IQ_MACHINE_INSPECT_DATA_PBA_TVSET",
-    pidCol: "BARCODE",
-    dateCol: "INSPECT_TIME",
-    resultCol: "INSPECT_RESULT",
-    dateType: "date",
     extraWhere: "AND t.LAST_FLAG = 'Y'",
   },
 };
@@ -76,11 +59,9 @@ const PROCESS_CONFIG: Record<RepeatProcessType, ProcessConfig> = {
 const PROCESS_LABELS: Record<RepeatProcessType, string> = {
   FT: "FT#1",
   ATE: "ATE",
-  IMAGE: "IMAGE",
-  SETTV: "SET",
 };
 
-const PROCESS_TYPES: RepeatProcessType[] = ["FT", "ATE", "IMAGE", "SETTV"];
+const PROCESS_TYPES: RepeatProcessType[] = ["FT", "ATE"];
 
 /** LINE별 검사 요약 (SQL 집계) */
 interface LineSummaryRow {
@@ -143,6 +124,7 @@ async function getLineSummary(
     JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
       AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
     WHERE ${condition}
+      AND (t.${config.pidCol} LIKE 'VN07%' OR t.${config.pidCol} LIKE 'VNL1%' OR t.${config.pidCol} LIKE 'VNA2%')
       AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
       AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')
       ${config.extraWhere ?? ""}
@@ -190,6 +172,7 @@ async function getRepeatLocations(
           JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
             AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
           WHERE ${condition}
+            AND (t.${config.pidCol} LIKE 'VN07%' OR t.${config.pidCol} LIKE 'VNL1%' OR t.${config.pidCol} LIKE 'VNA2%')
             AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
             AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')
             ${config.extraWhere ?? ""}
@@ -269,7 +252,7 @@ export async function GET(request: NextRequest) {
     const lineFilter = buildLineInClause(lines, "t", "ln");
     const timeRange = getVietnamTimeRange();
 
-    /* 1. 4공정 × 3쿼리 = 12개 쿼리 병렬 실행 (요약 + 반복Location + 마지막검사) */
+    /* 1. 2공정 × 3쿼리 = 6개 쿼리 병렬 실행 (요약 + 반복Location + 마지막검사) */
     const [summaries, repeatLocs, lastInspects] = await Promise.all([
       Promise.all(PROCESS_TYPES.map((pt) => getLineSummary(PROCESS_CONFIG[pt], timeRange, lineFilter))),
       Promise.all(PROCESS_TYPES.map((pt) => getRepeatLocations(PROCESS_CONFIG[pt], timeRange, lineFilter))),

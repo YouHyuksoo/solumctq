@@ -123,6 +123,8 @@ async function getBulkNgRecords(
     SELECT PID, INSPECT_DATE, LINE_CODE
     FROM ${tableName}
     WHERE INSPECT_DATE >= :todayStart
+      AND LAST_FLAG = 'Y'
+      AND (PID LIKE 'VN07%' OR PID LIKE 'VNL1%' OR PID LIKE 'VNA2%')
       AND INSPECT_RESULT NOT IN ('PASS', 'GOOD', 'OK', 'Y')
       AND (QC_CONFIRM_YN IS NULL OR QC_CONFIRM_YN != 'Y')
       ${lineFilter.clause.replace(/t\./g, "")}

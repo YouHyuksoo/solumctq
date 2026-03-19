@@ -45,7 +45,7 @@ export default function FpyPage() {
           </div>
           <div className="flex flex-col items-end gap-1 text-xs text-gray-400">
             <div className="flex items-center gap-3">
-              <span>{t("table.process") as string}: ICT, Hi-Pot, FT, Burn-In, ATE, IMAGE, SET</span>
+              <span>{t("table.process") as string}: ICT, Hi-Pot, FT, Burn-In, ATE</span>
               <span className="text-gray-600">|</span>
               <span><span className="text-red-400 font-bold">{t("grade.a") as string}</span>: 당일 직행율 90% 미만</span>
             </div>

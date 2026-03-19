@@ -17,18 +17,16 @@ import type { EquipmentProcessKey, EquipmentLineData } from "@/app/monitoring/eq
 
 export const dynamic = "force-dynamic";
 
-const PROCESS_KEYS: EquipmentProcessKey[] = ["ICT", "HIPOT", "FT", "BURNIN", "ATE", "IMAGE", "SET"];
+const PROCESS_KEYS: EquipmentProcessKey[] = ["ICT", "HIPOT", "FT", "BURNIN", "ATE"];
 
 /** LINE_STATUS_CODE 값 → 화면 표시 키 매핑 */
-const STATUS_CODES = ["ICT", "HIPOT", "FT", "BURNIN", "ATE", "IMAGE", "SETTV"] as const;
+const STATUS_CODES = ["ICT", "HIPOT", "FT", "BURNIN", "ATE"] as const;
 const STATUS_TO_DISPLAY: Record<string, EquipmentProcessKey> = {
   ICT: "ICT",
   HIPOT: "HIPOT",
   FT: "FT",
   BURNIN: "BURNIN",
   ATE: "ATE",
-  IMAGE: "IMAGE",
-  SETTV: "SET",
 };
 
 interface StopRow {
