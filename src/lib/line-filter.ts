@@ -1,11 +1,11 @@
 /**
  * @file src/lib/line-filter.ts
- * @description 라인 필터 SQL 조건 생성 + 근무일 시간 유틸
+ * @description 라인 필터 SQL 조건 생성 + 베트남 시간대 유틸
  *
  * 초보자 가이드:
  * 1. **parseLines**: URL query에서 라인 코드 배열 파싱
  * 2. **buildLineInClause**: IN 조건 SQL + bind params 생성
- * 3. **getWorkDayRange**: DB SYSDATE 기준 10:00 근무일 시간 범위
+ * 3. **getVietnamTimeRange**: 베트남(UTC+7) 기준 08:00~08:00 시프트 시간 범위
  */
 
 import { type NextRequest } from "next/server";
@@ -47,19 +47,41 @@ export function buildLineInClause(
 }
 
 /**
- * DB SYSDATE 기준 10:00 근무일 시간 범위 (하루치)
+ * 베트남(UTC+7) 기준 현재 시각 반환
  *
  * 초보자 가이드:
- * - TRUNC(SYSDATE-10/24) 로 10시를 일 경계로 사용
- * - 새벽 4시 → 어제 10:00 ~ 오늘 10:00
- * - 오전 11시 → 오늘 10:00 ~ 내일 10:00
+ * - 서버가 한국(UTC+9)에 있어도 DB는 베트남 시간 사용
+ * - JS Date는 서버 로컬 시간 → UTC → UTC+7 변환
  */
-export async function getWorkDayRange(): Promise<{ startStr: string; endStr: string }> {
-  const { executeQuery } = await import("@/lib/oracle");
-  const rows = await executeQuery<{ TD_START: string; TD_END: string }>(
-    `SELECT TO_CHAR(TRUNC(SYSDATE-10/24), 'YYYY/MM/DD') || ' 10:00:00' AS TD_START,
-            TO_CHAR(TRUNC(SYSDATE-10/24)+1, 'YYYY/MM/DD') || ' 10:00:00' AS TD_END
-     FROM DUAL`, {}
-  );
-  return { startStr: rows[0].TD_START, endStr: rows[0].TD_END };
+function getNowVietnam(): Date {
+  const now = new Date();
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+  return new Date(utcMs + 7 * 3600000);
+}
+
+/**
+ * 베트남(UTC+7) 기준 08:00 시프트 시간 범위 (하루치)
+ *
+ * 초보자 가이드:
+ * - 08:00 이전이면 전일 08:00 ~ 당일 08:00
+ * - 08:00 이후이면 당일 08:00 ~ 익일 08:00
+ */
+export function getVietnamTimeRange(): { startStr: string; endStr: string } {
+  const vnNow = getNowVietnam();
+  if (vnNow.getHours() < 8) {
+    vnNow.setDate(vnNow.getDate() - 1);
+  }
+  const y = vnNow.getFullYear();
+  const m = String(vnNow.getMonth() + 1).padStart(2, "0");
+  const d = String(vnNow.getDate()).padStart(2, "0");
+
+  const next = new Date(y, vnNow.getMonth(), vnNow.getDate() + 1);
+  const ny = next.getFullYear();
+  const nm = String(next.getMonth() + 1).padStart(2, "0");
+  const nd = String(next.getDate()).padStart(2, "0");
+
+  return {
+    startStr: `${y}/${m}/${d} 08:00:00`,
+    endStr: `${ny}/${nm}/${nd} 08:00:00`,
+  };
 }

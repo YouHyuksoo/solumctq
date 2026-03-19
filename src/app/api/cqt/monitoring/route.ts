@@ -41,12 +41,16 @@ const PROCESS_LABELS: Record<ProcessType, string> = {
 
 const PROCESS_TYPES: ProcessType[] = ["ICT", "HIPOT", "FT1", "BURNIN", "ATE"];
 
-/** 당일 10:00 기준 시작 시간 — DB SYSDATE 기준 (베트남 시간) */
-async function getTodayStart(): Promise<string> {
-  const rows = await executeQuery<{ TD_START: string }>(
-    `SELECT TO_CHAR(TRUNC(SYSDATE-10/24), 'YYYY/MM/DD') || ' 10:00:00' AS TD_START FROM DUAL`, {}
-  );
-  return rows[0].TD_START;
+/** 오늘 08:00 기준 시작 시간 (YYYY/MM/DD HH:MM:SS 포맷 - 인덱스 활용) */
+function getTodayStart(): string {
+  const now = new Date();
+  if (now.getHours() < 8) {
+    now.setDate(now.getDate() - 1);
+  }
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}/${m}/${d} 08:00:00`;
 }
 
 interface NgRecord {
@@ -268,7 +272,7 @@ function worseGrade(a: AlertGrade, b: AlertGrade): AlertGrade {
 
 export async function GET(request: NextRequest) {
   try {
-    const todayStart = await getTodayStart();
+    const todayStart = getTodayStart();
     const lines = parseLines(request);
     const lineFilter = buildLineInClause(lines, "", "ln");
 
