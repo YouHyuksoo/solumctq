@@ -198,15 +198,11 @@ async function queryProcess(
            SUM(CASE WHEN ${col} >= ${dt === "varchar" ? ":lwStart" : "TO_DATE(:lwStart, 'YYYY/MM/DD HH24:MI:SS')"}
                      AND ${col} <  ${dt === "varchar" ? ":lwEnd"   : "TO_DATE(:lwEnd, 'YYYY/MM/DD HH24:MI:SS')"}
                     THEN 1 ELSE 0 END) AS LW_TOTAL,
-           SUM(CASE WHEN ${col} >= ${dt === "varchar" ? ":twStart" : "TO_DATE(:twStart, 'YYYY/MM/DD HH24:MI:SS')"}
-                     AND ${col} <  ${dt === "varchar" ? ":twEnd"   : "TO_DATE(:twEnd, 'YYYY/MM/DD HH24:MI:SS')"}
-                     AND ${isNg} = 1 THEN 1 ELSE 0 END) AS TW_NG,
-           SUM(CASE WHEN ${col} >= ${dt === "varchar" ? ":twStart" : "TO_DATE(:twStart, 'YYYY/MM/DD HH24:MI:SS')"}
-                     AND ${col} <  ${dt === "varchar" ? ":twEnd"   : "TO_DATE(:twEnd, 'YYYY/MM/DD HH24:MI:SS')"}
-                    THEN 1 ELSE 0 END) AS TW_TOTAL
+           0 AS TW_NG,
+           0 AS TW_TOTAL
     FROM ${config.table} t
     JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
-    WHERE ${buildWhereDate(col, ":wbStart", ":twEnd", dt)}
+    WHERE ${buildWhereDate(col, ":wbStart", ":lwEnd", dt)}
       AND (t.${config.pidCol} LIKE 'VN07%' OR t.${config.pidCol} LIKE 'VNL1%' OR t.${config.pidCol} LIKE 'VNA2%')
       AND t.LINE_CODE IS NOT NULL
       AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
@@ -220,8 +216,6 @@ async function queryProcess(
     wbEnd: ranges.weekBefore.end,
     lwStart: ranges.lastWeek.start,
     lwEnd: ranges.lastWeek.end,
-    twStart: ranges.thisWeek.start,
-    twEnd: ranges.thisWeek.end,
     ...lineFilter.params,
   });
 }
@@ -265,8 +259,32 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    /* ── 모델 필터링 ── */
+    /** 소량 모수 기준 (전전기/전기 검사 수량이 이 값 미만이면 제외) */
+    const MIN_VOLUME = 200;
+
+    const filtered = [...modelMap.values()].filter((model) => {
+      const procs = Object.values(model.processes);
+
+      /* 전전기/전기 PPM 합계 */
+      const wbPpmSum = procs.reduce((s, p) => s + (p?.weekBefore ?? 0), 0);
+      const lwPpmSum = procs.reduce((s, p) => s + (p?.lastWeek ?? 0), 0);
+
+      /* 전전기/전기 검사 총량 */
+      const wbTotal = procs.reduce((s, p) => s + (p?.weekBeforeTotal ?? 0), 0);
+      const lwTotal = procs.reduce((s, p) => s + (p?.lastWeekTotal ?? 0), 0);
+
+      /* 1. 전전기 & 전기 PPM 모두 0 → 제외 (불량 없는 모델) */
+      if (wbPpmSum === 0 && lwPpmSum === 0) return false;
+
+      /* 2. 전전기 or 전기 검사 수량 MIN_VOLUME 미만 → 제외 (소량 모수) */
+      if (wbTotal < MIN_VOLUME || lwTotal < MIN_VOLUME) return false;
+
+      return true;
+    });
+
     /* 총 불량 건수 내림차순 정렬 */
-    const models = [...modelMap.values()].sort((a, b) => {
+    const models = filtered.sort((a, b) => {
       const sumA = Object.values(a.processes).reduce(
         (s, p) => s + (p?.weekBefore ?? 0) + (p?.lastWeek ?? 0) + (p?.thisWeek ?? 0), 0
       );

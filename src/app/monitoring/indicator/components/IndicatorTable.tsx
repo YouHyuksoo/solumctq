@@ -30,11 +30,10 @@ const MIN_SAMPLE_SIZE = 30;
 /** 비율에 따른 색상 클래스 반환 */
 function getRatioColor(prev: number, curr: number): string {
   if (prev === 0 && curr === 0) return "text-gray-600";
-  if (prev === 0 && curr > 0) return "text-violet-400 font-bold";
+  if (prev === 0 && curr > 0) return "text-gray-600";
   if (curr === 0) return "text-green-400";
   const ratio = (curr / prev) * 100;
   if (ratio >= 200) return "text-red-400 font-bold";
-  if (ratio >= 100) return "text-yellow-400";
   return "text-green-400";
 }
 
@@ -43,14 +42,13 @@ function formatPpm(ppm: number): string {
   return ppm.toLocaleString();
 }
 
-/** PPM + 건수 포맷: "PPM (NG건/전체건)" */
-function formatPpmWithCount(ppm: number, total: number): string {
+/** PPM 포맷 */
+function formatPpmOnly(ppm: number, total: number): string {
   if (total === 0) return "0";
-  const ng = Math.round((ppm / 1_000_000) * total);
-  return `${ppm.toLocaleString()} (${ng}/${total.toLocaleString()})`;
+  return ppm.toLocaleString();
 }
 
-/** 비율 텍스트 생성 (PPM + 건수 + 전기 대비 비율) */
+/** 비율 텍스트 생성 (PPM + 전기 대비 비율) */
 function getRatioText(
   prev: number,
   curr: number,
@@ -58,12 +56,10 @@ function getRatioText(
   newLabel: string
 ): string {
   if (prev === 0 && curr === 0) return "0";
-  const ng = currTotal > 0 ? Math.round((curr / 1_000_000) * currTotal) : 0;
-  const countStr = currTotal > 0 ? ` (${ng}/${currTotal.toLocaleString()})` : "";
-  if (prev === 0 && curr > 0) return `${formatPpm(curr)}${countStr} ${newLabel}`;
+  if (prev === 0 && curr > 0) return "0";
   if (curr === 0) return "0 (0%)";
   const ratio = Math.round((curr / prev) * 100);
-  return `${formatPpm(curr)}${countStr} ${ratio}%`;
+  return `${formatPpm(curr)} (${ratio}%)`;
 }
 
 /** 소량 모수용 텍스트: NG건/전체건 으로 표시 */
@@ -83,9 +79,25 @@ interface Props {
   includeThisWeek?: boolean;
 }
 
+/** 표시 가능한 유효 데이터가 있는 모델만 남김 */
+function filterVisibleModels(models: IndicatorModelData[]): IndicatorModelData[] {
+  return models.filter((model) => {
+    return PROCESS_KEYS.some((key) => {
+      const p = model.processes[key];
+      if (!p) return false;
+      /* 전전기 PPM=0 & 전기 PPM>0 → 0으로 표시되므로 유효 데이터 아님 */
+      if (p.weekBefore === 0 && p.lastWeek > 0) return false;
+      /* 둘 다 0이면 표시할 게 없음 */
+      if (p.weekBefore === 0 && p.lastWeek === 0) return false;
+      return true;
+    });
+  });
+}
+
 export default function IndicatorTable({ models, thisWeekDays, period, includeThisWeek = false }: Props) {
   const { t } = useLocale();
   const newLabel = t("pages.indicator.newDefect") as string;
+  const visibleModels = filterVisibleModels(models);
 
   return (
     <div className="overflow-auto h-full">
@@ -116,7 +128,7 @@ export default function IndicatorTable({ models, thisWeekDays, period, includeTh
           </tr>
         </thead>
         <tbody>
-          {models.map((model) => (
+          {visibleModels.map((model) => (
             <tr key={model.itemCode} className="border-t border-gray-800 hover:bg-gray-800/30">
               <td className="px-3 py-1.5 font-medium text-gray-200 whitespace-nowrap border border-gray-800 sticky left-0 bg-gray-950 z-10">
                 {model.itemCode}
@@ -174,17 +186,30 @@ function PpmCell({
       </td>
     );
   }
-  return <td className={className}>{ratioText ?? formatPpmWithCount(ppm, total)}</td>;
+  return <td className={className}>{ratioText ?? formatPpmOnly(ppm, total)}</td>;
 }
 
-/** 공정별 3셀 (전전주/전주/금주) */
+/** 공정별 3셀 (전전주/전주/금주) — 신규(전전기=0 & 전기>0) 공정은 빈 셀 */
 function ProcessCells({ data, newLabel, includeThisWeek }: { data: WeeklyNgData; newLabel: string; includeThisWeek: boolean }) {
+  const isNew = data.weekBefore === 0 && data.lastWeek > 0;
+  const emptyCellBase = "px-2 py-1.5 text-center border border-gray-800 text-gray-700";
+
+  if (isNew) {
+    return (
+      <>
+        <td className={`${emptyCellBase} ${GROUP_BORDER}`}>0</td>
+        <td className={`${emptyCellBase} bg-indigo-950/60`}>0</td>
+        {includeThisWeek && <td className={`${emptyCellBase} bg-teal-950/60`}>0</td>}
+      </>
+    );
+  }
+
   const lastWeekColor = getRatioColor(data.weekBefore, data.lastWeek);
   const thisWeekColor = getRatioColor(data.lastWeek, data.thisWeek);
 
   return (
     <>
-      {/* 전전주: 기준값 — 배경 없음 */}
+      {/* 전전주: 기준값 */}
       <PpmCell
         ppm={data.weekBefore}
         total={data.weekBeforeTotal}

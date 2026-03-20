@@ -27,7 +27,6 @@ export default function IndicatorPage() {
   const { t, dateLocale } = useLocale();
   const { selectedLines } = useLineFilter();
   const [period, setPeriod] = usePersistedState<PeriodType>("indicator-period", "weekly");
-  const [includeThisWeek, setIncludeThisWeek] = usePersistedState<boolean>("indicator-includeThisWeek", false);
   const { data, error, loading, fetchData } = useIndicator(selectedLines, period);
 
   /* 초기 로딩 + 라인 필터 변경 시 재조회 */
@@ -53,7 +52,6 @@ export default function IndicatorPage() {
               <div className="flex items-center gap-4 text-xs text-gray-400">
                 <span>{t(`pages.indicator.${period === "monthly" ? "monthBefore" : "weekBefore"}`) as string}: {data.weekRanges.weekBefore.start}~{data.weekRanges.weekBefore.end}</span>
                 <span>{t(`pages.indicator.${period === "monthly" ? "lastMonth" : "lastWeek"}`) as string}: {data.weekRanges.lastWeek.start}~{data.weekRanges.lastWeek.end}</span>
-                <span>{t(`pages.indicator.${period === "monthly" ? "thisMonth" : "thisWeek"}`) as string}: {data.weekRanges.thisWeek.start}~{data.weekRanges.thisWeek.end} ({data.thisWeekDays}{t(`pages.indicator.${period === "monthly" ? "thisMonthDays" : "thisWeekDays"}`) as string})</span>
               </div>
             )}
             <span className="text-xs text-gray-500">Solum Vietnam</span>
@@ -89,19 +87,6 @@ export default function IndicatorPage() {
                 {t("pages.indicator.periodMonthly") as string}
               </button>
             </div>
-            {/* 금주/당월 포함 토글 */}
-            <button
-              onClick={() => setIncludeThisWeek((v) => !v)}
-              className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
-                includeThisWeek
-                  ? "bg-teal-600 border-teal-500 text-white"
-                  : "bg-gray-800 border-gray-600 text-gray-400 hover:text-white hover:bg-gray-700"
-              }`}
-            >
-              {period === "monthly"
-                ? (includeThisWeek ? "당월 포함" : "당월 미포함")
-                : (includeThisWeek ? "금주 포함" : "금주 미포함")}
-            </button>
             <button
               onClick={fetchData}
               disabled={loading}
@@ -156,7 +141,6 @@ export default function IndicatorPage() {
             models={data.models}
             thisWeekDays={data.thisWeekDays}
             period={period}
-            includeThisWeek={includeThisWeek}
           />
         )}
       </main>
