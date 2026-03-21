@@ -24,7 +24,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, Windows, LogServer]
+    runs-on: [self-hosted, Windows]
 
     defaults:
       run:
