@@ -188,36 +188,35 @@ const RIGHT_TYPES = [LineStatusPanel, DataTable, GaugePanel, AlertPanel];
 interface Props { side: "left" | "right"; }
 
 export default function AmbientCharts({ side }: Props) {
-  const [phase, setPhase] = useState(side === "left" ? 0 : 2);
   const types = side === "left" ? LEFT_TYPES : RIGHT_TYPES;
+  const dur = side === "left" ? 32 : 36;
+  const seedBase = side === "right" ? 50 : 0;
 
-  useEffect(() => {
-    const id = setInterval(() => setPhase(p => (p + 1) % 12), 4000);
-    return () => clearInterval(id);
-  }, []);
-
-  const charts = [0, 1, 2].map(offset => {
-    const idx = (phase + offset) % types.length;
-    const Chart = types[idx];
-    const seed = phase * 3 + offset + (side === "right" ? 50 : 0);
-    return { Chart, seed, offset };
+  /* 8개 카드를 2세트 배치하여 무한 스크롤 */
+  const items = Array.from({ length: 8 }, (_, i) => {
+    const Chart = types[i % types.length];
+    const seed = i * 3 + seedBase;
+    return { Chart, seed, id: i };
   });
 
   return (
-    <div className={`absolute top-0 bottom-0 w-[220px] ${side === "left" ? "left-0" : "right-0"} pointer-events-none`}
-      style={{ zIndex: 1, opacity: 0.6, mask: side === "left"
-        ? "linear-gradient(to right, black 30%, transparent 100%)"
-        : "linear-gradient(to left, black 30%, transparent 100%)",
-        WebkitMask: side === "left"
-        ? "linear-gradient(to right, black 30%, transparent 100%)"
-        : "linear-gradient(to left, black 30%, transparent 100%)",
+    <div className={`absolute top-0 bottom-0 w-[220px] ${side === "left" ? "left-0" : "right-0"} pointer-events-none overflow-hidden`}
+      style={{ zIndex: 1, opacity: 0.6,
+        mask: `linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%), ${side === "left"
+          ? "linear-gradient(to right, black 30%, transparent 100%)"
+          : "linear-gradient(to left, black 30%, transparent 100%)"}`,
+        WebkitMask: `linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%), ${side === "left"
+          ? "linear-gradient(to right, black 30%, transparent 100%)"
+          : "linear-gradient(to left, black 30%, transparent 100%)"}`,
+        WebkitMaskComposite: "destination-in",
+        maskComposite: "intersect",
       }}>
-      <div className="flex flex-col gap-6 p-4 h-full justify-center">
-        {charts.map(({ Chart, seed, offset }) => (
-          <div key={offset} className="rounded-lg border border-gray-700/30 bg-gray-900/30 p-3"
-            style={{ animation: `fadeInUp 0.8s ease-out ${offset * 0.3}s both` }}>
+      <div className="flex flex-col gap-4 p-4"
+        style={{ animation: `scrollUp ${dur}s linear infinite` }}>
+        {[...items, ...items].map(({ Chart, seed, id }, idx) => (
+          <div key={`${id}-${idx}`} className="rounded-lg border border-gray-700/30 bg-gray-900/30 p-3 shrink-0">
             <div className="h-[80px]">
-              <Chart seed={seed} />
+              <Chart seed={seed + Math.floor(idx / 8) * 20} />
             </div>
           </div>
         ))}

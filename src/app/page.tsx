@@ -62,6 +62,7 @@ export default function Home() {
         .font-orbitron { font-family: 'Orbitron', monospace; }
         .font-noto { font-family: 'Noto Sans KR', sans-serif; }
         @keyframes gridScroll { 0% { transform: translateY(0); } 100% { transform: translateY(40px); } }
+        @keyframes scrollUp { 0% { transform: translateY(0); } 100% { transform: translateY(-50%); } }
         @keyframes scanline { 0% { top: -4px; } 100% { top: 100%; } }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes glow { 0%, 100% { box-shadow: 0 0 8px var(--c), 0 0 20px var(--c); } 50% { box-shadow: 0 0 16px var(--c), 0 0 40px var(--c); } }
