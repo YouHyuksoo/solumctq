@@ -22,49 +22,49 @@ export default function RepairStatusTable({ rows }: Props) {
 
   return (
     <div className="overflow-auto h-full">
-      <table className="w-full text-sm border-separate border-spacing-0">
+      <table className="w-full text-xs border-separate border-spacing-0">
         <thead className="sticky top-0 z-20" style={{ boxShadow: "0 2px 0 0 #1f2937" }}>
           <tr className="bg-gray-800">
-            <th className="text-center px-3 py-2 border border-gray-700 bg-gray-800">
+            <th className="text-center px-2 py-1 border border-gray-700 bg-gray-800">
               {t("table.time") as string}
             </th>
-            <th className="text-left px-3 py-2 border border-gray-700 bg-gray-800 sticky left-0 z-30">
+            <th className="text-left px-2 py-1 border border-gray-700 bg-gray-800 sticky left-0 z-30">
               PID
             </th>
-            <th className="text-center px-3 py-2 border border-gray-700 bg-gray-800">
+            <th className="text-center px-2 py-1 border border-gray-700 bg-gray-800">
               {t("common.line") as string}
             </th>
-            <th className="text-center px-3 py-2 border border-gray-700 bg-gray-800">
+            <th className="text-center px-2 py-1 border border-gray-700 bg-gray-800">
               {t("table.model") as string}
             </th>
-            <th className="text-center px-3 py-2 border border-gray-700 bg-gray-800">
+            <th className="text-center px-2 py-1 border border-gray-700 bg-gray-800">
               {t("pages.repairStatus.workstage") as string}
             </th>
-            <th className="text-center px-3 py-2 border border-gray-700 bg-gray-800">
+            <th className="text-center px-2 py-1 border border-gray-700 bg-gray-800">
               {t("pages.repairStatus.repairWorkstage") as string}
             </th>
-            <th className="text-center px-3 py-2 border border-gray-700 bg-gray-800">
+            <th className="text-center px-2 py-1 border border-gray-700 bg-gray-800">
               {t("pages.repairStatus.qcResult") as string}
             </th>
-            <th className="text-center px-3 py-2 border border-gray-700 bg-gray-800">
+            <th className="text-center px-2 py-1 border border-gray-700 bg-gray-800">
               {t("table.repairLabel") as string}
             </th>
-            <th className="text-center px-3 py-2 border border-gray-700 bg-gray-800">
+            <th className="text-center px-2 py-1 border border-gray-700 bg-gray-800">
               {t("table.receipt") as string}
             </th>
-            <th className="text-center px-3 py-2 border border-gray-700 bg-gray-800">
+            <th className="text-center px-2 py-1 border border-gray-700 bg-gray-800">
               {t("table.location") as string}
             </th>
-            <th className="text-center px-3 py-2 border border-gray-700 bg-gray-800">
+            <th className="text-center px-2 py-1 border border-gray-700 bg-gray-800">
               {t("table.defectPart") as string}
             </th>
-            <th className="text-center px-3 py-2 border border-gray-700 bg-gray-800">
+            <th className="text-center px-2 py-1 border border-gray-700 bg-gray-800">
               {t("table.badReason") as string}
             </th>
-            <th className="text-center px-3 py-2 border border-gray-700 bg-gray-800">
+            <th className="text-center px-2 py-1 border border-gray-700 bg-gray-800">
               {t("pages.repairStatus.badReasonName") as string}
             </th>
-            <th className="text-center px-3 py-2 border border-gray-700 bg-gray-800">
+            <th className="text-center px-2 py-1 border border-gray-700 bg-gray-800">
               {t("table.handling") as string}
             </th>
           </tr>
@@ -74,51 +74,51 @@ export default function RepairStatusTable({ rows }: Props) {
             const isNewGroup = idx === 0 || rows[idx - 1].workstageName !== row.workstageName;
             return (
             <tr key={idx} className={`hover:bg-gray-800/30 ${isNewGroup ? "border-t-2 border-t-blue-600" : "border-t border-gray-800"}`}>
-              <td className="px-3 py-1.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
+              <td className="px-2 py-0.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
                 {row.qcDate}
               </td>
-              <td className="px-3 py-1.5 font-mono text-gray-200 whitespace-nowrap border border-gray-800 sticky left-0 bg-gray-950 z-10">
+              <td className="px-2 py-0.5 font-mono text-gray-200 whitespace-nowrap border border-gray-800 sticky left-0 bg-gray-950 z-10">
                 {row.pid}
               </td>
-              <td className="px-3 py-1.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
+              <td className="px-2 py-0.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
                 {row.lineName}
                 <span className="ml-1 text-xs text-gray-500">({row.lineCode})</span>
               </td>
-              <td className="px-3 py-1.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
+              <td className="px-2 py-0.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
                 {row.modelName}
               </td>
-              <td className="px-3 py-1.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
+              <td className="px-2 py-0.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
                 {row.workstageName}
               </td>
-              <td className="px-3 py-1.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
+              <td className="px-2 py-0.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
                 {row.repairWorkstageName}
               </td>
-              <td className="px-3 py-1.5 text-center border border-gray-800 whitespace-nowrap">
+              <td className="px-2 py-0.5 text-center border border-gray-800 whitespace-nowrap">
                 <span className={row.qcResultName === "-" ? "text-gray-500" : "text-yellow-400 font-bold"}>
                   {row.qcResultName}
                 </span>
               </td>
-              <td className="px-3 py-1.5 text-center border border-gray-800 whitespace-nowrap">
+              <td className="px-2 py-0.5 text-center border border-gray-800 whitespace-nowrap">
                 <span className={row.repairResultName === "-" ? "text-gray-500" : "text-green-400 font-bold"}>
                   {row.repairResultName}
                 </span>
               </td>
-              <td className="px-3 py-1.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
+              <td className="px-2 py-0.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
                 {row.receiptName}
               </td>
-              <td className="px-3 py-1.5 text-center border border-gray-800 text-gray-300">
+              <td className="px-2 py-0.5 text-center border border-gray-800 text-gray-300">
                 {row.locationCode}
               </td>
-              <td className="px-3 py-1.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
+              <td className="px-2 py-0.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
                 {row.defectItemCode}
               </td>
-              <td className="px-3 py-1.5 text-center border border-gray-800 text-gray-400 whitespace-nowrap">
+              <td className="px-2 py-0.5 text-center border border-gray-800 text-gray-400 whitespace-nowrap">
                 {row.badReasonCode}
               </td>
-              <td className="px-3 py-1.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
+              <td className="px-2 py-0.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
                 {row.badReasonName}
               </td>
-              <td className="px-3 py-1.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
+              <td className="px-2 py-0.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
                 {row.handlingName}
               </td>
             </tr>
