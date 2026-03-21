@@ -46,20 +46,17 @@ export default function MonitoringPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      <div className="bg-gray-900 border-b border-gray-700 px-6 py-4">
+      <div className="bg-gray-900 border-b border-gray-700 px-6 py-3">
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
-          <div className="flex items-center">
-            <h1
-              className="text-4xl font-bold bg-clip-text text-transparent"
-              style={{ backgroundImage: "linear-gradient(to right, #f87171, #facc15, #4ade80, #60a5fa, #a78bfa, #f472b6)" }}
-            >
-              {t("pages.accident.title") as string}
-            </h1>
-            <LineSelectButton />
-          </div>
+          <LineSelectButton />
+          <h1
+            className="text-3xl font-bold bg-clip-text text-transparent"
+            style={{ backgroundImage: "linear-gradient(to right, #f87171, #facc15, #4ade80, #60a5fa, #a78bfa, #f472b6)" }}
+          >
+            {t("pages.accident.title") as string}
+          </h1>
           <div className="flex flex-col items-end gap-1">
             <div className="flex items-center gap-4 text-xs text-gray-400">
-              <span>{t("table.process") as string}: ICT, HIPOT, FT#1, BURN-IN, ATE</span>
               <span><span className="text-red-400 font-bold">{t("grade.a") as string}</span>: {t("nav.repeatability") as string}/{t("nav.accident") as string}</span>
               <span><span className="text-orange-400 font-bold">{t("grade.b") as string}</span>: {t("nav.nonConsecutive") as string}/{t("nav.openShort") as string}</span>
             </div>
@@ -71,12 +68,6 @@ export default function MonitoringPage() {
       <header className="sticky top-0 z-10 bg-gray-800 border-b border-gray-700 px-6 py-3">
         <div className="flex items-center justify-between max-w-[1920px] mx-auto">
           <div className="flex items-center gap-4">
-            <h1 className="text-lg font-bold">
-              {t("pages.monitoring.title") as string}
-              <span className="ml-2 text-sm font-normal text-gray-400">
-                {t("pages.monitoring.subtitle") as string}
-              </span>
-            </h1>
             <MonitoringNav />
           </div>
           <div className="flex items-center gap-4">
