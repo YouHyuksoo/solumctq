@@ -41,24 +41,6 @@ export async function GET(request: NextRequest) {
     `;
     const bp = { tsStart: tr.startStr, tsEnd: tr.endStr, ...lineFilter.params };
 
-    const fpyLineFilter = buildLineInClause(lines, "t", "fl");
-    const fpyPromises = FPY_PROCESSES.map(p =>
-      executeQuery<FpyRow>(`
-        SELECT '${p.key}' AS NAME,
-               CASE WHEN t.INSPECT_DATE < TO_CHAR(TRUNC(SYSDATE-10/24), 'YYYY/MM/DD') || ' 10:00:00' THEN 'Y' ELSE 'T' END AS DAY_TYPE,
-               COUNT(DISTINCT t.PID) AS TOTAL,
-               COUNT(DISTINCT CASE WHEN t.INSPECT_RESULT IN ('PASS','GOOD','OK','Y') THEN t.PID END) AS PASS,
-               CASE WHEN COUNT(DISTINCT t.PID) > 0
-                 THEN ROUND(COUNT(DISTINCT CASE WHEN t.INSPECT_RESULT IN ('PASS','GOOD','OK','Y') THEN t.PID END) / COUNT(DISTINCT t.PID) * 100, 1)
-                 ELSE 0 END AS FPY
-        FROM ${p.table} t
-        WHERE t.INSPECT_DATE >= TO_CHAR(TRUNC(SYSDATE-10/24)-1, 'YYYY/MM/DD') || ' 10:00:00'
-          AND t.INSPECT_DATE < TO_CHAR(TRUNC(SYSDATE-10/24)+1, 'YYYY/MM/DD') || ' 10:00:00'
-          ${fpyLineFilter.clause}
-        GROUP BY CASE WHEN t.INSPECT_DATE < TO_CHAR(TRUNC(SYSDATE-10/24), 'YYYY/MM/DD') || ' 10:00:00' THEN 'Y' ELSE 'T' END
-      `, { ...fpyLineFilter.params })
-    );
-
     const [processR, badCodeR, lineR, modelR, hourR, repairR, defectItemR, locationR, repairWsR, receiptR] = await Promise.all([
       executeQuery<CountRow>(`
         SELECT NVL(F_GET_WORKSTAGE_NAME(t.WORKSTAGE_CODE), t.WORKSTAGE_CODE) AS NAME, COUNT(*) AS CNT
@@ -113,7 +95,25 @@ export async function GET(request: NextRequest) {
       `, bp),
     ]);
 
-    const fpyResults = await Promise.all(fpyPromises);
+    const fpyLineFilter = buildLineInClause(lines, "t", "fl");
+    const fpyResults = await Promise.all(
+      FPY_PROCESSES.map(p =>
+        executeQuery<FpyRow>(`
+          SELECT '${p.key}' AS NAME,
+                 CASE WHEN t.INSPECT_DATE < TO_CHAR(TRUNC(SYSDATE-10/24), 'YYYY/MM/DD') || ' 10:00:00' THEN 'Y' ELSE 'T' END AS DAY_TYPE,
+                 COUNT(DISTINCT t.PID) AS TOTAL,
+                 COUNT(DISTINCT CASE WHEN t.INSPECT_RESULT IN ('PASS','GOOD','OK','Y') THEN t.PID END) AS PASS,
+                 CASE WHEN COUNT(DISTINCT t.PID) > 0
+                   THEN ROUND(COUNT(DISTINCT CASE WHEN t.INSPECT_RESULT IN ('PASS','GOOD','OK','Y') THEN t.PID END) / COUNT(DISTINCT t.PID) * 100, 1)
+                   ELSE 0 END AS FPY
+          FROM ${p.table} t
+          WHERE t.INSPECT_DATE >= TO_CHAR(TRUNC(SYSDATE-10/24)-1, 'YYYY/MM/DD') || ' 10:00:00'
+            AND t.INSPECT_DATE < TO_CHAR(TRUNC(SYSDATE-10/24)+1, 'YYYY/MM/DD') || ' 10:00:00'
+            ${fpyLineFilter.clause}
+          GROUP BY CASE WHEN t.INSPECT_DATE < TO_CHAR(TRUNC(SYSDATE-10/24), 'YYYY/MM/DD') || ' 10:00:00' THEN 'Y' ELSE 'T' END
+        `, { ...fpyLineFilter.params })
+      )
+    );
     const fpyData = FPY_PROCESSES.map((p, i) => {
       const rows = fpyResults[i];
       const today = rows.find(r => r.DAY_TYPE === "T");
