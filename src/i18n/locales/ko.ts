@@ -296,6 +296,7 @@ const ko = {
       workstage: "공정",
       repairWorkstage: "수리공정",
       qcResult: "검사결과",
+      badReasonName: "불량코드명",
     },
     equipmentHistory: {
       title: "설비점검이력",

@@ -292,6 +292,7 @@ const vi: TranslationKeys = {
       workstage: "Công đoạn",
       repairWorkstage: "CĐ sửa chữa",
       qcResult: "Kết quả QC",
+      badReasonName: "Tên mã lỗi",
     },
     equipmentHistory: {
       title: "Lịch sử kiểm tra thiết bị",

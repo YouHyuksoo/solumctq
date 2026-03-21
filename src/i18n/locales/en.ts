@@ -292,6 +292,7 @@ const en: TranslationKeys = {
       workstage: "Process",
       repairWorkstage: "Repair Process",
       qcResult: "QC Result",
+      badReasonName: "Defect Name",
     },
     equipmentHistory: {
       title: "Equipment Inspection History",

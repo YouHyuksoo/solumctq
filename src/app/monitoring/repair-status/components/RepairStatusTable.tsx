@@ -62,6 +62,9 @@ export default function RepairStatusTable({ rows }: Props) {
               {t("table.badReason") as string}
             </th>
             <th className="text-center px-3 py-2 border border-gray-700 bg-gray-800">
+              {t("pages.repairStatus.badReasonName") as string}
+            </th>
+            <th className="text-center px-3 py-2 border border-gray-700 bg-gray-800">
               {t("table.handling") as string}
             </th>
           </tr>
@@ -106,6 +109,9 @@ export default function RepairStatusTable({ rows }: Props) {
               </td>
               <td className="px-3 py-1.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
                 {row.defectItemCode}
+              </td>
+              <td className="px-3 py-1.5 text-center border border-gray-800 text-gray-400 whitespace-nowrap">
+                {row.badReasonCode}
               </td>
               <td className="px-3 py-1.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
                 {row.badReasonName}
