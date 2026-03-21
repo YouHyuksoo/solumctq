@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 interface CountRow { NAME: string; CNT: number; }
 interface RepairRow { TOTAL_CNT: number; REPAIRED_CNT: number; }
 interface HourRow { HR: string; CNT: number; }
-interface FpyRow { NAME: string; FPY: number; TOTAL: number; PASS: number; }
+interface FpyRow { NAME: string; DAY_TYPE: string; FPY: number; TOTAL: number; PASS: number; }
 
 const FPY_PROCESSES = [
   { key: "ICT", table: "IQ_MACHINE_ICT_SERVER_DATA_RAW" },
@@ -45,15 +45,17 @@ export async function GET(request: NextRequest) {
     const fpyPromises = FPY_PROCESSES.map(p =>
       executeQuery<FpyRow>(`
         SELECT '${p.key}' AS NAME,
+               CASE WHEN t.INSPECT_DATE < TO_CHAR(TRUNC(SYSDATE-10/24), 'YYYY/MM/DD') || ' 10:00:00' THEN 'Y' ELSE 'T' END AS DAY_TYPE,
                COUNT(DISTINCT t.PID) AS TOTAL,
                COUNT(DISTINCT CASE WHEN t.INSPECT_RESULT IN ('PASS','GOOD','OK','Y') THEN t.PID END) AS PASS,
                CASE WHEN COUNT(DISTINCT t.PID) > 0
                  THEN ROUND(COUNT(DISTINCT CASE WHEN t.INSPECT_RESULT IN ('PASS','GOOD','OK','Y') THEN t.PID END) / COUNT(DISTINCT t.PID) * 100, 1)
                  ELSE 0 END AS FPY
         FROM ${p.table} t
-        WHERE t.INSPECT_DATE >= TO_CHAR(TRUNC(SYSDATE-10/24), 'YYYY/MM/DD') || ' 10:00:00'
+        WHERE t.INSPECT_DATE >= TO_CHAR(TRUNC(SYSDATE-10/24)-1, 'YYYY/MM/DD') || ' 10:00:00'
           AND t.INSPECT_DATE < TO_CHAR(TRUNC(SYSDATE-10/24)+1, 'YYYY/MM/DD') || ' 10:00:00'
           ${fpyLineFilter.clause}
+        GROUP BY CASE WHEN t.INSPECT_DATE < TO_CHAR(TRUNC(SYSDATE-10/24), 'YYYY/MM/DD') || ' 10:00:00' THEN 'Y' ELSE 'T' END
       `, { ...fpyLineFilter.params })
     );
 
@@ -112,9 +114,17 @@ export async function GET(request: NextRequest) {
     ]);
 
     const fpyResults = await Promise.all(fpyPromises);
-    const fpyData = fpyResults.map(rows => {
-      const r = rows[0];
-      return r ? { name: r.NAME, count: r.FPY, total: r.TOTAL, pass: r.PASS } : { name: "-", count: 0, total: 0, pass: 0 };
+    const fpyData = FPY_PROCESSES.map((p, i) => {
+      const rows = fpyResults[i];
+      const today = rows.find(r => r.DAY_TYPE === "T");
+      const yesterday = rows.find(r => r.DAY_TYPE === "Y");
+      return {
+        name: p.key,
+        today: today?.FPY ?? 0,
+        yesterday: yesterday?.FPY ?? 0,
+        todayTotal: today?.TOTAL ?? 0,
+        yesterdayTotal: yesterday?.TOTAL ?? 0,
+      };
     });
 
     const toChart = (rows: CountRow[]) => rows.map(r => ({ name: r.NAME || "-", count: r.CNT }));

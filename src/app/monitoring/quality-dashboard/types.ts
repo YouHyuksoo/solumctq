@@ -8,7 +8,7 @@
  */
 
 export interface ChartItem { name: string; count: number; }
-export interface FpyItem { name: string; count: number; total: number; pass: number; }
+export interface FpyItem { name: string; today: number; yesterday: number; todayTotal: number; yesterdayTotal: number; }
 
 export interface RepairStats { total: number; repaired: number; pending: number; }
 
