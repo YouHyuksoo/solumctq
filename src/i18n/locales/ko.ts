@@ -293,6 +293,9 @@ const ko = {
       periodDesc: "기간: 당일 08:00 ~ 익일 08:00",
       receiptNormal: "입고",
       receiptDefect: "불량입고",
+      workstage: "공정",
+      repairWorkstage: "수리공정",
+      qcResult: "검사결과",
     },
     equipmentHistory: {
       title: "설비점검이력",

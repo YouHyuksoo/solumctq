@@ -289,6 +289,9 @@ const en: TranslationKeys = {
       periodDesc: "Period: Today 08:00 ~ Next day 08:00",
       receiptNormal: "Receipt",
       receiptDefect: "Defect",
+      workstage: "Process",
+      repairWorkstage: "Repair Process",
+      qcResult: "QC Result",
     },
     equipmentHistory: {
       title: "Equipment Inspection History",

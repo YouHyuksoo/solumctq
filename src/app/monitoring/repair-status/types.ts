@@ -4,9 +4,7 @@
  *
  * 초보자 가이드:
  * 1. RepairStatusRow: IP_PRODUCT_WORK_QC 개별 불량 레코드
- * 2. RECEIPT_DEFICIT: 입고구분 (2=불량입고)
- * 3. REPAIR_RESULT_CODE: 수리결과코드
- * 4. QC_INSPECT_HANDLING: 검사처리결과
+ * 2. 코드값은 F_GET_BASECODE로 변환된 명칭으로 제공
  */
 
 export interface RepairStatusRow {
@@ -15,10 +13,13 @@ export interface RepairStatusRow {
   lineCode: string;
   lineName: string;
   modelName: string;
-  receiptDeficit: string;
+  workstageName: string;
+  repairWorkstageName: string;
+  qcResultName: string;
+  repairResultName: string;
+  receiptName: string;
   locationCode: string;
-  repairResultCode: string;
-  qcInspectHandling: string;
+  handlingName: string;
   defectItemCode: string;
   badReasonCode: string;
   badReasonName: string;

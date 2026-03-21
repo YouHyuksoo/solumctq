@@ -289,6 +289,9 @@ const vi: TranslationKeys = {
       periodDesc: "Thời gian: Hôm nay 08:00 ~ Ngày mai 08:00",
       receiptNormal: "Nhập kho",
       receiptDefect: "Lỗi",
+      workstage: "Công đoạn",
+      repairWorkstage: "CĐ sửa chữa",
+      qcResult: "Kết quả QC",
     },
     equipmentHistory: {
       title: "Lịch sử kiểm tra thiết bị",
