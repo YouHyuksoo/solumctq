@@ -30,7 +30,7 @@ export async function GET() {
       SELECT LINE_CODE, LINE_NAME, LINE_PRODUCT_DIVISION
       FROM IP_PRODUCT_LINE
       WHERE LINE_CODE NOT IN ('*', '00')
-        AND LINE_PRODUCT_DIVISION NOT IN ('AI', 'COMMON')
+        AND LINE_PRODUCT_DIVISION NOT IN ('AI', 'COMMON', 'AVI', 'PBA', 'SMD', 'U1')
       ORDER BY LINE_PRODUCT_DIVISION, LINE_CODE
     `;
     const rows = await executeQuery<LineRow>(sql);
