@@ -274,7 +274,8 @@ export async function GET(request: NextRequest) {
   try {
     const todayStart = getTodayStart();
     const lines = parseLines(request);
-    const lineFilter = buildLineInClause(lines, "", "ln");
+    const lineFilter = buildLineInClause(lines, "t", "ln");
+    /* alias "t" → 테이블 alias 없는 쿼리에서는 replace로 제거 */
 
     /* 1. 5개 공정 NG 벌크 조회 + 당일 활성 라인 (병렬) */
     const [lines2, ...bulkNgResults] = await Promise.all([
