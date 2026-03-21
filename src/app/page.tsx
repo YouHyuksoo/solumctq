@@ -1,285 +1,173 @@
 /**
  * @file src/app/page.tsx
- * @description 이상점 모니터링 랜딩 페이지 - 각 모니터링 화면으로 이동하는 카드 메뉴
+ * @description 이상점 모니터링 랜딩 페이지 — Factory Control Room 컨셉
+ *
+ * 초보자 가이드:
+ * 1. 상단: 시스템 브랜딩 + 등급 체계 시각화
+ * 2. 중앙: 공장 품질 관제 대시보드 느낌의 히어로
+ * 3. 하단: 바로가기 내비게이션 바
  */
 
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLocale } from "@/i18n";
 import LanguageSelector from "./components/LanguageSelector";
 
-/** 심플 SVG 아이콘 컴포넌트 */
-const Icons = {
-  /** 반복성 - 새로고침/반복 */
-  repeat: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M5.1 15A7 7 0 0118.9 9M18.9 9L20 4M18.9 15a7 7 0 01-13.8 0M5.1 9L4 20" />
-    </svg>
-  ),
-  /** 비연속 - 끊긴 링크 */
-  unlink: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M17 11h1a3 3 0 010 6h-1m-8 0H6a3 3 0 010-6h1m1-4l-1-1m10 0l1-1m-5-2V3m0 18v-2" />
-    </svg>
-  ),
-  /** 사고성 - 경고 삼각형 */
-  warning: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-    </svg>
-  ),
-  /** 재질 - 큐브/박스 */
-  cube: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
-    </svg>
-  ),
-  /** 오픈/숏 - 볼트/전기 */
-  bolt: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-    </svg>
-  ),
-  /** 인디케이터 - 차트바 */
-  chart: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-    </svg>
-  ),
-  /** FPY - 트렌드 상승 */
-  trending: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
-    </svg>
-  ),
-  /** 설비 - 렌치 */
-  wrench: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17l-5.1 5.1a2.121 2.121 0 01-3-3l5.1-5.1m0 0L15 4.5a3.5 3.5 0 014.95 4.95l-7.53 5.72z" />
-    </svg>
-  ),
-  /** 종합분석 - 클립보드 체크 */
-  clipboard: (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-    </svg>
-  ),
-};
+const SHORTCUTS = [
+  { href: "/monitoring/repeatability", label: "반복성", color: "#ef4444" },
+  { href: "/monitoring/non-consecutive", label: "비연속", color: "#f97316" },
+  { href: "/monitoring/accident", label: "사고성", color: "#eab308" },
+  { href: "/monitoring/material", label: "원자재", color: "#a855f7" },
+  { href: "/monitoring/open-short", label: "Open/Short", color: "#06b6d4" },
+  { href: "/monitoring/indicator", label: "지표", color: "#10b981" },
+  { href: "/monitoring/fpy", label: "직행율", color: "#14b8a6" },
+  { href: "/monitoring/equipment", label: "설비이상", color: "#64748b" },
+  { href: "/monitoring/repair-status", label: "수리상태", color: "#f43f5e" },
+  { href: "/monitoring/equipment-history", label: "설비이력", color: "#6366f1" },
+  { href: "/monitoring/quality-dashboard", label: "품질분석", color: "#0ea5e9" },
+  { href: "/monitoring/analysis", label: "종합분석", color: "#3b82f6" },
+];
 
-const ORB_CONFIGS = [
-  { w: 700, h: 700, top: "-10%", left: "5%", bg: "radial-gradient(circle, rgba(239,68,68,0.6), rgba(168,85,247,0.4), transparent 70%)", dur: "12s", kf: "aurora1" },
-  { w: 800, h: 800, top: "50%", left: "70%", bg: "radial-gradient(circle, rgba(59,130,246,0.55), rgba(16,185,129,0.4), transparent 70%)", dur: "15s", kf: "aurora2" },
-  { w: 600, h: 600, top: "25%", left: "40%", bg: "radial-gradient(circle, rgba(250,204,21,0.5), rgba(244,114,182,0.35), transparent 70%)", dur: "10s", kf: "aurora3" },
+const GRADES = [
+  { grade: "A", label: "Line Stop", desc: "즉시 라인 정지", color: "#ef4444", pulse: true },
+  { grade: "B", label: "Ship Hold", desc: "출하 중지", color: "#f97316", pulse: false },
+  { grade: "C", label: "Improve", desc: "불량 개선", color: "#a855f7", pulse: false },
 ];
 
 export default function Home() {
   const { t } = useLocale();
+  const [time, setTime] = useState("");
+  const [mounted, setMounted] = useState(false);
 
-  const MENU_ITEMS = [
-    {
-      href: "/monitoring/repeatability",
-      title: t("nav.repeatability") as string,
-      description: t("pages.home.repeatDesc") as string,
-      icon: Icons.repeat,
-      accent: "border-red-500 hover:bg-red-950/40",
-      badge: t("grade.a") as string,
-      badgeColor: "bg-red-600",
-    },
-    {
-      href: "/monitoring/non-consecutive",
-      title: t("nav.nonConsecutive") as string,
-      description: t("pages.home.nonConsDesc") as string,
-      icon: Icons.unlink,
-      accent: "border-orange-500 hover:bg-orange-950/40",
-      badge: t("grade.b") as string,
-      badgeColor: "bg-orange-600",
-    },
-    {
-      href: "/monitoring/accident",
-      title: t("nav.accident") as string,
-      description: t("pages.home.accidentDesc") as string,
-      icon: Icons.warning,
-      accent: "border-yellow-500 hover:bg-yellow-950/40",
-      badge: `${t("grade.a") as string}/${t("grade.b") as string}`,
-      badgeColor: "bg-yellow-600",
-    },
-    {
-      href: "/monitoring/material",
-      title: t("nav.material") as string,
-      description: t("pages.home.materialDesc") as string,
-      icon: Icons.cube,
-      accent: "border-purple-500 hover:bg-purple-950/40",
-      badge: `${t("grade.a") as string}/${t("grade.c") as string}`,
-      badgeColor: "bg-purple-600",
-    },
-    {
-      href: "/monitoring/open-short",
-      title: t("nav.openShort") as string,
-      description: t("pages.home.openShortDesc") as string,
-      icon: Icons.bolt,
-      accent: "border-cyan-500 hover:bg-cyan-950/40",
-      badge: t("grade.b") as string,
-      badgeColor: "bg-cyan-600",
-    },
-    {
-      href: "/monitoring/indicator",
-      title: t("nav.indicator") as string,
-      description: t("pages.home.indicatorDesc") as string,
-      icon: Icons.chart,
-      accent: "border-emerald-500 hover:bg-emerald-950/40",
-      badge: t("grade.c") as string,
-      badgeColor: "bg-emerald-600",
-    },
-    {
-      href: "/monitoring/fpy",
-      title: t("nav.fpy") as string,
-      description: t("pages.home.fpyDesc") as string,
-      icon: Icons.trending,
-      accent: "border-teal-500 hover:bg-teal-950/40",
-      badge: t("grade.a") as string,
-      badgeColor: "bg-teal-600",
-    },
-    {
-      href: "/monitoring/equipment",
-      title: t("nav.equipment") as string,
-      description: t("pages.home.equipmentDesc") as string,
-      icon: Icons.wrench,
-      accent: "border-slate-500 hover:bg-slate-950/40",
-      badge: t("grade.c") as string,
-      badgeColor: "bg-slate-600",
-    },
-    {
-      href: "/monitoring/repair-status",
-      title: t("nav.repairStatus") as string,
-      description: t("pages.home.repairStatusDesc") as string,
-      icon: Icons.wrench,
-      accent: "border-rose-500 hover:bg-rose-950/40",
-      badge: "-",
-      badgeColor: "bg-rose-600",
-    },
-    {
-      href: "/monitoring/equipment-history",
-      title: t("nav.equipmentHistory") as string,
-      description: t("pages.home.equipmentHistoryDesc") as string,
-      icon: Icons.clipboard,
-      accent: "border-indigo-500 hover:bg-indigo-950/40",
-      badge: "-",
-      badgeColor: "bg-indigo-600",
-    },
-    {
-      href: "/monitoring/quality-dashboard",
-      title: t("nav.qualityDashboard") as string,
-      description: "공정별/불량코드/라인별/모델별/시간대별 품질 분석 차트 대시보드",
-      icon: Icons.chart,
-      accent: "border-sky-500 hover:bg-sky-950/40",
-      badge: "-",
-      badgeColor: "bg-sky-600",
-    },
-    {
-      href: "/monitoring/analysis",
-      title: t("nav.analysis") as string,
-      description: t("pages.home.analysisDesc") as string,
-      icon: Icons.clipboard,
-      accent: "border-blue-500 hover:bg-blue-950/40",
-      badge: "ALL",
-      badgeColor: "bg-blue-600",
-    },
-  ];
+  useEffect(() => {
+    setMounted(true);
+    const tick = () => {
+      const now = new Date();
+      const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+      const vn = new Date(utc + 7 * 3600000);
+      setTime(vn.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-8"
-      style={{ position: "relative", overflow: "hidden" }}
-    >
-      {/* 키프레임 정의 */}
+    <div className="h-screen flex flex-col bg-[#060a10] text-white overflow-hidden" style={{ position: "relative" }}>
       <style>{`
-        @keyframes aurora1 {
-          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.6; }
-          33% { transform: translate(120px, -100px) scale(1.4); opacity: 0.9; }
-          66% { transform: translate(-80px, 60px) scale(0.9); opacity: 0.5; }
-        }
-        @keyframes aurora2 {
-          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.55; }
-          33% { transform: translate(-110px, 80px) scale(1.3); opacity: 0.85; }
-          66% { transform: translate(90px, -50px) scale(0.85); opacity: 0.4; }
-        }
-        @keyframes aurora3 {
-          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
-          50% { transform: translate(60px, 80px) scale(1.5); opacity: 0.8; }
-        }
-        @keyframes sweep {
-          0% { transform: translateX(-100%) rotate(-15deg); }
-          100% { transform: translateX(300%) rotate(-15deg); }
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@300;400;700&display=swap');
+        .font-orbitron { font-family: 'Orbitron', monospace; }
+        .font-noto { font-family: 'Noto Sans KR', sans-serif; }
+        @keyframes gridScroll { 0% { transform: translateY(0); } 100% { transform: translateY(40px); } }
+        @keyframes scanline { 0% { top: -4px; } 100% { top: 100%; } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes glow { 0%, 100% { box-shadow: 0 0 8px var(--c), 0 0 20px var(--c); } 50% { box-shadow: 0 0 16px var(--c), 0 0 40px var(--c); } }
+        .grade-pulse { animation: glow 2s ease-in-out infinite; }
+        .fade-in { animation: fadeInUp 0.6s ease-out both; }
+        .sc-link { transition: all 0.2s; }
+        .sc-link:hover { transform: translateY(-2px); background: rgba(255,255,255,0.08); }
       `}</style>
 
-      {/* 오로라 구체들 */}
-      {ORB_CONFIGS.map((orb, i) => (
-        <div
-          key={i}
-          style={{
-            position: "absolute",
-            width: orb.w,
-            height: orb.h,
-            top: orb.top,
-            left: orb.left,
-            borderRadius: "50%",
-            background: orb.bg,
-            filter: "blur(100px)",
-            pointerEvents: "none",
-            animation: `${orb.kf} ${orb.dur} ease-in-out infinite`,
-          }}
-        />
-      ))}
+      {/* 배경 그리드 */}
+      <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", opacity: 0.04 }}>
+        <div style={{
+          position: "absolute", inset: "-40px",
+          backgroundImage: "linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+          animation: "gridScroll 4s linear infinite",
+        }} />
+      </div>
 
-      {/* 스포트라이트 빛줄기 */}
+      {/* 스캔라인 */}
       <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
-        <div
-          style={{
-            position: "absolute",
-            top: "-50%",
-            width: "25%",
-            height: "200%",
-            background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.06), rgba(255,255,255,0.12), rgba(255,255,255,0.06), transparent)",
-            animation: "sweep 6s ease-in-out infinite",
-          }}
-        />
+        <div style={{
+          position: "absolute", left: 0, right: 0, height: "4px",
+          background: "linear-gradient(180deg, transparent, rgba(59,130,246,0.08), transparent)",
+          animation: "scanline 3s linear infinite",
+        }} />
       </div>
 
-      <div className="absolute top-4 right-4" style={{ zIndex: 10 }}>
-        <LanguageSelector />
-      </div>
-      <div className="text-center mb-6" style={{ position: "relative", zIndex: 10 }}>
-        <h1
-          className="text-4xl font-bold mb-2 bg-clip-text text-transparent"
-          style={{ backgroundImage: "linear-gradient(to right, #f87171, #facc15, #4ade80, #60a5fa, #a78bfa, #f472b6)" }}
-        >
-          {t("common.ctqMonitoring") as string}
-        </h1>
-        <p className="text-gray-400 text-sm">{t("common.qualitySystem") as string}</p>
+      {/* 상단 바 */}
+      <div className="shrink-0 border-b border-gray-800/60 px-6 py-3 flex items-center justify-between" style={{ position: "relative", zIndex: 10 }}>
+        <div className="flex items-center gap-4">
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          <span className="font-orbitron text-[10px] text-gray-500 tracking-[0.3em] uppercase">System Online</span>
+        </div>
+        <div className="flex items-center gap-6">
+          <span className="font-orbitron text-xs text-gray-400 tracking-wider">
+            VN UTC+7 {mounted ? time : "--:--:--"}
+          </span>
+          <LanguageSelector />
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 max-w-[1400px] w-full" style={{ position: "relative", zIndex: 10 }}>
-        {MENU_ITEMS.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`group block rounded-lg border-2 bg-gray-900/70 backdrop-blur-sm p-3 transition-all duration-200 ${item.accent} hover:scale-[1.02] hover:shadow-lg hover:shadow-black/40`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-300 group-hover:text-white transition-colors">{item.icon}</span>
-              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold text-white ${item.badgeColor}`}>
-                {item.badge}
-              </span>
+      {/* 메인 컨텐츠 */}
+      <div className="flex-1 flex flex-col items-center justify-center px-8" style={{ position: "relative", zIndex: 10 }}>
+        {/* 시스템 타이틀 */}
+        <div className="text-center fade-in" style={{ animationDelay: "0.1s" }}>
+          <div className="font-orbitron text-[10px] text-blue-400/60 tracking-[0.5em] uppercase mb-4">
+            Solum Vietnam Manufacturing
+          </div>
+          <h1 className="font-orbitron text-4xl md:text-5xl font-black tracking-tight mb-3"
+            style={{ background: "linear-gradient(135deg, #e2e8f0 0%, #60a5fa 50%, #e2e8f0 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            CTQ MONITORING
+          </h1>
+          <p className="font-noto text-sm text-gray-500 font-light tracking-wide">
+            {t("common.qualitySystem") as string}
+          </p>
+        </div>
+
+        {/* 등급 체계 인디케이터 */}
+        <div className="flex items-center gap-8 mt-12 fade-in" style={{ animationDelay: "0.3s" }}>
+          {GRADES.map((g) => (
+            <div key={g.grade} className="flex flex-col items-center gap-3">
+              <div
+                className={`w-14 h-14 rounded-xl flex items-center justify-center border-2 ${g.pulse ? "grade-pulse" : ""}`}
+                style={{ borderColor: g.color, background: `${g.color}15`, "--c": g.color } as React.CSSProperties}
+              >
+                <span className="font-orbitron text-xl font-black" style={{ color: g.color }}>{g.grade}</span>
+              </div>
+              <div className="text-center">
+                <div className="font-orbitron text-[10px] font-bold tracking-wider" style={{ color: g.color }}>{g.label}</div>
+                <div className="font-noto text-[10px] text-gray-500 mt-0.5">{g.desc}</div>
+              </div>
             </div>
-            <h2 className="text-sm font-bold mb-1 group-hover:text-white text-gray-100">
-              {item.title}
-            </h2>
-            <p className="text-xs text-gray-400 leading-snug line-clamp-2">
-              {item.description}
-            </p>
-          </Link>
-        ))}
+          ))}
+        </div>
+
+        {/* 공정 흐름 다이어그램 */}
+        <div className="flex items-center gap-1 mt-12 fade-in" style={{ animationDelay: "0.5s" }}>
+          {["ICT", "Hi-Pot", "FT", "Burn-In", "ATE", "IMAGE", "SET"].map((proc, i) => (
+            <div key={proc} className="flex items-center">
+              <div className="px-3 py-1.5 rounded border border-gray-700/50 bg-gray-900/40 backdrop-blur">
+                <span className="font-orbitron text-[9px] text-gray-400 tracking-wider">{proc}</span>
+              </div>
+              {i < 6 && (
+                <svg className="w-4 h-4 text-gray-700 mx-0.5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 하단 바로가기 */}
+      <div className="shrink-0 border-t border-gray-800/60 px-4 py-3 fade-in" style={{ position: "relative", zIndex: 10, animationDelay: "0.7s" }}>
+        <div className="flex items-center gap-1 justify-center flex-wrap max-w-[1400px] mx-auto">
+          {SHORTCUTS.map((s) => (
+            <Link key={s.href} href={s.href}
+              className="sc-link flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-gray-800/50 bg-gray-900/30 backdrop-blur group">
+              <div className="w-1.5 h-1.5 rounded-full shrink-0 opacity-60 group-hover:opacity-100 transition-opacity"
+                style={{ backgroundColor: s.color }} />
+              <span className="font-noto text-[11px] text-gray-400 group-hover:text-gray-200 whitespace-nowrap transition-colors">
+                {s.label}
+              </span>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );
