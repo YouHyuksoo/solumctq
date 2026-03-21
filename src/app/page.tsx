@@ -142,8 +142,15 @@ export default function Home() {
           ))}
         </div>
 
+        {/* 들어가기 버튼 */}
+        <Link href="/monitoring"
+          className="mt-10 px-8 py-3 rounded-lg border border-blue-500/50 bg-blue-600/10 hover:bg-blue-600/30 text-blue-400 hover:text-white font-orbitron text-sm tracking-wider transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/20 fade-in"
+          style={{ animationDelay: "0.5s" }}>
+          ENTER MONITORING
+        </Link>
+
         {/* 공정 흐름 다이어그램 */}
-        <div className="flex items-center gap-1 mt-12 fade-in" style={{ animationDelay: "0.5s" }}>
+        <div className="flex items-center gap-1 mt-8 fade-in" style={{ animationDelay: "0.6s" }}>
           {["ICT", "Hi-Pot", "FT", "Burn-In", "ATE", "IMAGE", "SET"].map((proc, i) => (
             <div key={proc} className="flex items-center">
               <div className="px-3 py-1.5 rounded border border-gray-700/50 bg-gray-900/40 backdrop-blur">
