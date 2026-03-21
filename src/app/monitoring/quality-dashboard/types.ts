@@ -3,27 +3,15 @@
  * @description 품질 분석 대시보드 타입 정의
  *
  * 초보자 가이드:
- * 1. IP_PRODUCT_WORK_QC 데이터를 다양한 차트 형태로 집계한 결과
- * 2. 공정별/불량코드별/라인별/모델별/시간대별 집계 + 수리완료율
+ * 1. 10종 차트 데이터 + 요약 + 수리율
+ * 2. 사이드바 설정: 레이아웃/높이/팔레트/10종 토글
  */
 
-export interface ChartItem {
-  name: string;
-  count: number;
-}
+export interface ChartItem { name: string; count: number; }
 
-export interface RepairStats {
-  total: number;
-  repaired: number;
-  pending: number;
-}
+export interface RepairStats { total: number; repaired: number; pending: number; }
 
-export interface SummaryData {
-  totalDefects: number;
-  repairRate: number;
-  topProcess: string;
-  topBadCode: string;
-}
+export interface SummaryData { totalDefects: number; repairRate: number; topProcess: string; topBadCode: string; }
 
 export interface QualityDashboardResponse {
   process: ChartItem[];
@@ -32,6 +20,10 @@ export interface QualityDashboardResponse {
   model: ChartItem[];
   hourly: ChartItem[];
   repair: RepairStats;
+  defectItem: ChartItem[];
+  location: ChartItem[];
+  repairWorkstage: ChartItem[];
+  receipt: ChartItem[];
   summary: SummaryData;
   lastUpdated: string;
 }
@@ -46,6 +38,10 @@ export interface DashboardSettings {
   showRepair: boolean;
   showHourly: boolean;
   showModel: boolean;
+  showDefectItem: boolean;
+  showLocation: boolean;
+  showRepairWorkstage: boolean;
+  showReceipt: boolean;
   showSummary: boolean;
 }
 
@@ -59,6 +55,10 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   showRepair: true,
   showHourly: true,
   showModel: true,
+  showDefectItem: false,
+  showLocation: false,
+  showRepairWorkstage: false,
+  showReceipt: false,
   showSummary: true,
 };
 

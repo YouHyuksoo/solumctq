@@ -1,9 +1,9 @@
 /**
  * @file src/app/monitoring/quality-dashboard/components/DashboardSidebar.tsx
- * @description 대시보드 사이드바 — 차트 설정 컨트롤 패널
+ * @description 대시보드 사이드바 — 차트 설정 컨트롤 패널 (10종 차트 토글)
  *
  * 초보자 가이드:
- * 1. 레이아웃, 차트 높이, 색상 팔레트, 차트 토글 제어
+ * 1. 레이아웃, 차트 높이, 색상 팔레트, 10종 차트 토글 제어
  * 2. 프리셋으로 빠른 구성 전환
  */
 
@@ -14,9 +14,10 @@ import { DEFAULT_SETTINGS } from "../types";
 
 const PRESETS: Record<string, Partial<DashboardSettings>> = {
   default: { ...DEFAULT_SETTINGS },
-  manager: { layout: "2x2+1", chartHeight: 220, palette: "rainbow", showProcess: true, showBadCode: true, showLine: false, showRepair: true, showHourly: true, showModel: false, showSummary: true },
-  line: { layout: "2x3", chartHeight: 200, palette: "cool", showProcess: true, showBadCode: false, showLine: true, showRepair: false, showHourly: true, showModel: true, showSummary: true },
-  quality: { layout: "3x2", chartHeight: 180, palette: "warm", showProcess: true, showBadCode: true, showLine: true, showRepair: true, showHourly: false, showModel: false, showSummary: true },
+  manager: { layout: "2x2+1", chartHeight: 220, palette: "rainbow", showProcess: true, showBadCode: true, showLine: false, showRepair: true, showHourly: true, showModel: false, showDefectItem: false, showLocation: false, showRepairWorkstage: false, showReceipt: true, showSummary: true },
+  line: { layout: "2x3", chartHeight: 200, palette: "cool", showProcess: true, showBadCode: false, showLine: true, showRepair: false, showHourly: true, showModel: true, showDefectItem: false, showLocation: true, showRepairWorkstage: false, showReceipt: false, showSummary: true },
+  quality: { layout: "3x2", chartHeight: 180, palette: "warm", showProcess: true, showBadCode: true, showLine: true, showRepair: true, showHourly: false, showModel: false, showDefectItem: true, showLocation: false, showRepairWorkstage: true, showReceipt: false, showSummary: true },
+  all: { layout: "3x2", chartHeight: 160, palette: "blue", showProcess: true, showBadCode: true, showLine: true, showRepair: true, showHourly: true, showModel: true, showDefectItem: true, showLocation: true, showRepairWorkstage: true, showReceipt: true, showSummary: true },
 };
 
 interface Props {
@@ -44,7 +45,7 @@ export default function DashboardSidebar({ settings, onChange, onRefresh, loadin
       <div className="bg-gray-800/50 rounded-lg p-3">
         <label className="block text-[10px] text-gray-400 uppercase tracking-wide mb-2">프리셋</label>
         <div className="flex flex-wrap gap-1">
-          {Object.entries({ default: "기본", manager: "관리자", line: "라인분석", quality: "품질집중" }).map(([k, v]) => (
+          {Object.entries({ default: "기본", manager: "관리자", line: "라인", quality: "품질", all: "전체" }).map(([k, v]) => (
             <button key={k} onClick={() => set(PRESETS[k] as DashboardSettings)}
               className="px-2 py-1 text-[10px] border border-gray-600 rounded bg-gray-900 text-gray-400 hover:border-blue-500 hover:text-blue-400 transition-colors">
               {v}
@@ -57,8 +58,8 @@ export default function DashboardSidebar({ settings, onChange, onRefresh, loadin
         <label className="block text-[10px] text-gray-400 uppercase tracking-wide mb-2">레이아웃</label>
         <select value={settings.layout} onChange={e => set({ layout: e.target.value as DashboardSettings["layout"] })}
           className="w-full bg-gray-900 text-gray-200 border border-gray-600 rounded px-2 py-1 text-xs">
-          <option value="2x3">2열 x 3행</option>
-          <option value="3x2">3열 x 2행</option>
+          <option value="2x3">2열</option>
+          <option value="3x2">3열</option>
           <option value="2x2+1">2열 + 풀하단</option>
         </select>
       </div>
@@ -93,6 +94,10 @@ export default function DashboardSidebar({ settings, onChange, onRefresh, loadin
           ["showRepair", "수리완료율"],
           ["showModel", "모델별 불량"],
           ["showHourly", "시간대별 분포"],
+          ["showDefectItem", "불량부품 TOP10"],
+          ["showLocation", "불량위치 TOP10"],
+          ["showRepairWorkstage", "수리공정별"],
+          ["showReceipt", "입고구분별"],
         ] as [keyof DashboardSettings, string][]).map(([key, label]) => (
           <label key={key} className="flex items-center gap-2 mt-1 cursor-pointer">
             <input type="checkbox" checked={settings[key] as boolean}
