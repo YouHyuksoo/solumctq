@@ -200,7 +200,7 @@ export default function AmbientCharts({ side }: Props) {
   });
 
   return (
-    <div className={`absolute top-0 bottom-0 w-[220px] ${side === "left" ? "left-0" : "right-0"} pointer-events-none overflow-hidden`}
+    <div className={`absolute top-[20%] bottom-[20%] w-[220px] ${side === "left" ? "left-0" : "right-0"} pointer-events-none overflow-hidden`}
       style={{ zIndex: 1, opacity: 0.6,
         mask: `linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%), ${side === "left"
           ? "linear-gradient(to right, black 30%, transparent 100%)"
