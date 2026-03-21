@@ -1,25 +1,24 @@
 /**
  * @file src/app/components/AmbientCharts.tsx
- * @description 랜딩 페이지 좌우 흐릿한 순환 차트 애니메이션
+ * @description 랜딩 페이지 좌우 순환 차트/모니터링 화면 애니메이션
  *
  * 초보자 가이드:
- * 1. SVG 기반 가짜 차트 (막대/꺾은선/도넛/영역) 4종 순환
- * 2. 흐릿하게 + 낮은 투명도로 배경 분위기 연출
- * 3. side="left"|"right"로 좌우 배치
+ * 1. left: 분석 차트 (막대/꺾은선/도넛/영역) 순환
+ * 2. right: 모니터링 화면 (라인상태/테이블/게이지/FPY) 순환
  */
 
 "use client";
 
 import { useState, useEffect } from "react";
 
-const COLORS = ["#3b82f6", "#60a5fa", "#4ade80", "#f87171", "#a78bfa", "#facc15", "#38bdf8"];
+const C = ["#3b82f6", "#60a5fa", "#4ade80", "#f87171", "#a78bfa", "#facc15", "#38bdf8"];
 
 function BarChart({ seed }: { seed: number }) {
   const bars = Array.from({ length: 7 }, (_, i) => 20 + ((seed * 17 + i * 31) % 60));
   return (
     <svg viewBox="0 0 160 100" className="w-full h-full">
       {bars.map((h, i) => (
-        <rect key={i} x={6 + i * 22} y={100 - h} width={16} height={h} rx={2} fill={COLORS[i]} opacity={0.7}>
+        <rect key={i} x={6 + i * 22} y={100 - h} width={16} height={h} rx={2} fill={C[i]} opacity={0.7}>
           <animate attributeName="height" values={`${h};${h * 0.6};${h};${h * 1.2};${h}`} dur={`${3 + i * 0.4}s`} repeatCount="indefinite" />
           <animate attributeName="y" values={`${100 - h};${100 - h * 0.6};${100 - h};${100 - h * 1.2};${100 - h}`} dur={`${3 + i * 0.4}s`} repeatCount="indefinite" />
         </rect>
@@ -34,15 +33,9 @@ function LineChart({ seed }: { seed: number }) {
   const area = `${path} L${pts[pts.length - 1].x},95 L${pts[0].x},95 Z`;
   return (
     <svg viewBox="0 0 160 100" className="w-full h-full">
-      <path d={area} fill={COLORS[seed % COLORS.length]} opacity={0.15} />
-      <path d={path} fill="none" stroke={COLORS[seed % COLORS.length]} strokeWidth={2} opacity={0.8}>
-        <animate attributeName="d" values={`${path};${pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${Math.max(10, p.y + ((i * 7 + seed) % 20) - 10)}`).join(" ")};${path}`} dur="5s" repeatCount="indefinite" />
-      </path>
-      {pts.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r={2.5} fill={COLORS[seed % COLORS.length]} opacity={0.9}>
-          <animate attributeName="cy" values={`${p.y};${Math.max(10, p.y + ((i * 7 + seed) % 20) - 10)};${p.y}`} dur="5s" repeatCount="indefinite" />
-        </circle>
-      ))}
+      <path d={area} fill={C[seed % C.length]} opacity={0.15} />
+      <path d={path} fill="none" stroke={C[seed % C.length]} strokeWidth={2} opacity={0.8} />
+      {pts.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={2.5} fill={C[seed % C.length]} opacity={0.9} />)}
     </svg>
   );
 }
@@ -58,42 +51,145 @@ function DonutChart({ seed }: { seed: number }) {
         const start = (acc / total) * Math.PI * 2 - Math.PI / 2;
         acc += v;
         const end = (acc / total) * Math.PI * 2 - Math.PI / 2;
-        const large = (v / total) > 0.5 ? 1 : 0;
-        const d = `M${cx + r * Math.cos(start)},${cy + r * Math.sin(start)} A${r},${r} 0 ${large} 1 ${cx + r * Math.cos(end)},${cy + r * Math.sin(end)} L${cx + inner * Math.cos(end)},${cy + inner * Math.sin(end)} A${inner},${inner} 0 ${large} 0 ${cx + inner * Math.cos(start)},${cy + inner * Math.sin(start)} Z`;
-        return <path key={i} d={d} fill={COLORS[(seed + i) % COLORS.length]} opacity={0.7} />;
+        const lg = (v / total) > 0.5 ? 1 : 0;
+        return <path key={i} d={`M${cx + r * Math.cos(start)},${cy + r * Math.sin(start)} A${r},${r} 0 ${lg} 1 ${cx + r * Math.cos(end)},${cy + r * Math.sin(end)} L${cx + inner * Math.cos(end)},${cy + inner * Math.sin(end)} A${inner},${inner} 0 ${lg} 0 ${cx + inner * Math.cos(start)},${cy + inner * Math.sin(start)} Z`} fill={C[(seed + i) % C.length]} opacity={0.7} />;
       })}
-      <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="middle" fill="#e2e8f0" fontSize={11} fontFamily="Orbitron" opacity={0.6}>
-        {Math.round(vals[0] / total * 100)}%
-      </text>
+      <text x={cx} y={cy + 1} textAnchor="middle" dominantBaseline="middle" fill="#e2e8f0" fontSize={11} fontFamily="monospace" opacity={0.6}>{Math.round(vals[0] / total * 100)}%</text>
     </svg>
   );
 }
 
 function AreaStacked({ seed }: { seed: number }) {
-  const n = 8;
+  const n = 8, xS = 160 / (n - 1);
   const s1 = Array.from({ length: n }, (_, i) => 30 + ((seed * 19 + i * 13) % 30));
   const s2 = Array.from({ length: n }, (_, i) => s1[i] + 10 + ((seed * 7 + i * 11) % 20));
-  const xStep = 160 / (n - 1);
-  const mkPath = (arr: number[]) => arr.map((y, i) => `${i === 0 ? "M" : "L"}${i * xStep},${100 - y}`).join(" ");
-  const mkArea = (arr: number[]) => `${mkPath(arr)} L${(n - 1) * xStep},100 L0,100 Z`;
+  const mk = (a: number[]) => a.map((y, i) => `${i === 0 ? "M" : "L"}${i * xS},${100 - y}`).join(" ");
+  const mkA = (a: number[]) => `${mk(a)} L${(n - 1) * xS},100 L0,100 Z`;
   return (
     <svg viewBox="0 0 160 100" className="w-full h-full">
-      <path d={mkArea(s2)} fill={COLORS[(seed + 2) % COLORS.length]} opacity={0.2} />
-      <path d={mkArea(s1)} fill={COLORS[(seed + 4) % COLORS.length]} opacity={0.25} />
-      <path d={mkPath(s1)} fill="none" stroke={COLORS[(seed + 4) % COLORS.length]} strokeWidth={1.5} opacity={0.6} />
-      <path d={mkPath(s2)} fill="none" stroke={COLORS[(seed + 2) % COLORS.length]} strokeWidth={1.5} opacity={0.6} />
+      <path d={mkA(s2)} fill={C[(seed + 2) % C.length]} opacity={0.2} />
+      <path d={mkA(s1)} fill={C[(seed + 4) % C.length]} opacity={0.25} />
+      <path d={mk(s1)} fill="none" stroke={C[(seed + 4) % C.length]} strokeWidth={1.5} opacity={0.6} />
     </svg>
   );
 }
 
-const CHART_TYPES = [BarChart, LineChart, DonutChart, AreaStacked];
+/* ── 오른쪽 전용: 모니터링 화면 스타일 ── */
 
-interface Props {
-  side: "left" | "right";
+function LineStatusPanel({ seed }: { seed: number }) {
+  const lines = ["L41", "L43", "L45", "L47", "L51", "L53"];
+  const statuses = lines.map((_, i) => (seed + i) % 5 === 0 ? "A" : (seed + i) % 7 === 0 ? "B" : "OK");
+  return (
+    <svg viewBox="0 0 160 100" className="w-full h-full">
+      <text x="4" y="10" fill="#64748b" fontSize="6" fontFamily="monospace">LINE STATUS</text>
+      {lines.map((l, i) => {
+        const y = 18 + i * 13;
+        const st = statuses[i];
+        const col = st === "A" ? "#ef4444" : st === "B" ? "#f97316" : "#4ade80";
+        return (
+          <g key={i}>
+            <text x="6" y={y + 7} fill="#94a3b8" fontSize="7" fontFamily="monospace">{l}</text>
+            <rect x="30" y={y} width={80 + ((seed + i) * 7 % 40)} height={9} rx={1} fill={col} opacity={0.25} />
+            <rect x="30" y={y} width={60 + ((seed + i) * 11 % 50)} height={9} rx={1} fill={col} opacity={0.5}>
+              <animate attributeName="width" values={`${60 + ((seed + i) * 11 % 50)};${50 + ((seed + i) * 13 % 40)};${60 + ((seed + i) * 11 % 50)}`} dur={`${3 + i * 0.3}s`} repeatCount="indefinite" />
+            </rect>
+            <circle cx="145" cy={y + 4.5} r="3" fill={col} opacity={0.8}>
+              {st === "A" && <animate attributeName="opacity" values="0.8;0.3;0.8" dur="1s" repeatCount="indefinite" />}
+            </circle>
+          </g>
+        );
+      })}
+    </svg>
+  );
 }
+
+function DataTable({ seed }: { seed: number }) {
+  const procs = ["ICT", "HIPOT", "FT", "BURN", "ATE"];
+  return (
+    <svg viewBox="0 0 160 100" className="w-full h-full">
+      <text x="4" y="10" fill="#64748b" fontSize="6" fontFamily="monospace">PROCESS NG COUNT</text>
+      <rect x="2" y="15" width="156" height="12" rx="1" fill="#1e3a5f" opacity="0.3" />
+      <text x="6" y="24" fill="#60a5fa" fontSize="6.5" fontFamily="monospace">PROC</text>
+      <text x="50" y="24" fill="#60a5fa" fontSize="6.5" fontFamily="monospace">TOTAL</text>
+      <text x="90" y="24" fill="#60a5fa" fontSize="6.5" fontFamily="monospace">NG</text>
+      <text x="120" y="24" fill="#60a5fa" fontSize="6.5" fontFamily="monospace">FPY%</text>
+      {procs.map((p, i) => {
+        const y = 32 + i * 13;
+        const total = 2000 + ((seed + i) * 137 % 3000);
+        const ng = ((seed + i) * 7 % 30);
+        const fpy = (100 - ng / total * 100).toFixed(1);
+        return (
+          <g key={i}>
+            {i % 2 === 0 && <rect x="2" y={y - 3} width="156" height="12" fill="#0f172a" opacity="0.3" />}
+            <text x="6" y={y + 6} fill="#cbd5e1" fontSize="6.5" fontFamily="monospace">{p}</text>
+            <text x="50" y={y + 6} fill="#94a3b8" fontSize="6.5" fontFamily="monospace">{total}</text>
+            <text x="90" y={y + 6} fill={ng > 15 ? "#f87171" : "#4ade80"} fontSize="6.5" fontFamily="monospace">{ng}</text>
+            <text x="120" y={y + 6} fill="#94a3b8" fontSize="6.5" fontFamily="monospace">{fpy}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function GaugePanel({ seed }: { seed: number }) {
+  const fpy = 90 + (seed * 3 % 10);
+  const angle = (fpy / 100) * 180;
+  const rad = (a: number) => (a - 180) * Math.PI / 180;
+  const cx = 80, cy = 60, r = 40;
+  return (
+    <svg viewBox="0 0 160 100" className="w-full h-full">
+      <text x="80" y="12" textAnchor="middle" fill="#64748b" fontSize="6" fontFamily="monospace">DAILY FPY</text>
+      <path d={`M${cx - r},${cy} A${r},${r} 0 0 1 ${cx + r},${cy}`} fill="none" stroke="#1e3a5f" strokeWidth="8" />
+      <path d={`M${cx - r},${cy} A${r},${r} 0 0 1 ${cx + r * Math.cos(rad(angle))},${cy + r * Math.sin(rad(angle))}`} fill="none" stroke={fpy >= 95 ? "#4ade80" : fpy >= 90 ? "#facc15" : "#f87171"} strokeWidth="8" strokeLinecap="round">
+        <animate attributeName="stroke-dashoffset" from="200" to="0" dur="1.5s" fill="freeze" />
+      </path>
+      <text x={cx} y={cy + 5} textAnchor="middle" fill="#e2e8f0" fontSize="16" fontFamily="monospace" fontWeight="bold">{fpy}%</text>
+      <text x={cx} y={cy + 15} textAnchor="middle" fill="#64748b" fontSize="6" fontFamily="monospace">TARGET: 95%</text>
+      <text x={cx - r + 4} y={cy + 12} fill="#475569" fontSize="5" fontFamily="monospace">0</text>
+      <text x={cx + r - 8} y={cy + 12} fill="#475569" fontSize="5" fontFamily="monospace">100</text>
+    </svg>
+  );
+}
+
+function AlertPanel({ seed }: { seed: number }) {
+  const alerts = [
+    { line: "L47", proc: "HIPOT", grade: "A", time: "14:32" },
+    { line: "L53", proc: "FT", grade: "B", time: "13:15" },
+    { line: "L61", proc: "ATE", grade: "C", time: "11:48" },
+    { line: "L45", proc: "ICT", grade: "B", time: "10:22" },
+  ];
+  const shifted = alerts.map((_, i) => alerts[(i + seed) % alerts.length]);
+  return (
+    <svg viewBox="0 0 160 100" className="w-full h-full">
+      <text x="4" y="10" fill="#64748b" fontSize="6" fontFamily="monospace">RECENT ALERTS</text>
+      {shifted.map((a, i) => {
+        const y = 18 + i * 20;
+        const col = a.grade === "A" ? "#ef4444" : a.grade === "B" ? "#f97316" : "#a855f7";
+        return (
+          <g key={i}>
+            <rect x="2" y={y} width="156" height="16" rx="2" fill={col} opacity={0.08} stroke={col} strokeWidth="0.5" strokeOpacity="0.3" />
+            <circle cx="10" cy={y + 8} r="2.5" fill={col} opacity={0.8}>
+              {a.grade === "A" && <animate attributeName="opacity" values="0.8;0.3;0.8" dur="1s" repeatCount="indefinite" />}
+            </circle>
+            <text x="18" y={y + 10} fill={col} fontSize="7" fontFamily="monospace" fontWeight="bold">{a.grade}</text>
+            <text x="30" y={y + 10} fill="#cbd5e1" fontSize="6.5" fontFamily="monospace">{a.line} {a.proc}</text>
+            <text x="140" y={y + 10} fill="#475569" fontSize="6" fontFamily="monospace" textAnchor="end">{a.time}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+const LEFT_TYPES = [BarChart, LineChart, DonutChart, AreaStacked];
+const RIGHT_TYPES = [LineStatusPanel, DataTable, GaugePanel, AlertPanel];
+
+interface Props { side: "left" | "right"; }
 
 export default function AmbientCharts({ side }: Props) {
   const [phase, setPhase] = useState(side === "left" ? 0 : 2);
+  const types = side === "left" ? LEFT_TYPES : RIGHT_TYPES;
 
   useEffect(() => {
     const id = setInterval(() => setPhase(p => (p + 1) % 12), 4000);
@@ -101,8 +197,8 @@ export default function AmbientCharts({ side }: Props) {
   }, []);
 
   const charts = [0, 1, 2].map(offset => {
-    const idx = (phase + offset) % CHART_TYPES.length;
-    const Chart = CHART_TYPES[idx];
+    const idx = (phase + offset) % types.length;
+    const Chart = types[idx];
     const seed = phase * 3 + offset + (side === "right" ? 50 : 0);
     return { Chart, seed, offset };
   });
