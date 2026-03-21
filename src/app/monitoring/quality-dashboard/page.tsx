@@ -1,20 +1,21 @@
 /**
  * @file src/app/monitoring/quality-dashboard/page.tsx
- * @description 품질 분석 대시보드 페이지 — 사이드바 설정 + 다차원 차트
+ * @description 품질 분석 대시보드 페이지 — 사이드바 설정 + QC/RAW 차트 통합
  *
  * 초보자 가이드:
- * 1. 왼쪽 사이드바: 차트 구성 설정 (레이아웃/높이/팔레트/토글)
- * 2. 오른쪽: Recharts 기반 6종 차트 + 요약 카드
+ * 1. 왼쪽 사이드바: 차트 구성 설정 (레이아웃/높이/팔레트/17종 토글)
+ * 2. 오른쪽: QC 테이블 차트 + RAW 테이블 인사이트 차트
  * 3. h-screen flex 레이아웃 — 차트 영역만 스크롤
  */
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useLineFilter } from "../contexts/LineFilterContext";
 import { useQualityDashboard } from "./hooks/useQualityDashboard";
 import DashboardSidebar from "./components/DashboardSidebar";
 import DashboardCharts from "./components/DashboardCharts";
+import RawInsightCharts from "./components/RawInsightCharts";
 import MonitoringNav from "../components/MonitoringNav";
 import HeaderActions from "../components/HeaderActions";
 import LineSelectButton from "../components/LineSelectButton";
@@ -26,7 +27,7 @@ import { DEFAULT_SETTINGS } from "./types";
 export default function QualityDashboardPage() {
   const { t, dateLocale } = useLocale();
   const { selectedLines } = useLineFilter();
-  const { data, error, loading, fetchData } = useQualityDashboard(selectedLines);
+  const { data, rawData, error, loading, fetchData } = useQualityDashboard(selectedLines);
   const [settings, setSettings] = usePersistedState<DashboardSettings>("quality-dashboard-settings", DEFAULT_SETTINGS);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -67,7 +68,9 @@ export default function QualityDashboardPage() {
             {t("common.dataLoading") as string}
           </div>
         )}
-        {data && <DashboardCharts data={data} settings={settings} />}
+        {data && (
+          <DashboardCharts data={data} settings={settings} rawData={rawData} />
+        )}
       </div>
     </div>
   );

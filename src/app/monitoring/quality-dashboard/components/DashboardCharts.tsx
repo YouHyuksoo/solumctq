@@ -13,12 +13,14 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, Legend,
 } from "recharts";
-import type { QualityDashboardResponse, DashboardSettings, ChartItem, FpyItem } from "../types";
+import type { QualityDashboardResponse, DashboardSettings, ChartItem, FpyItem, RawInsightsResponse } from "../types";
 import { PALETTES } from "../types";
+import RawInsightCharts from "./RawInsightCharts";
 
 interface Props {
   data: QualityDashboardResponse;
   settings: DashboardSettings;
+  rawData?: RawInsightsResponse | null;
 }
 
 function ChartCard({ title, children, fullWidth }: { title: string; children: React.ReactNode; fullWidth?: boolean }) {
@@ -55,7 +57,7 @@ function HorizontalBar({ data, h, colors }: { data: ChartItem[]; h: number; colo
   );
 }
 
-export default function DashboardCharts({ data, settings }: Props) {
+export default function DashboardCharts({ data, settings, rawData }: Props) {
   const colors = PALETTES[settings.palette] || PALETTES.blue;
   const h = settings.chartHeight;
   const gridCols = settings.layout === "3x2" ? "grid-cols-3" : "grid-cols-2";
@@ -168,6 +170,7 @@ export default function DashboardCharts({ data, settings }: Props) {
             </ChartCard>
           );
         })}
+        {rawData && <RawInsightCharts data={rawData} settings={settings} />}
       </div>
     </div>
   );

@@ -10,6 +10,20 @@
 export interface ChartItem { name: string; count: number; }
 export interface FpyItem { name: string; today: number; yesterday: number; todayTotal: number; yesterdayTotal: number; }
 
+export interface RetestItem { name: string; total: number; distinctPid: number; rate: number; }
+export interface NgMatrixItem { name: string; [proc: string]: string | number; }
+export interface WeeklyTrendItem { date: string; [proc: string]: string | number; }
+
+export interface RawInsightsResponse {
+  inspectionVolume: ChartItem[];
+  hourlyInspection: ChartItem[];
+  lineProduction: ChartItem[];
+  ngMatrix: NgMatrixItem[];
+  retestRate: RetestItem[];
+  weeklyTrend: WeeklyTrendItem[];
+  lastUpdated: string;
+}
+
 export interface RepairStats { total: number; repaired: number; pending: number; }
 
 export interface SummaryData { totalDefects: number; repairRate: number; topProcess: string; topBadCode: string; }
@@ -45,6 +59,12 @@ export interface DashboardSettings {
   showRepairWorkstage: boolean;
   showReceipt: boolean;
   showFpy: boolean;
+  showInspVolume: boolean;
+  showHourlyInsp: boolean;
+  showLineProd: boolean;
+  showNgMatrix: boolean;
+  showRetestRate: boolean;
+  showWeeklyTrend: boolean;
   showSummary: boolean;
 }
 
@@ -63,6 +83,12 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   showRepairWorkstage: false,
   showReceipt: false,
   showFpy: true,
+  showInspVolume: false,
+  showHourlyInsp: false,
+  showLineProd: false,
+  showNgMatrix: false,
+  showRetestRate: false,
+  showWeeklyTrend: false,
   showSummary: true,
 };
 

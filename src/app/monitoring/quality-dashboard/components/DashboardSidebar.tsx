@@ -17,7 +17,7 @@ const PRESETS: Record<string, Partial<DashboardSettings>> = {
   manager: { layout: "2x2+1", chartHeight: 220, palette: "rainbow", showProcess: true, showBadCode: true, showLine: false, showRepair: true, showHourly: true, showModel: false, showDefectItem: false, showLocation: false, showRepairWorkstage: false, showReceipt: true, showSummary: true },
   line: { layout: "2x3", chartHeight: 200, palette: "cool", showProcess: true, showBadCode: false, showLine: true, showRepair: false, showHourly: true, showModel: true, showDefectItem: false, showLocation: true, showRepairWorkstage: false, showReceipt: false, showSummary: true },
   quality: { layout: "3x2", chartHeight: 180, palette: "warm", showProcess: true, showBadCode: true, showLine: true, showRepair: true, showHourly: false, showModel: false, showDefectItem: true, showLocation: false, showRepairWorkstage: true, showReceipt: false, showSummary: true },
-  all: { layout: "3x2", chartHeight: 160, palette: "blue", showProcess: true, showBadCode: true, showLine: true, showRepair: true, showHourly: true, showModel: true, showDefectItem: true, showLocation: true, showRepairWorkstage: true, showReceipt: true, showFpy: true, showSummary: true },
+  all: { layout: "3x2", chartHeight: 160, palette: "blue", showProcess: true, showBadCode: true, showLine: true, showRepair: true, showHourly: true, showModel: true, showDefectItem: true, showLocation: true, showRepairWorkstage: true, showReceipt: true, showFpy: true, showInspVolume: true, showHourlyInsp: true, showLineProd: true, showNgMatrix: true, showRetestRate: true, showWeeklyTrend: true, showSummary: true },
 };
 
 interface Props {
@@ -99,6 +99,12 @@ export default function DashboardSidebar({ settings, onChange, onRefresh, loadin
           ["showRepairWorkstage", "수리공정별"],
           ["showReceipt", "입고구분별"],
           ["showFpy", "공정별 직행율"],
+          ["showInspVolume", "공정별 검사량"],
+          ["showHourlyInsp", "시간당 검사량"],
+          ["showLineProd", "라인별 생산량"],
+          ["showNgMatrix", "라인×공정 NG"],
+          ["showRetestRate", "재검사율"],
+          ["showWeeklyTrend", "주간 직행율 추이"],
         ] as [keyof DashboardSettings, string][]).map(([key, label]) => (
           <label key={key} className="flex items-center gap-2 mt-1 cursor-pointer">
             <input type="checkbox" checked={settings[key] as boolean}

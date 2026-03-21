@@ -1,19 +1,21 @@
 /**
  * @file src/app/monitoring/quality-dashboard/hooks/useQualityDashboard.ts
- * @description 품질 분석 대시보드 데이터 조회 훅
+ * @description 품질 분석 대시보드 데이터 조회 훅 — QC + RAW 병렬 조회
  *
  * 초보자 가이드:
- * 1. fetchData() 호출 시 API 1회 조회
- * 2. 자동 갱신 없음 (수동 새로고침)
+ * 1. /api/ctq/quality-dashboard — QC 테이블 집계
+ * 2. /api/ctq/quality-dashboard-raw — RAW 검사 테이블 집계
+ * 3. 두 API 병렬 호출
  */
 
 "use client";
 
 import { useState, useCallback } from "react";
-import type { QualityDashboardResponse } from "../types";
+import type { QualityDashboardResponse, RawInsightsResponse } from "../types";
 
 export function useQualityDashboard(selectedLines: string[]) {
   const [data, setData] = useState<QualityDashboardResponse | null>(null);
+  const [rawData, setRawData] = useState<RawInsightsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -25,10 +27,16 @@ export function useQualityDashboard(selectedLines: string[]) {
       if (selectedLines.length > 0) {
         params.set("lines", selectedLines.join(","));
       }
-      const res = await fetch(`/api/ctq/quality-dashboard?${params.toString()}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json: QualityDashboardResponse = await res.json();
-      setData(json);
+      const qs = params.toString();
+      const [qcRes, rawRes] = await Promise.all([
+        fetch(`/api/ctq/quality-dashboard?${qs}`),
+        fetch(`/api/ctq/quality-dashboard-raw?${qs}`),
+      ]);
+      if (!qcRes.ok) throw new Error(`QC API HTTP ${qcRes.status}`);
+      if (!rawRes.ok) throw new Error(`RAW API HTTP ${rawRes.status}`);
+      const [qcJson, rawJson] = await Promise.all([qcRes.json(), rawRes.json()]);
+      setData(qcJson);
+      setRawData(rawJson);
     } catch (err) {
       setError(String(err));
     } finally {
@@ -36,5 +44,5 @@ export function useQualityDashboard(selectedLines: string[]) {
     }
   }, [selectedLines]);
 
-  return { data, error, loading, fetchData };
+  return { data, rawData, error, loading, fetchData };
 }
