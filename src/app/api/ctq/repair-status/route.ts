@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
         AND t.LINE_CODE IS NOT NULL
         AND t.LINE_CODE <> '*'
         ${lineFilter.clause}
-      ORDER BY t.QC_DATE DESC
+      ORDER BY t.WORKSTAGE_CODE, t.RECEIPT_DEFICIT, t.QC_DATE DESC
       FETCH FIRST 500 ROWS ONLY
     `;
 

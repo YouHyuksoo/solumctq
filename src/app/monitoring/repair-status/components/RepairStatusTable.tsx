@@ -70,8 +70,10 @@ export default function RepairStatusTable({ rows }: Props) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, idx) => (
-            <tr key={idx} className="border-t border-gray-800 hover:bg-gray-800/30">
+          {rows.map((row, idx) => {
+            const isNewGroup = idx === 0 || rows[idx - 1].workstageName !== row.workstageName;
+            return (
+            <tr key={idx} className={`hover:bg-gray-800/30 ${isNewGroup ? "border-t-2 border-t-blue-600" : "border-t border-gray-800"}`}>
               <td className="px-3 py-1.5 text-center border border-gray-800 text-gray-300 whitespace-nowrap">
                 {row.qcDate}
               </td>
@@ -120,7 +122,8 @@ export default function RepairStatusTable({ rows }: Props) {
                 {row.handlingName}
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
