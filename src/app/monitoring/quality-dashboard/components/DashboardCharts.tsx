@@ -13,7 +13,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, Legend,
 } from "recharts";
-import type { QualityDashboardResponse, DashboardSettings, ChartItem } from "../types";
+import type { QualityDashboardResponse, DashboardSettings, ChartItem, FpyItem } from "../types";
 import { PALETTES } from "../types";
 
 interface Props {
@@ -101,6 +101,21 @@ export default function DashboardCharts({ data, settings }: Props) {
       el: <HorizontalBar data={data.location} h={h} colors={colors} /> },
     { key: "repairWs", show: settings.showRepairWorkstage, title: "수리공정별 불량",
       el: <VerticalBar data={data.repairWorkstage} h={h} colors={colors} /> },
+    { key: "fpy", show: settings.showFpy, title: "공정별 당일 직행율 (%)", el: (
+      <ResponsiveContainer width="100%" height={h}>
+        <BarChart data={data.fpy}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+          <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 10 }} />
+          <YAxis tick={{ fill: "#64748b", fontSize: 10 }} domain={[0, 100]} />
+          <Tooltip contentStyle={{ background: "#1e293b", border: "1px solid #334155", fontSize: 12 }} />
+          <Bar dataKey="count" name="직행율(%)">
+            {data.fpy.map((d, i) => (
+              <Cell key={i} fill={d.count < 90 ? "#f87171" : d.count < 95 ? "#facc15" : "#4ade80"} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    ) },
     { key: "receipt", show: settings.showReceipt, title: "입고구분별 불량", el: (() => {
       const pieData = data.receipt.map(r => ({ name: r.name, value: r.count }));
       return (

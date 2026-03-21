@@ -17,6 +17,15 @@ export const dynamic = "force-dynamic";
 interface CountRow { NAME: string; CNT: number; }
 interface RepairRow { TOTAL_CNT: number; REPAIRED_CNT: number; }
 interface HourRow { HR: string; CNT: number; }
+interface FpyRow { NAME: string; FPY: number; TOTAL: number; PASS: number; }
+
+const FPY_PROCESSES = [
+  { key: "ICT", table: "IQ_MACHINE_ICT_SERVER_DATA_RAW" },
+  { key: "HIPOT", table: "IQ_MACHINE_HIPOT_POWER_DATA_RAW" },
+  { key: "FT", table: "IQ_MACHINE_FT1_SMPS_DATA_RAW" },
+  { key: "BURNIN", table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW" },
+  { key: "ATE", table: "IQ_MACHINE_ATE_SERVER_DATA_RAW" },
+];
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,6 +40,22 @@ export async function GET(request: NextRequest) {
       ${lineFilter.clause}
     `;
     const bp = { tsStart: tr.startStr, tsEnd: tr.endStr, ...lineFilter.params };
+
+    const fpyLineFilter = buildLineInClause(lines, "t", "fl");
+    const fpyPromises = FPY_PROCESSES.map(p =>
+      executeQuery<FpyRow>(`
+        SELECT '${p.key}' AS NAME,
+               COUNT(DISTINCT t.PID) AS TOTAL,
+               COUNT(DISTINCT CASE WHEN t.INSPECT_RESULT IN ('PASS','GOOD','OK','Y') THEN t.PID END) AS PASS,
+               CASE WHEN COUNT(DISTINCT t.PID) > 0
+                 THEN ROUND(COUNT(DISTINCT CASE WHEN t.INSPECT_RESULT IN ('PASS','GOOD','OK','Y') THEN t.PID END) / COUNT(DISTINCT t.PID) * 100, 1)
+                 ELSE 0 END AS FPY
+        FROM ${p.table} t
+        WHERE t.INSPECT_DATE >= TO_CHAR(TRUNC(SYSDATE-10/24), 'YYYY/MM/DD') || ' 10:00:00'
+          AND t.INSPECT_DATE < TO_CHAR(TRUNC(SYSDATE-10/24)+1, 'YYYY/MM/DD') || ' 10:00:00'
+          ${fpyLineFilter.clause}
+      `, { ...fpyLineFilter.params })
+    );
 
     const [processR, badCodeR, lineR, modelR, hourR, repairR, defectItemR, locationR, repairWsR, receiptR] = await Promise.all([
       executeQuery<CountRow>(`
@@ -86,6 +111,12 @@ export async function GET(request: NextRequest) {
       `, bp),
     ]);
 
+    const fpyResults = await Promise.all(fpyPromises);
+    const fpyData = fpyResults.map(rows => {
+      const r = rows[0];
+      return r ? { name: r.NAME, count: r.FPY, total: r.TOTAL, pass: r.PASS } : { name: "-", count: 0, total: 0, pass: 0 };
+    });
+
     const toChart = (rows: CountRow[]) => rows.map(r => ({ name: r.NAME || "-", count: r.CNT }));
     const total = repairR[0]?.TOTAL_CNT ?? 0;
     const repaired = repairR[0]?.REPAIRED_CNT ?? 0;
@@ -107,6 +138,7 @@ export async function GET(request: NextRequest) {
       location: toChart(locationR),
       repairWorkstage: toChart(repairWsR),
       receipt: toChart(receiptR),
+      fpy: fpyData,
       summary: {
         totalDefects: total,
         repairRate: total > 0 ? Math.round((repaired / total) * 100) : 0,

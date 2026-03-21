@@ -8,6 +8,7 @@
  */
 
 export interface ChartItem { name: string; count: number; }
+export interface FpyItem { name: string; count: number; total: number; pass: number; }
 
 export interface RepairStats { total: number; repaired: number; pending: number; }
 
@@ -24,6 +25,7 @@ export interface QualityDashboardResponse {
   location: ChartItem[];
   repairWorkstage: ChartItem[];
   receipt: ChartItem[];
+  fpy: FpyItem[];
   summary: SummaryData;
   lastUpdated: string;
 }
@@ -42,6 +44,7 @@ export interface DashboardSettings {
   showLocation: boolean;
   showRepairWorkstage: boolean;
   showReceipt: boolean;
+  showFpy: boolean;
   showSummary: boolean;
 }
 
@@ -59,6 +62,7 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   showLocation: false,
   showRepairWorkstage: false,
   showReceipt: false,
+  showFpy: true,
   showSummary: true,
 };
 
