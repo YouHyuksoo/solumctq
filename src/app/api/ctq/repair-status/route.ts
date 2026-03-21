@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
       FROM IP_PRODUCT_WORK_QC t
       WHERE t.QC_DATE >= TO_DATE(:tsStart, 'YYYY/MM/DD HH24:MI:SS')
         AND t.QC_DATE < TO_DATE(:tsEnd, 'YYYY/MM/DD HH24:MI:SS')
+        AND (t.SERIAL_NO LIKE 'VN07%' OR t.SERIAL_NO LIKE 'VNL1%' OR t.SERIAL_NO LIKE 'VNA2%')
         AND t.LINE_CODE IS NOT NULL
         AND t.LINE_CODE <> '*'
         ${lineFilter.clause}
