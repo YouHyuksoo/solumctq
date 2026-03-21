@@ -49,6 +49,7 @@ const ko = {
     fpy: "직행율",
     equipment: "설비이상",
     equipmentHistory: "설비점검이력",
+    repairStatus: "수리상태",
     analysis: "종합분석",
   },
 
@@ -151,6 +152,11 @@ const ko = {
       "내용: 당일 설비 가동/정지 개별 이력",
       "기간: 당일 (F_GET_WORK_ACTUAL_DATE)",
     ],
+    repairStatus: [
+      "테이블: IP_PRODUCT_WORK_QC",
+      "내용: 당일 불량 감지 PID 수리 현황",
+      "기간: 당일 08:00 ~ 익일 08:00",
+    ],
   },
 
   /* ── 테이블 헤더 ── */
@@ -214,6 +220,7 @@ const ko = {
       fpyDesc: "라인별/공정별 당일 직행율 모니터링. 90% 미만 시 A급.",
       equipmentDesc: "라인별/공정별 일일 설비 정지시간 모니터링. 60분 이상 정지 시 C급.",
       equipmentHistoryDesc: "당일 설비 가동/정지 개별 이력 조회. 시작~종료 시간, 정지시간 상세 확인.",
+      repairStatusDesc: "당일 불량 감지된 PID의 수리 현황. 입고/수리결과/처리 상태 확인.",
       analysisDesc: "8개 모니터링 종합 분석 보고",
     },
     monitoring: {
@@ -278,6 +285,14 @@ const ko = {
       gradeDesc: "일 정지시간 60분 이상 → 불량개선",
       tableDesc: "테이블: IP_LINE_DAILY_OPERATION_HIST",
       periodDesc: "기간: 당일 (F_GET_WORK_ACTUAL_DATE)",
+    },
+    repairStatus: {
+      title: "수리상태",
+      noData: "현재 조건에 해당하는 수리 데이터가 없습니다.",
+      tableSource: "테이블: IP_PRODUCT_WORK_QC",
+      periodDesc: "기간: 당일 08:00 ~ 익일 08:00",
+      receiptNormal: "입고",
+      receiptDefect: "불량입고",
     },
     equipmentHistory: {
       title: "설비점검이력",

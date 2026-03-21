@@ -48,6 +48,7 @@ const vi: TranslationKeys = {
     fpy: "Tỷ lệ đạt",
     equipment: "Thiết bị",
     equipmentHistory: "Lịch sử TB",
+    repairStatus: "Sửa chữa",
     analysis: "Phân tích",
   },
 
@@ -149,6 +150,11 @@ const vi: TranslationKeys = {
       "Nội dung: Lịch sử vận hành/dừng thiết bị trong ngày",
       "Thời gian: Trong ngày (F_GET_WORK_ACTUAL_DATE)",
     ],
+    repairStatus: [
+      "Bảng: IP_PRODUCT_WORK_QC",
+      "Nội dung: Trạng thái sửa chữa PID lỗi trong ngày",
+      "Thời gian: Hôm nay 08:00 ~ Ngày mai 08:00",
+    ],
   },
 
   table: {
@@ -210,6 +216,7 @@ const vi: TranslationKeys = {
       fpyDesc: "Giám sát tỷ lệ đạt theo line/công đoạn. Dưới 90% → Cấp A.",
       equipmentDesc: "Giám sát thời gian dừng thiết bị theo line/công đoạn. Dừng 60 phút+ → Cấp C.",
       equipmentHistoryDesc: "Lịch sử vận hành/dừng thiết bị trong ngày. Chi tiết thời gian bắt đầu/kết thúc và thời gian dừng.",
+      repairStatusDesc: "Trạng thái sửa chữa PID lỗi trong ngày. Chi tiết nhập kho/kết quả sửa chữa/xử lý.",
       analysisDesc: "Phân tích tổng hợp 8 giám sát",
     },
     monitoring: {
@@ -274,6 +281,14 @@ const vi: TranslationKeys = {
       gradeDesc: "Dừng 60 phút+ trong ngày → Cần cải thiện",
       tableDesc: "Bảng: IP_LINE_DAILY_OPERATION_HIST",
       periodDesc: "Thời gian: Trong ngày (F_GET_WORK_ACTUAL_DATE)",
+    },
+    repairStatus: {
+      title: "Trạng thái sửa chữa",
+      noData: "Không có dữ liệu sửa chữa phù hợp với tiêu chí hiện tại.",
+      tableSource: "Bảng: IP_PRODUCT_WORK_QC",
+      periodDesc: "Thời gian: Hôm nay 08:00 ~ Ngày mai 08:00",
+      receiptNormal: "Nhập kho",
+      receiptDefect: "Lỗi",
     },
     equipmentHistory: {
       title: "Lịch sử kiểm tra thiết bị",

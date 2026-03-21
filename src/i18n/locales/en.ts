@@ -48,6 +48,7 @@ const en: TranslationKeys = {
     fpy: "FPY",
     equipment: "Equipment",
     equipmentHistory: "Equip History",
+    repairStatus: "Repair",
     analysis: "Analysis",
   },
 
@@ -149,6 +150,11 @@ const en: TranslationKeys = {
       "Content: Daily equipment operation/stop history records",
       "Period: Today (F_GET_WORK_ACTUAL_DATE)",
     ],
+    repairStatus: [
+      "Table: IP_PRODUCT_WORK_QC",
+      "Content: Daily defect PID repair status",
+      "Period: Today 08:00 ~ Next day 08:00",
+    ],
   },
 
   table: {
@@ -210,6 +216,7 @@ const en: TranslationKeys = {
       fpyDesc: "Daily first pass yield by line/process. Below 90% → Grade A.",
       equipmentDesc: "Daily equipment stop time by line/process. 60min+ stop → Grade C.",
       equipmentHistoryDesc: "Daily equipment operation/stop history. Start/end times and stop duration details.",
+      repairStatusDesc: "Daily defect PID repair status. Receipt/repair result/handling details.",
       analysisDesc: "Comprehensive analysis of all 8 monitors",
     },
     monitoring: {
@@ -274,6 +281,14 @@ const en: TranslationKeys = {
       gradeDesc: "Daily stop time 60min+ → Quality improvement",
       tableDesc: "Table: IP_LINE_DAILY_OPERATION_HIST",
       periodDesc: "Period: Today (F_GET_WORK_ACTUAL_DATE)",
+    },
+    repairStatus: {
+      title: "Repair Status",
+      noData: "No repair data matching the current criteria.",
+      tableSource: "Table: IP_PRODUCT_WORK_QC",
+      periodDesc: "Period: Today 08:00 ~ Next day 08:00",
+      receiptNormal: "Receipt",
+      receiptDefect: "Defect",
     },
     equipmentHistory: {
       title: "Equipment Inspection History",

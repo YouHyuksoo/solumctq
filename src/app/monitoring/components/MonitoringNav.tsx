@@ -32,6 +32,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/monitoring/fpy", labelKey: "nav.fpy", tooltipKey: "navTooltip.fpy", statusKey: "navTooltip.fpyStatus" },
   { href: "/monitoring/equipment", labelKey: "nav.equipment", tooltipKey: "navTooltip.equipment", statusKey: "navTooltip.equipmentStatus" },
   { href: "/monitoring/equipment-history", labelKey: "nav.equipmentHistory", tooltipKey: "navTooltip.equipmentHistory", statusKey: "" },
+  { href: "/monitoring/repair-status", labelKey: "nav.repairStatus", tooltipKey: "navTooltip.repairStatus", statusKey: "" },
   { href: "/monitoring/analysis", labelKey: "nav.analysis", tooltipKey: "", statusKey: "" },
 ];
 
