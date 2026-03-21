@@ -109,7 +109,7 @@ export default function AmbientCharts({ side }: Props) {
 
   return (
     <div className={`absolute top-0 bottom-0 w-[220px] ${side === "left" ? "left-0" : "right-0"} pointer-events-none`}
-      style={{ zIndex: 1, filter: "blur(1px)", opacity: 0.35, mask: side === "left"
+      style={{ zIndex: 1, filter: "blur(0.5px)", opacity: 0.45, mask: side === "left"
         ? "linear-gradient(to right, black 30%, transparent 100%)"
         : "linear-gradient(to left, black 30%, transparent 100%)",
         WebkitMask: side === "left"

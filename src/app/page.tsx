@@ -15,6 +15,7 @@ import Link from "next/link";
 import { useLocale } from "@/i18n";
 import LanguageSelector from "./components/LanguageSelector";
 import AmbientCharts from "./components/AmbientCharts";
+import AmbientPeople from "./components/AmbientPeople";
 
 const SHORTCUTS = [
   { href: "/monitoring/repeatability", label: "반복성", color: "#ef4444" },
@@ -83,7 +84,7 @@ export default function Home() {
 
       {/* 좌우 순환 차트 */}
       <AmbientCharts side="left" />
-      <AmbientCharts side="right" />
+      <AmbientPeople />
 
       {/* 스캔라인 */}
       <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
