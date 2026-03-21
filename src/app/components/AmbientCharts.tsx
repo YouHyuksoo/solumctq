@@ -200,7 +200,7 @@ export default function AmbientCharts({ side }: Props) {
   });
 
   return (
-    <div className={`absolute top-0 bottom-0 w-[160px] ${side === "left" ? "left-0" : "right-0"} pointer-events-none overflow-hidden`}
+    <div className={`absolute top-0 bottom-0 w-[220px] ${side === "left" ? "left-0" : "right-0"} pointer-events-none overflow-hidden`}
       style={{ zIndex: 1, opacity: 0.6,
         mask: `linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%), ${side === "left"
           ? "linear-gradient(to right, black 30%, transparent 100%)"
@@ -215,7 +215,7 @@ export default function AmbientCharts({ side }: Props) {
         style={{ animation: `scrollUp ${dur}s linear infinite` }}>
         {[...items, ...items].map(({ Chart, seed, id }, idx) => (
           <div key={`${id}-${idx}`} className="rounded-lg border border-gray-700/30 bg-gray-900/30 p-3 shrink-0">
-            <div className="h-[80px]">
+            <div className="h-[55px]">
               <Chart seed={seed + Math.floor(idx / 8) * 20} />
             </div>
           </div>
