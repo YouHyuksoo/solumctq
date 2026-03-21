@@ -48,6 +48,7 @@ const ko = {
     indicator: "지표",
     fpy: "직행율",
     equipment: "설비이상",
+    equipmentHistory: "설비점검이력",
     analysis: "종합분석",
   },
 
@@ -145,6 +146,11 @@ const ko = {
       "노랑: 정지 발생 (60분 미만)",
       "회색: 정지 없음",
     ],
+    equipmentHistory: [
+      "테이블: IP_LINE_DAILY_OPERATION_HIST",
+      "내용: 당일 설비 가동/정지 개별 이력",
+      "기간: 당일 (F_GET_WORK_ACTUAL_DATE)",
+    ],
   },
 
   /* ── 테이블 헤더 ── */
@@ -207,6 +213,7 @@ const ko = {
       indicatorDesc: "모델별/공정별 불량률 증가 지표. 주간(전전주→전주→금주) / 월간(전전월→전월→당월) 비교.",
       fpyDesc: "라인별/공정별 당일 직행율 모니터링. 90% 미만 시 A급.",
       equipmentDesc: "라인별/공정별 일일 설비 정지시간 모니터링. 60분 이상 정지 시 C급.",
+      equipmentHistoryDesc: "당일 설비 가동/정지 개별 이력 조회. 시작~종료 시간, 정지시간 상세 확인.",
       analysisDesc: "8개 모니터링 종합 분석 보고",
     },
     monitoring: {
@@ -271,6 +278,14 @@ const ko = {
       gradeDesc: "일 정지시간 60분 이상 → 불량개선",
       tableDesc: "테이블: IP_LINE_DAILY_OPERATION_HIST",
       periodDesc: "기간: 당일 (F_GET_WORK_ACTUAL_DATE)",
+    },
+    equipmentHistory: {
+      title: "설비점검이력",
+      noData: "현재 조건에 해당하는 설비점검 이력이 없습니다.",
+      startTime: "시작시간",
+      endTime: "종료시간",
+      duration: "정지시간",
+      tableSource: "테이블: IP_LINE_DAILY_OPERATION_HIST",
     },
     analysis: {
       title: "종합분석",

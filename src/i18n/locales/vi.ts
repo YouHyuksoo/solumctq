@@ -47,6 +47,7 @@ const vi: TranslationKeys = {
     indicator: "Chỉ số",
     fpy: "Tỷ lệ đạt",
     equipment: "Thiết bị",
+    equipmentHistory: "Lịch sử TB",
     analysis: "Phân tích",
   },
 
@@ -143,6 +144,11 @@ const vi: TranslationKeys = {
       "Vàng: Có dừng (dưới 60 phút)",
       "Xám: Không dừng",
     ],
+    equipmentHistory: [
+      "Bảng: IP_LINE_DAILY_OPERATION_HIST",
+      "Nội dung: Lịch sử vận hành/dừng thiết bị trong ngày",
+      "Thời gian: Trong ngày (F_GET_WORK_ACTUAL_DATE)",
+    ],
   },
 
   table: {
@@ -203,6 +209,7 @@ const vi: TranslationKeys = {
       indicatorDesc: "Chỉ số tỷ lệ NG theo model/công đoạn. Có thể chọn so sánh tuần hoặc tháng.",
       fpyDesc: "Giám sát tỷ lệ đạt theo line/công đoạn. Dưới 90% → Cấp A.",
       equipmentDesc: "Giám sát thời gian dừng thiết bị theo line/công đoạn. Dừng 60 phút+ → Cấp C.",
+      equipmentHistoryDesc: "Lịch sử vận hành/dừng thiết bị trong ngày. Chi tiết thời gian bắt đầu/kết thúc và thời gian dừng.",
       analysisDesc: "Phân tích tổng hợp 8 giám sát",
     },
     monitoring: {
@@ -267,6 +274,14 @@ const vi: TranslationKeys = {
       gradeDesc: "Dừng 60 phút+ trong ngày → Cần cải thiện",
       tableDesc: "Bảng: IP_LINE_DAILY_OPERATION_HIST",
       periodDesc: "Thời gian: Trong ngày (F_GET_WORK_ACTUAL_DATE)",
+    },
+    equipmentHistory: {
+      title: "Lịch sử kiểm tra thiết bị",
+      noData: "Không có lịch sử kiểm tra thiết bị phù hợp với tiêu chí hiện tại.",
+      startTime: "Thời gian BĐ",
+      endTime: "Thời gian KT",
+      duration: "Thời gian dừng",
+      tableSource: "Bảng: IP_LINE_DAILY_OPERATION_HIST",
     },
     analysis: {
       title: "Phân tích tổng hợp",

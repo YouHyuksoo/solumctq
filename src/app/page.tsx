@@ -150,6 +150,15 @@ export default function Home() {
       badgeColor: "bg-slate-600",
     },
     {
+      href: "/monitoring/equipment-history",
+      title: t("nav.equipmentHistory") as string,
+      description: t("pages.home.equipmentHistoryDesc") as string,
+      icon: Icons.clipboard,
+      accent: "border-indigo-500 hover:bg-indigo-950/40",
+      badge: "-",
+      badgeColor: "bg-indigo-600",
+    },
+    {
       href: "/monitoring/analysis",
       title: t("nav.analysis") as string,
       description: t("pages.home.analysisDesc") as string,

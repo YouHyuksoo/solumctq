@@ -47,6 +47,7 @@ const en: TranslationKeys = {
     indicator: "Indicator",
     fpy: "FPY",
     equipment: "Equipment",
+    equipmentHistory: "Equip History",
     analysis: "Analysis",
   },
 
@@ -143,6 +144,11 @@ const en: TranslationKeys = {
       "Yellow: Stop occurred (under 60min)",
       "Gray: No stop",
     ],
+    equipmentHistory: [
+      "Table: IP_LINE_DAILY_OPERATION_HIST",
+      "Content: Daily equipment operation/stop history records",
+      "Period: Today (F_GET_WORK_ACTUAL_DATE)",
+    ],
   },
 
   table: {
@@ -203,6 +209,7 @@ const en: TranslationKeys = {
       indicatorDesc: "NG rate trend by model/process. Weekly or monthly comparison selectable.",
       fpyDesc: "Daily first pass yield by line/process. Below 90% → Grade A.",
       equipmentDesc: "Daily equipment stop time by line/process. 60min+ stop → Grade C.",
+      equipmentHistoryDesc: "Daily equipment operation/stop history. Start/end times and stop duration details.",
       analysisDesc: "Comprehensive analysis of all 8 monitors",
     },
     monitoring: {
@@ -267,6 +274,14 @@ const en: TranslationKeys = {
       gradeDesc: "Daily stop time 60min+ → Quality improvement",
       tableDesc: "Table: IP_LINE_DAILY_OPERATION_HIST",
       periodDesc: "Period: Today (F_GET_WORK_ACTUAL_DATE)",
+    },
+    equipmentHistory: {
+      title: "Equipment Inspection History",
+      noData: "No equipment inspection history matching the current criteria.",
+      startTime: "Start Time",
+      endTime: "End Time",
+      duration: "Duration",
+      tableSource: "Table: IP_LINE_DAILY_OPERATION_HIST",
     },
     analysis: {
       title: "Comprehensive Analysis",
