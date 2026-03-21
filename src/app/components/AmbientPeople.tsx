@@ -162,7 +162,7 @@ export default function AmbientPeople() {
   return (
     <div className="absolute top-0 bottom-0 right-0 w-[220px] pointer-events-none"
       style={{
-        zIndex: 1, filter: "blur(0.5px)", opacity: 0.5,
+        zIndex: 1, opacity: 0.6,
         mask: "linear-gradient(to left, black 30%, transparent 100%)",
         WebkitMask: "linear-gradient(to left, black 30%, transparent 100%)",
       }}>
