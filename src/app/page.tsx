@@ -168,6 +168,15 @@ export default function Home() {
       badgeColor: "bg-indigo-600",
     },
     {
+      href: "/monitoring/quality-dashboard",
+      title: t("nav.qualityDashboard") as string,
+      description: "공정별/불량코드/라인별/모델별/시간대별 품질 분석 차트 대시보드",
+      icon: Icons.chart,
+      accent: "border-sky-500 hover:bg-sky-950/40",
+      badge: "-",
+      badgeColor: "bg-sky-600",
+    },
+    {
       href: "/monitoring/analysis",
       title: t("nav.analysis") as string,
       description: t("pages.home.analysisDesc") as string,

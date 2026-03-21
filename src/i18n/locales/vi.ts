@@ -49,6 +49,7 @@ const vi: TranslationKeys = {
     equipment: "Thiết bị",
     equipmentHistory: "Lịch sử TB",
     repairStatus: "Sửa chữa",
+    qualityDashboard: "Bảng CL",
     analysis: "Phân tích",
   },
 
@@ -153,6 +154,11 @@ const vi: TranslationKeys = {
     repairStatus: [
       "Bảng: IP_PRODUCT_WORK_QC",
       "Nội dung: Trạng thái sửa chữa PID lỗi trong ngày",
+      "Thời gian: Hôm nay 08:00 ~ Ngày mai 08:00",
+    ],
+    qualityDashboard: [
+      "Bảng: IP_PRODUCT_WORK_QC",
+      "Nội dung: Biểu đồ theo công đoạn/mã lỗi/line/model/giờ",
       "Thời gian: Hôm nay 08:00 ~ Ngày mai 08:00",
     ],
   },

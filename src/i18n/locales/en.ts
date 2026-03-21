@@ -49,6 +49,7 @@ const en: TranslationKeys = {
     equipment: "Equipment",
     equipmentHistory: "Equip History",
     repairStatus: "Repair",
+    qualityDashboard: "Dashboard",
     analysis: "Analysis",
   },
 
@@ -153,6 +154,11 @@ const en: TranslationKeys = {
     repairStatus: [
       "Table: IP_PRODUCT_WORK_QC",
       "Content: Daily defect PID repair status",
+      "Period: Today 08:00 ~ Next day 08:00",
+    ],
+    qualityDashboard: [
+      "Table: IP_PRODUCT_WORK_QC",
+      "Content: Process/defect code/line/model/hourly charts",
       "Period: Today 08:00 ~ Next day 08:00",
     ],
   },

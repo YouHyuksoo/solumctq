@@ -50,6 +50,7 @@ const ko = {
     equipment: "설비이상",
     equipmentHistory: "설비점검이력",
     repairStatus: "수리상태",
+    qualityDashboard: "품질분석",
     analysis: "종합분석",
   },
 
@@ -155,6 +156,11 @@ const ko = {
     repairStatus: [
       "테이블: IP_PRODUCT_WORK_QC",
       "내용: 당일 불량 감지 PID 수리 현황",
+      "기간: 당일 08:00 ~ 익일 08:00",
+    ],
+    qualityDashboard: [
+      "테이블: IP_PRODUCT_WORK_QC",
+      "내용: 공정별/불량코드/라인별/모델별/시간대별 차트",
       "기간: 당일 08:00 ~ 익일 08:00",
     ],
   },
