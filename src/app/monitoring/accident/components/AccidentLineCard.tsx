@@ -40,7 +40,7 @@ function formatShortDate(dt: string): string {
   return `${date} ${time}`;
 }
 
-export default function AccidentLineCard({ line }: { line: AccidentLineCardData }) {
+export default function AccidentLineCard({ line, compact = false }: { line: AccidentLineCardData; compact?: boolean }) {
   const { t } = useLocale();
   const style = GRADE_STYLES[line.overallGrade];
 
@@ -54,26 +54,26 @@ export default function AccidentLineCard({ line }: { line: AccidentLineCardData 
   return (
     <div className={`rounded-lg border-2 ${style.card} p-0 overflow-hidden`}>
       {/* 헤더 */}
-      <div className="flex items-center justify-between px-4 py-2 bg-black/40">
+      <div className={`flex items-center justify-between bg-black/40 ${compact ? "px-4 py-2" : "px-4 py-2"}`}>
         <div>
-          <span className="text-sm text-gray-400">Line: </span>
-          <span className="font-bold text-white text-base">{line.lineName}</span>
-          <span className="ml-2 text-xs text-gray-500">({line.lineCode})</span>
+          <span className={`text-gray-400 ${compact ? "text-xs" : "text-sm"}`}>Line: </span>
+          <span className={`font-bold text-white ${compact ? "text-base" : "text-base"}`}>{line.lineName}</span>
+          <span className={`ml-2 text-gray-500 ${compact ? "text-xs" : "text-xs"}`}>({line.lineCode})</span>
         </div>
-        <span className={`px-3 py-1 rounded text-sm font-bold ${style.badge}`}>
+        <span className={`rounded font-bold ${style.badge} ${compact ? "px-2 py-0.5 text-xs" : "px-3 py-1 text-sm"}`}>
           {GRADE_TEXT[line.overallGrade]}
         </span>
       </div>
 
       {/* 공정 테이블 */}
-      <table className="w-full text-sm">
+      <table className={`w-full ${compact ? "text-xs" : "text-sm"}`}>
         <thead>
-          <tr className="bg-gray-600/50 text-gray-400 text-xs">
-            <th className="text-left px-4 py-2 w-24">{t("table.process") as string}</th>
-            <th className="text-left px-4 py-2 w-32">{t("table.status") as string}</th>
-            <th className="text-left px-4 py-2 w-28">{t("table.lastInspect") as string}</th>
-            <th className="text-center px-4 py-2 w-14">NG</th>
-            <th className="text-center px-4 py-2 w-20">{t("table.gradeCol") as string}</th>
+          <tr className={`bg-gray-600/50 text-gray-400 ${compact ? "text-[10px]" : "text-xs"}`}>
+            <th className={`text-left w-24 ${compact ? "px-3 py-1.5" : "px-4 py-2"}`}>{t("table.process") as string}</th>
+            <th className={`text-left w-32 ${compact ? "px-3 py-1.5" : "px-4 py-2"}`}>{t("table.status") as string}</th>
+            <th className={`text-left w-28 ${compact ? "px-3 py-1.5" : "px-4 py-2"}`}>{t("table.lastInspect") as string}</th>
+            <th className={`text-center w-14 ${compact ? "px-3 py-1.5" : "px-4 py-2"}`}>NG</th>
+            <th className={`text-center w-20 ${compact ? "px-3 py-1.5" : "px-4 py-2"}`}>{t("table.gradeCol") as string}</th>
           </tr>
         </thead>
         <tbody>
@@ -82,10 +82,10 @@ export default function AccidentLineCard({ line }: { line: AccidentLineCardData 
               key={p.process}
               className={`border-t border-gray-800 ${ROW_GRADE_STYLES[p.grade]}`}
             >
-              <td className="px-4 py-2 font-medium text-gray-200 whitespace-nowrap bg-gray-600/50">
+              <td className={`font-medium text-gray-200 whitespace-nowrap bg-gray-600/50 ${compact ? "px-3 py-1.5" : "px-4 py-2"}`}>
                 {p.processLabel}
               </td>
-              <td className="px-4 py-2">
+              <td className={compact ? "px-3 py-1.5" : "px-4 py-2"}>
                 {p.detail ? (
                   <span className={`font-bold text-xs ${p.grade === "A" ? "text-red-400" : "text-yellow-400"}`}>
                     {translateDetail(p.detail, t)}
@@ -94,11 +94,11 @@ export default function AccidentLineCard({ line }: { line: AccidentLineCardData 
                   <span className="text-green-400">OK</span>
                 )}
               </td>
-              <td className="px-4 py-2 text-gray-400 text-xs font-mono whitespace-nowrap">
+              <td className={`text-gray-400 text-xs font-mono whitespace-nowrap ${compact ? "px-3 py-1.5" : "px-4 py-2"}`}>
                 {p.lastInspectDate ? formatShortDate(p.lastInspectDate) : "-"}
               </td>
               <td
-                className="px-4 py-2 text-center"
+                className={`text-center ${compact ? "px-3 py-1.5" : "px-4 py-2"}`}
                 onClick={() => p.ngCount > 0 && setModal({ process: p.process, label: p.processLabel })}
               >
                 {p.ngCount > 0 ? (
@@ -114,7 +114,7 @@ export default function AccidentLineCard({ line }: { line: AccidentLineCardData 
                   <span className="text-gray-600">0</span>
                 )}
               </td>
-              <td className="px-4 py-2 text-center whitespace-nowrap">
+              <td className={`text-center whitespace-nowrap ${compact ? "px-3 py-1.5" : "px-4 py-2"}`}>
                 {p.grade === "A" && (
                   <span className={`px-2 py-0.5 rounded text-xs font-bold whitespace-nowrap ${GRADE_STYLES.A.badge}`}>
                     {t("grade.a") as string}

@@ -15,6 +15,7 @@ const ko = {
     loading: "로딩 중...",
     dataLoading: "데이터 로딩 중...",
     dataError: "데이터 조회 오류",
+    statusNormal: "정상 운영 중",
     noActiveLines: "활성 라인이 없습니다.",
     noMatchingData: "현재 조건에 해당하는 불량 데이터가 없습니다.",
     refresh: "갱신",

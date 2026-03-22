@@ -19,6 +19,7 @@ import SettingsPanel from "../components/SettingsPanel";
 import MonitoringNav from "../components/MonitoringNav";
 import HeaderActions from "../components/HeaderActions";
 import LineSelectButton from "../components/LineSelectButton";
+import LanguageSelector from "@/app/components/LanguageSelector";
 import { useLocale } from "@/i18n";
 
 const ITEMS_PER_PAGE = 9;
@@ -57,6 +58,16 @@ export default function OpenShortPage() {
               {t("pages.accident.title") as string}
             </h1>
             <LineSelectButton />
+            <LanguageSelector />
+            <SettingsPanel
+              monitorInterval={monitorInterval}
+              rollingInterval={rollingInterval}
+              rollingEnabled={rollingEnabled}
+              onMonitorIntervalChange={setMonitorInterval}
+              onRollingIntervalChange={setRollingInterval}
+              onRollingEnabledChange={setRollingEnabled}
+            />
+            <HeaderActions />
           </div>
           <div className="flex flex-col items-end gap-1">
             <div className="flex items-center gap-4 text-xs text-gray-400">
@@ -76,25 +87,6 @@ export default function OpenShortPage() {
             {data && data.lines.length > 0 && (
               <SummaryBadge label={t("pages.openShort.gradeBLabel") as string} count={bCount} color="bg-orange-600" />
             )}
-            <div className="flex items-center gap-2 text-xs text-gray-400 ml-4">
-              {data && (
-                <span>{t("common.refresh") as string}: {new Date(data.lastUpdated).toLocaleTimeString(dateLocale)}</span>
-              )}
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  loading ? "bg-yellow-500 animate-pulse" : "bg-green-500"
-                }`}
-              />
-            </div>
-            <SettingsPanel
-              monitorInterval={monitorInterval}
-              rollingInterval={rollingInterval}
-              rollingEnabled={rollingEnabled}
-              onMonitorIntervalChange={setMonitorInterval}
-              onRollingIntervalChange={setRollingInterval}
-              onRollingEnabledChange={setRollingEnabled}
-            />
-            <HeaderActions />
           </div>
         </div>
         {rollingEnabled && totalPages > 1 && (
@@ -109,7 +101,7 @@ export default function OpenShortPage() {
         )}
       </header>
 
-      <main className="max-w-[1920px] mx-auto p-6">
+      <main className="max-w-[1920px] mx-auto px-4 py-2">
         {error && (
           <div className="mb-4 p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm">
             {t("common.dataError") as string}: {error}
@@ -152,6 +144,22 @@ export default function OpenShortPage() {
           </>
         )}
       </main>
+
+      {/* 하단 상태바 */}
+      <footer className="fixed bottom-0 left-0 right-0 z-10 bg-gray-900 border-t border-gray-700 px-6 py-1.5">
+        <div className="flex items-center justify-between max-w-[1920px] mx-auto">
+          <div className="flex items-center gap-3 text-xs text-gray-400">
+            <span className={`w-2 h-2 rounded-full ${loading ? "bg-yellow-500 animate-pulse" : "bg-green-500"}`} />
+            <span>{loading ? (t("common.dataLoading") as string) : (t("common.statusNormal") as string)}</span>
+          </div>
+          <div className="flex items-center gap-4 text-xs text-gray-500">
+            {data && (
+              <span>{t("common.refresh") as string}: {new Date(data.lastUpdated).toLocaleTimeString(dateLocale)}</span>
+            )}
+            <span>{t("table.process") as string}: ICT</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

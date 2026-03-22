@@ -17,6 +17,7 @@ import { useLineFilter } from "../contexts/LineFilterContext";
 import MonitoringNav from "../components/MonitoringNav";
 import HeaderActions from "../components/HeaderActions";
 import LineSelectButton from "../components/LineSelectButton";
+import LanguageSelector from "@/app/components/LanguageSelector";
 import SummaryCards from "./components/SummaryCards";
 import DetailReport from "./components/DetailReport";
 import { useAnalysis } from "./hooks/useAnalysis";
@@ -38,7 +39,6 @@ export default function AnalysisPage() {
           <div className="flex items-center gap-4">
             <MonitoringNav />
           </div>
-          <HeaderActions />
         </div>
       </header>
 
@@ -50,12 +50,9 @@ export default function AnalysisPage() {
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-bold">{t("pages.analysis.title") as string}</h1>
               <LineSelectButton />
+              <LanguageSelector />
+              <HeaderActions />
             </div>
-            {data && (
-              <p className="text-xs text-gray-500 mt-1">
-                {t("pages.analysis.reportTime") as string}: {new Date(data.lastUpdated).toLocaleTimeString()}
-              </p>
-            )}
           </div>
           <button
             onClick={fetchAll}
@@ -85,6 +82,21 @@ export default function AnalysisPage() {
           </>
         )}
       </main>
+
+      {/* 하단 상태바 */}
+      <footer className="fixed bottom-0 left-0 right-0 z-10 bg-gray-900 border-t border-gray-700 px-6 py-1.5">
+        <div className="flex items-center justify-between max-w-[1920px] mx-auto">
+          <div className="flex items-center gap-3 text-xs text-gray-400">
+            <span className={`w-2 h-2 rounded-full ${loading ? "bg-yellow-500 animate-pulse" : "bg-green-500"}`} />
+            <span>{loading ? (t("common.dataLoading") as string) : (t("common.statusNormal") as string)}</span>
+          </div>
+          <div className="flex items-center gap-4 text-xs text-gray-500">
+            {data && (
+              <span>{t("common.refresh") as string}: {new Date(data.lastUpdated).toLocaleTimeString()}</span>
+            )}
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

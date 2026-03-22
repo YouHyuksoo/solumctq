@@ -16,6 +16,7 @@ const en: TranslationKeys = {
     loading: "Loading...",
     dataLoading: "Loading data...",
     dataError: "Data retrieval error",
+    statusNormal: "System Normal",
     noActiveLines: "No active lines.",
     noMatchingData: "No defect data matching the current criteria.",
     refresh: "Updated",

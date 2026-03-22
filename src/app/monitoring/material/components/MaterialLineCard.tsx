@@ -26,7 +26,7 @@ const GRADE_STYLES: Record<MaterialGrade, { card: string; badge: string }> = {
   },
 };
 
-export default function MaterialLineCard({ line }: { line: MaterialLineCardData }) {
+export default function MaterialLineCard({ line, compact = false }: { line: MaterialLineCardData; compact?: boolean }) {
   const { t } = useLocale();
   const style = GRADE_STYLES[line.overallGrade];
 
@@ -43,23 +43,23 @@ export default function MaterialLineCard({ line }: { line: MaterialLineCardData 
 
   return (
     <div className={`rounded-lg border-2 ${style.card} p-0 overflow-hidden`}>
-      <div className="flex items-center justify-between px-4 py-2 bg-black/40">
+      <div className={`flex items-center justify-between bg-black/40 ${compact ? "px-4 py-2" : "px-4 py-2"}`}>
         <div>
-          <span className="text-sm text-gray-400">Line: </span>
-          <span className="font-bold text-white">{line.lineName}</span>
-          <span className="ml-2 text-xs text-gray-500">({line.lineCode})</span>
+          <span className={`text-gray-400 ${compact ? "text-xs" : "text-sm"}`}>Line: </span>
+          <span className={`font-bold text-white ${compact ? "text-base" : "text-base"}`}>{line.lineName}</span>
+          <span className={`ml-2 text-gray-500 ${compact ? "text-xs" : "text-xs"}`}>({line.lineCode})</span>
         </div>
-        <span className={`px-3 py-1 rounded text-xs font-bold ${style.badge}`}>
+        <span className={`rounded font-bold ${style.badge} ${compact ? "px-2 py-0.5 text-xs" : "px-3 py-1 text-xs"}`}>
           {GRADE_TEXT[line.overallGrade]}
         </span>
       </div>
 
-      <table className="w-full text-sm">
+      <table className={`w-full ${compact ? "text-xs" : "text-sm"}`}>
         <thead>
-          <tr className="bg-black/30 text-gray-400 text-xs">
-            <th className="text-left px-3 py-1.5">{t("table.component") as string}</th>
-            <th className="text-center px-3 py-1.5 w-16">{t("table.dailyNg") as string}</th>
-            <th className="text-center px-3 py-1.5 w-20">{t("table.cumNg") as string}</th>
+          <tr className={`bg-black/30 text-gray-400 ${compact ? "text-[10px]" : "text-xs"}`}>
+            <th className={`text-left ${compact ? "px-3 py-1.5" : "px-3 py-1.5"}`}>{t("table.component") as string}</th>
+            <th className={`text-center w-16 ${compact ? "px-3 py-1.5" : "px-3 py-1.5"}`}>{t("table.dailyNg") as string}</th>
+            <th className={`text-center w-20 ${compact ? "px-3 py-1.5" : "px-3 py-1.5"}`}>{t("table.cumNg") as string}</th>
           </tr>
         </thead>
         <tbody>
@@ -71,10 +71,10 @@ export default function MaterialLineCard({ line }: { line: MaterialLineCardData 
               onMouseLeave={() => setTooltip(null)}
               onClick={() => d.cumulativeCount > 0 && setModal({ defectItem: d.defectItem })}
             >
-              <td className="px-3 py-1.5 font-medium text-gray-200 whitespace-nowrap">
+              <td className={`font-medium text-gray-200 whitespace-nowrap ${compact ? "px-3 py-1.5" : "px-3 py-1.5"}`}>
                 {d.defectItem}
               </td>
-              <td className="px-3 py-1.5 text-center">
+              <td className={`text-center ${compact ? "px-3 py-1.5" : "px-3 py-1.5"}`}>
                 {d.dailyCount > 0 ? (
                   <span className={`font-bold ${d.dailyCount >= 3 ? "text-red-400" : "text-yellow-400"}`}>
                     {d.dailyCount}
@@ -83,7 +83,7 @@ export default function MaterialLineCard({ line }: { line: MaterialLineCardData 
                   <span className="text-gray-600">0</span>
                 )}
               </td>
-              <td className="px-3 py-1.5 text-center">
+              <td className={`text-center ${compact ? "px-3 py-1.5" : "px-3 py-1.5"}`}>
                 {d.cumulativeCount > 0 ? (
                   <span className={`font-bold ${d.cumulativeCount >= 3 ? "text-orange-400" : "text-yellow-400"}`}>
                     {d.cumulativeCount}

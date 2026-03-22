@@ -16,6 +16,7 @@ const vi: TranslationKeys = {
     loading: "Đang tải...",
     dataLoading: "Đang tải dữ liệu...",
     dataError: "Lỗi truy xuất dữ liệu",
+    statusNormal: "Hệ thống bình thường",
     noActiveLines: "Không có line hoạt động.",
     noMatchingData: "Không có dữ liệu lỗi phù hợp với tiêu chí hiện tại.",
     refresh: "Cập nhật",

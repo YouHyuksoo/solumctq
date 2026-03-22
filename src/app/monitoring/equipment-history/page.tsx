@@ -17,6 +17,7 @@ import EquipmentHistoryTable from "./components/EquipmentHistoryTable";
 import MonitoringNav from "../components/MonitoringNav";
 import HeaderActions from "../components/HeaderActions";
 import LineSelectButton from "../components/LineSelectButton";
+import LanguageSelector from "@/app/components/LanguageSelector";
 import { useLocale } from "@/i18n";
 
 export default function EquipmentHistoryPage() {
@@ -40,6 +41,8 @@ export default function EquipmentHistoryPage() {
               {t("pages.equipmentHistory.title") as string}
             </h1>
             <LineSelectButton />
+            <LanguageSelector />
+            <HeaderActions />
           </div>
           <div className="flex flex-col items-end gap-1">
             <div className="flex items-center gap-4 text-xs text-gray-400">
@@ -69,19 +72,6 @@ export default function EquipmentHistoryPage() {
                 t("pages.indicator.refreshBtn") as string
               )}
             </button>
-            <div className="flex items-center gap-2 text-xs text-gray-400">
-              {data && (
-                <span>
-                  {t("common.refresh") as string}: {new Date(data.lastUpdated).toLocaleTimeString(dateLocale)}
-                </span>
-              )}
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  loading ? "bg-yellow-500 animate-pulse" : "bg-green-500"
-                }`}
-              />
-            </div>
-            <HeaderActions />
           </div>
         </div>
       </header>
@@ -115,6 +105,19 @@ export default function EquipmentHistoryPage() {
           <EquipmentHistoryTable rows={data.rows} />
         )}
       </main>
+      <footer className="shrink-0 bg-gray-900 border-t border-gray-700 px-6 py-1.5">
+        <div className="flex items-center justify-between max-w-[1920px] mx-auto">
+          <div className="flex items-center gap-3 text-xs text-gray-400">
+            <span className={`w-2 h-2 rounded-full ${loading ? "bg-yellow-500 animate-pulse" : "bg-green-500"}`} />
+            <span>{loading ? (t("common.dataLoading") as string) : (t("common.statusNormal") as string)}</span>
+          </div>
+          <div className="flex items-center gap-4 text-xs text-gray-500">
+            {data && (
+              <span>{t("common.refresh") as string}: {new Date(data.lastUpdated).toLocaleTimeString(dateLocale)}</span>
+            )}
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
