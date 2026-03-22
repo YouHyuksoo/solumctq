@@ -107,7 +107,7 @@ export default function DashboardSidebar({ settings, onChange, onRefresh, loadin
           ["showWeeklyTrend", "주간 직행율 추이"],
         ] as [keyof DashboardSettings, string][]).map(([key, label]) => (
           <label key={key} className="flex items-center gap-2 mt-1 cursor-pointer">
-            <input type="checkbox" checked={settings[key] as boolean}
+            <input type="checkbox" checked={!!(settings[key])}
               onChange={e => set({ [key]: e.target.checked })}
               className="accent-blue-500" />
             <span className="text-[11px] text-gray-300">{label}</span>

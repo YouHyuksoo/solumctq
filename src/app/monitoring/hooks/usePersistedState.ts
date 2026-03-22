@@ -17,7 +17,12 @@ export function usePersistedState<T>(key: string, defaultValue: T): [T, (value: 
     if (typeof window === "undefined") return defaultValue;
     try {
       const saved = localStorage.getItem(key);
-      return saved !== null ? (JSON.parse(saved) as T) : defaultValue;
+      if (saved === null) return defaultValue;
+      const parsed = JSON.parse(saved) as T;
+      if (typeof defaultValue === "object" && defaultValue !== null && !Array.isArray(defaultValue)) {
+        return { ...defaultValue, ...parsed };
+      }
+      return parsed;
     } catch {
       return defaultValue;
     }
