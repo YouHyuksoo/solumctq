@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import type { RawInsightsResponse, DashboardSettings } from "../types";
 import { PALETTES } from "../types";
+import { useLocale } from "@/i18n";
 
 const PROC_COLORS: Record<string, string> = {
   ICT: "#3b82f6", HIPOT: "#a78bfa", FT: "#4ade80", BURNIN: "#fb923c", ATE: "#38bdf8",
@@ -37,20 +38,21 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
 }
 
 export default function RawInsightCharts({ data, settings }: Props) {
+  const { t } = useLocale();
   const colors = PALETTES[settings.palette] || PALETTES.blue;
   const h = settings.chartHeight;
   const tipStyle = { background: "#1e293b", border: "1px solid #334155", fontSize: 12 };
 
   const charts: { key: string; show: boolean; el: React.ReactNode }[] = [
     { key: "inspVolume", show: settings.showInspVolume, el: (
-      <ChartCard title="공정별 검사량 (당일)">
+      <ChartCard title={t("pages.qualityDashboard.inspVolumeTitle") as string}>
         <ResponsiveContainer width="100%" height={h}>
           <BarChart data={data.inspectionVolume}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
             <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 10 }} />
             <YAxis tick={{ fill: "#64748b", fontSize: 10 }} />
             <Tooltip contentStyle={tipStyle} />
-            <Bar dataKey="count" name="검사량">
+            <Bar dataKey="count" name={t("pages.qualityDashboard.inspCount") as string}>
               {data.inspectionVolume.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
             </Bar>
           </BarChart>
@@ -58,27 +60,27 @@ export default function RawInsightCharts({ data, settings }: Props) {
       </ChartCard>
     )},
     { key: "hourlyInsp", show: settings.showHourlyInsp, el: (
-      <ChartCard title="시간당 검사량 (당일)">
+      <ChartCard title={t("pages.qualityDashboard.hourlyInspTitle") as string}>
         <ResponsiveContainer width="100%" height={h}>
           <AreaChart data={data.hourlyInspection}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
             <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 9 }} />
             <YAxis tick={{ fill: "#64748b", fontSize: 10 }} />
             <Tooltip contentStyle={tipStyle} />
-            <Area type="monotone" dataKey="count" name="검사량" stroke="#60a5fa" fill="#60a5fa" fillOpacity={0.3} />
+            <Area type="monotone" dataKey="count" name={t("pages.qualityDashboard.inspCount") as string} stroke="#60a5fa" fill="#60a5fa" fillOpacity={0.3} />
           </AreaChart>
         </ResponsiveContainer>
       </ChartCard>
     )},
     { key: "lineProd", show: settings.showLineProd, el: (
-      <ChartCard title="라인별 생산량 — 고유 PID (당일)">
+      <ChartCard title={t("pages.qualityDashboard.lineProdTitle") as string}>
         <ResponsiveContainer width="100%" height={h}>
           <BarChart data={data.lineProduction}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
             <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 9 }} />
             <YAxis tick={{ fill: "#64748b", fontSize: 10 }} />
             <Tooltip contentStyle={tipStyle} />
-            <Bar dataKey="count" name="PID수">
+            <Bar dataKey="count" name={t("pages.qualityDashboard.pidCount") as string}>
               {data.lineProduction.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
             </Bar>
           </BarChart>
@@ -86,7 +88,7 @@ export default function RawInsightCharts({ data, settings }: Props) {
       </ChartCard>
     )},
     { key: "ngMatrix", show: settings.showNgMatrix, el: (
-      <ChartCard title="라인 × 공정 NG 매트릭스">
+      <ChartCard title={t("pages.qualityDashboard.ngMatrixTitle") as string}>
         <ResponsiveContainer width="100%" height={h}>
           <BarChart data={data.ngMatrix}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
@@ -100,14 +102,14 @@ export default function RawInsightCharts({ data, settings }: Props) {
       </ChartCard>
     )},
     { key: "retestRate", show: settings.showRetestRate, el: (
-      <ChartCard title="공정별 재검사율 (%)">
+      <ChartCard title={t("pages.qualityDashboard.retestRateTitle") as string}>
         <ResponsiveContainer width="100%" height={h}>
           <BarChart data={data.retestRate}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
             <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 10 }} />
             <YAxis tick={{ fill: "#64748b", fontSize: 10 }} />
             <Tooltip contentStyle={tipStyle} />
-            <Bar dataKey="rate" name="재검사율(%)">
+            <Bar dataKey="rate" name={t("pages.qualityDashboard.retestRatePercent") as string}>
               {data.retestRate.map((d, i) => (
                 <Cell key={i} fill={d.rate > 5 ? "#f87171" : d.rate > 1 ? "#facc15" : "#4ade80"} />
               ))}
@@ -117,7 +119,7 @@ export default function RawInsightCharts({ data, settings }: Props) {
       </ChartCard>
     )},
     { key: "weeklyTrend", show: settings.showWeeklyTrend, el: (
-      <ChartCard title="주간 직행율 추이 (최근 7일, %)">
+      <ChartCard title={t("pages.qualityDashboard.weeklyTrendTitle") as string}>
         <ResponsiveContainer width="100%" height={h}>
           <LineChart data={data.weeklyTrend}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
