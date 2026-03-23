@@ -261,7 +261,8 @@ export async function GET(request: NextRequest) {
 
     /* ── 모델 필터링 ── */
     /** 소량 모수 기준 (전전기/전기 검사 수량이 이 값 미만이면 제외) */
-    const MIN_VOLUME = 200;
+    const minVolumeParam = Number(request.nextUrl.searchParams.get("minVolume"));
+    const MIN_VOLUME = minVolumeParam > 0 ? minVolumeParam : 200;
 
     const filtered = [...modelMap.values()].filter((model) => {
       const procs = Object.values(model.processes);

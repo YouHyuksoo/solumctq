@@ -11,7 +11,7 @@
 import { useState, useCallback } from "react";
 import type { IndicatorResponse, PeriodType } from "../types";
 
-export function useIndicator(selectedLines: string[] = [], period: PeriodType = "weekly") {
+export function useIndicator(selectedLines: string[] = [], period: PeriodType = "weekly", minVolume: number = 200) {
   const [data, setData] = useState<IndicatorResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -22,6 +22,7 @@ export function useIndicator(selectedLines: string[] = [], period: PeriodType = 
       const params = new URLSearchParams();
       if (selectedLines.length > 0) params.set("lines", selectedLines.join(","));
       if (period === "monthly") params.set("period", "monthly");
+      if (minVolume !== 200) params.set("minVolume", String(minVolume));
       const qs = params.toString();
       const res = await fetch(`/api/ctq/indicator${qs ? `?${qs}` : ""}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -33,7 +34,7 @@ export function useIndicator(selectedLines: string[] = [], period: PeriodType = 
     } finally {
       setLoading(false);
     }
-  }, [selectedLines, period]);
+  }, [selectedLines, period, minVolume]);
 
   return { data, error, loading, fetchData };
 }
