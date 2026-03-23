@@ -10,7 +10,7 @@
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLineFilter } from "../contexts/LineFilterContext";
 import { useRepairStatus } from "./hooks/useRepairStatus";
 import RepairStatusTable from "./components/RepairStatusTable";
@@ -23,7 +23,9 @@ import { useLocale } from "@/i18n";
 export default function RepairStatusPage() {
   const { t, dateLocale } = useLocale();
   const { selectedLines } = useLineFilter();
-  const { data, error, loading, fetchData } = useRepairStatus(selectedLines);
+  const [pidInput, setPidInput] = useState("");
+  const [pidFilter, setPidFilter] = useState("");
+  const { data, error, loading, fetchData } = useRepairStatus(selectedLines, pidFilter);
 
   useEffect(() => {
     fetchData();
@@ -59,6 +61,25 @@ export default function RepairStatusPage() {
             <MonitoringNav />
           </div>
           <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={pidInput}
+                onChange={(e) => setPidInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { setPidFilter(pidInput); } }}
+                placeholder="PID 검색..."
+                className="w-56 px-3 py-1.5 rounded bg-gray-900 border border-gray-600 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500"
+              />
+              {pidFilter && (
+                <button
+                  onClick={() => { setPidInput(""); setPidFilter(""); }}
+                  className="px-2 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-xs text-gray-300"
+                  title="필터 초기화"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
             <button
               onClick={fetchData}
               disabled={loading}

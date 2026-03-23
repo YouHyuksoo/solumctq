@@ -12,7 +12,7 @@
 import { useState, useCallback } from "react";
 import type { RepairStatusResponse } from "../types";
 
-export function useRepairStatus(selectedLines: string[]) {
+export function useRepairStatus(selectedLines: string[], pidFilter: string = "") {
   const [data, setData] = useState<RepairStatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -25,6 +25,9 @@ export function useRepairStatus(selectedLines: string[]) {
       if (selectedLines.length > 0) {
         params.set("lines", selectedLines.join(","));
       }
+      if (pidFilter.trim()) {
+        params.set("pid", pidFilter.trim());
+      }
       const res = await fetch(`/api/ctq/repair-status?${params.toString()}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: RepairStatusResponse = await res.json();
@@ -34,7 +37,7 @@ export function useRepairStatus(selectedLines: string[]) {
     } finally {
       setLoading(false);
     }
-  }, [selectedLines]);
+  }, [selectedLines, pidFilter]);
 
   return { data, error, loading, fetchData };
 }

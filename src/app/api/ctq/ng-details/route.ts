@@ -153,9 +153,13 @@ export async function GET(request: NextRequest) {
         FROM ${config.table} t
         JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
           AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
-        LEFT JOIN IP_PRODUCT_WORK_QC r
-          ON r.SERIAL_NO = t.${config.pidCol}
-          AND r.RECEIPT_DEFICIT = '2'
+        LEFT JOIN (
+          SELECT * FROM (
+            SELECT rr.*, ROW_NUMBER() OVER (PARTITION BY rr.SERIAL_NO ORDER BY rr.QC_DATE DESC) AS RN
+            FROM IP_PRODUCT_WORK_QC rr
+            WHERE rr.RECEIPT_DEFICIT = '2'
+          ) WHERE RN = 1
+        ) r ON r.SERIAL_NO = t.${config.pidCol}
         WHERE ${dateCondition}
           AND (t.${config.pidCol} LIKE 'VN07%' OR t.${config.pidCol} LIKE 'VNL1%' OR t.${config.pidCol} LIKE 'VNA2%')
           AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')

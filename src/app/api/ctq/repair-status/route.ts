@@ -40,6 +40,8 @@ export async function GET(request: NextRequest) {
     const lines = parseLines(request);
     const lineFilter = buildLineInClause(lines, "t", "ln");
     const tr = getVietnamTimeRange();
+    const pidFilter = request.nextUrl.searchParams.get("pid")?.trim() ?? "";
+    const pidClause = pidFilter ? "AND t.SERIAL_NO LIKE :pidLike" : "";
 
     const sql = `
       SELECT TO_CHAR(t.QC_DATE, 'YYYY-MM-DD HH24:MI:SS') AS QC_DATE,
@@ -64,6 +66,7 @@ export async function GET(request: NextRequest) {
         AND t.LINE_CODE IS NOT NULL
         AND t.LINE_CODE <> '*'
         ${lineFilter.clause}
+        ${pidClause}
       ORDER BY t.WORKSTAGE_CODE, t.RECEIPT_DEFICIT, t.QC_DATE DESC
       FETCH FIRST 500 ROWS ONLY
     `;
@@ -72,6 +75,7 @@ export async function GET(request: NextRequest) {
       tsStart: tr.startStr,
       tsEnd: tr.endStr,
       ...lineFilter.params,
+      ...(pidFilter ? { pidLike: `%${pidFilter}%` } : {}),
     });
 
     const mapped = rows.map((r) => ({
