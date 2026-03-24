@@ -141,6 +141,7 @@ async function getNgDetailsByDefect(
         AND t.LINE_CODE IS NOT NULL
         AND t.LINE_CODE <> '*'
         AND t.DEFECT_ITEM_CODE IS NOT NULL
+        AND t.DEFECT_ITEM_CODE <> '*'
         AND ${buildExcludeOpenShortClause("t")}
         ${lineFilter.clause}
     ) WHERE RN <= 5
@@ -170,6 +171,7 @@ async function fetchFromDB(
       AND t.LINE_CODE IS NOT NULL
       AND t.LINE_CODE <> '*'
       AND t.DEFECT_ITEM_CODE IS NOT NULL
+      AND t.DEFECT_ITEM_CODE <> '*'
       AND ${buildExcludeOpenShortClause("t")}
       ${lineFilter.clause}
     GROUP BY t.LINE_CODE, t.DEFECT_ITEM_CODE
