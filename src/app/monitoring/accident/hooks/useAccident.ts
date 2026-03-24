@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { AccidentResponse } from "../types";
 
-export function useAccident(intervalMs: number, selectedLines: string[] = []) {
+export function useAccident(intervalMs: number, selectedLines: string[] = [], enabled = true) {
   const [data, setData] = useState<AccidentResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -29,10 +29,11 @@ export function useAccident(intervalMs: number, selectedLines: string[] = []) {
   }, [linesParam]);
 
   useEffect(() => {
+    if (!enabled) return;
     fetchData();
     const id = setInterval(fetchData, intervalMs);
     return () => clearInterval(id);
-  }, [fetchData, intervalMs]);
+  }, [fetchData, intervalMs, enabled]);
 
   return { data, error, loading };
 }

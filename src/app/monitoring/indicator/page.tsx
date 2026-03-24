@@ -26,7 +26,7 @@ import { useLocale } from "@/i18n";
 
 export default function IndicatorPage() {
   const { t, dateLocale } = useLocale();
-  const { selectedLines } = useLineFilter();
+  const { selectedLines, isInitialized } = useLineFilter();
   const [period, setPeriod] = usePersistedState<PeriodType>("indicator-period", "weekly");
   const [minVolume, setMinVolume] = usePersistedState<number>("indicator-minVolume", 200);
   const [showSettings, setShowSettings] = useState(false);
@@ -36,8 +36,8 @@ export default function IndicatorPage() {
 
   /* 초기 로딩 + 라인 필터 변경 시 재조회 */
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (isInitialized) fetchData();
+  }, [fetchData, isInitialized]);
 
   /* 설정 팝오버 외부 클릭 닫기 */
   useEffect(() => {

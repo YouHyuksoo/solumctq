@@ -24,12 +24,12 @@ import { useLocale } from "@/i18n";
 
 export default function MaterialPage() {
   const { t, dateLocale } = useLocale();
-  const { selectedLines } = useLineFilter();
+  const { selectedLines, isInitialized } = useLineFilter();
   const { data, error, loading, fetchData } = useMaterial(selectedLines);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (isInitialized) fetchData();
+  }, [fetchData, isInitialized]);
 
   const aCount = data?.lines.filter((l) => l.overallGrade === "A").length ?? 0;
   const cCount = data?.lines.filter((l) => l.overallGrade === "C").length ?? 0;

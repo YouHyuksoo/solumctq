@@ -22,12 +22,12 @@ import LanguageSelector from "@/app/components/LanguageSelector";
 
 export default function FpyPage() {
   const { t, dateLocale } = useLocale();
-  const { selectedLines } = useLineFilter();
+  const { selectedLines, isInitialized } = useLineFilter();
   const { data, error, loading, fetchData } = useFpy(selectedLines);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (isInitialized) fetchData();
+  }, [fetchData, isInitialized]);
 
   const aCount = data?.lines.filter((l) => l.overallGrade === "A").length ?? 0;
 

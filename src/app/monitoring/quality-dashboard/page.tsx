@@ -27,11 +27,11 @@ import { DEFAULT_SETTINGS } from "./types";
 
 export default function QualityDashboardPage() {
   const { t, dateLocale } = useLocale();
-  const { selectedLines } = useLineFilter();
+  const { selectedLines, isInitialized } = useLineFilter();
   const { data, rawData, error, loading, fetchData } = useQualityDashboard(selectedLines);
   const [settings, setSettings] = usePersistedState<DashboardSettings>("quality-dashboard-settings", DEFAULT_SETTINGS);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { if (isInitialized) fetchData(); }, [fetchData, isInitialized]);
 
   return (
     <div className="h-screen flex flex-col bg-gray-950 text-white overflow-hidden">

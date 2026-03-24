@@ -22,14 +22,14 @@ import { useLocale } from "@/i18n";
 
 export default function RepairStatusPage() {
   const { t, dateLocale } = useLocale();
-  const { selectedLines } = useLineFilter();
+  const { selectedLines, isInitialized } = useLineFilter();
   const [pidInput, setPidInput] = useState("");
   const [pidFilter, setPidFilter] = useState("");
   const { data, error, loading, fetchData } = useRepairStatus(selectedLines, pidFilter);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (isInitialized) fetchData();
+  }, [fetchData, isInitialized]);
 
   return (
     <div className="h-screen flex flex-col bg-gray-950 text-white overflow-hidden">

@@ -24,12 +24,12 @@ import { useAnalysis } from "./hooks/useAnalysis";
 
 export default function AnalysisPage() {
   const { t } = useLocale();
-  const { selectedLines } = useLineFilter();
+  const { selectedLines, isInitialized } = useLineFilter();
   const { data, loading, fetchAll } = useAnalysis(selectedLines);
 
   useEffect(() => {
-    fetchAll();
-  }, [fetchAll]);
+    if (isInitialized) fetchAll();
+  }, [fetchAll, isInitialized]);
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">

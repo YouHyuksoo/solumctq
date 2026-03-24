@@ -175,6 +175,7 @@ async function fetchFromDB(
       AND ${buildExcludeOpenShortClause("t")}
       ${lineFilter.clause}
     GROUP BY t.LINE_CODE, t.DEFECT_ITEM_CODE
+    HAVING COUNT(*) >= 2
   `;
 
   const rows = await executeQuery<DefectRow>(sql, {

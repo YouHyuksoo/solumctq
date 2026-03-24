@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { MonitoringResponse } from "../types";
 
-export function useMonitoring(intervalMs = 10000, selectedLines: string[] = []) {
+export function useMonitoring(intervalMs = 10000, selectedLines: string[] = [], enabled = true) {
   const [data, setData] = useState<MonitoringResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,10 +30,11 @@ export function useMonitoring(intervalMs = 10000, selectedLines: string[] = []) 
   }, [linesParam]);
 
   useEffect(() => {
+    if (!enabled) return;
     fetchData();
     const timer = setInterval(fetchData, intervalMs);
     return () => clearInterval(timer);
-  }, [fetchData, intervalMs]);
+  }, [fetchData, intervalMs, enabled]);
 
   return { data, error, loading };
 }

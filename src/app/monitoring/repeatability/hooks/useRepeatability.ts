@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { RepeatabilityResponse } from "../types";
 
-export function useRepeatability(intervalMs = 30000, selectedLines: string[] = []) {
+export function useRepeatability(intervalMs = 30000, selectedLines: string[] = [], enabled = true) {
   const [data, setData] = useState<RepeatabilityResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,10 +30,11 @@ export function useRepeatability(intervalMs = 30000, selectedLines: string[] = [
   }, [linesParam]);
 
   useEffect(() => {
+    if (!enabled) return;
     fetchData();
     const timer = setInterval(fetchData, intervalMs);
     return () => clearInterval(timer);
-  }, [fetchData, intervalMs]);
+  }, [fetchData, intervalMs, enabled]);
 
   return { data, error, loading };
 }

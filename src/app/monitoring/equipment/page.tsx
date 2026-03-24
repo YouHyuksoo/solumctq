@@ -23,12 +23,12 @@ import { useLocale } from "@/i18n";
 
 export default function EquipmentPage() {
   const { t, dateLocale } = useLocale();
-  const { selectedLines } = useLineFilter();
+  const { selectedLines, isInitialized } = useLineFilter();
   const { data, error, loading, fetchData } = useEquipment(selectedLines);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (isInitialized) fetchData();
+  }, [fetchData, isInitialized]);
 
   return (
     <div className="h-screen flex flex-col bg-gray-950 text-white overflow-hidden">

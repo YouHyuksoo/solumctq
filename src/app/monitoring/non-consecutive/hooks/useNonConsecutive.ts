@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { RepeatabilityResponse } from "@/app/monitoring/repeatability/types";
 
-export function useNonConsecutive(intervalMs: number, selectedLines: string[] = []) {
+export function useNonConsecutive(intervalMs: number, selectedLines: string[] = [], enabled = true) {
   const [data, setData] = useState<RepeatabilityResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -29,10 +29,11 @@ export function useNonConsecutive(intervalMs: number, selectedLines: string[] = 
   }, [linesParam]);
 
   useEffect(() => {
+    if (!enabled) return;
     fetchData();
     const id = setInterval(fetchData, intervalMs);
     return () => clearInterval(id);
-  }, [fetchData, intervalMs]);
+  }, [fetchData, intervalMs, enabled]);
 
   return { data, error, loading };
 }

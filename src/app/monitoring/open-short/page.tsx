@@ -30,8 +30,8 @@ export default function OpenShortPage() {
   const [rollingEnabled, setRollingEnabled] = usePersistedState("ctq-rolling-enabled", true);
 
   const { t, dateLocale } = useLocale();
-  const { selectedLines } = useLineFilter();
-  const { data, error, loading } = useOpenShort(monitorInterval, selectedLines);
+  const { selectedLines, isInitialized } = useLineFilter();
+  const { data, error, loading } = useOpenShort(monitorInterval, selectedLines, isInitialized);
 
   const totalItems = data?.lines.length ?? 0;
   const { currentPage, totalPages, startIdx, endIdx, progress, setCurrentPage } =
