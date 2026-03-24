@@ -20,6 +20,8 @@ const vi: TranslationKeys = {
     noActiveLines: "Không có line hoạt động.",
     noMatchingData: "Không có dữ liệu lỗi phù hợp với tiêu chí hiện tại.",
     refresh: "Cập nhật",
+    fullscreen: "Toàn màn hình",
+    exitFullscreen: "Thoát toàn màn hình",
     line: "Line",
   },
 
@@ -308,6 +310,8 @@ const vi: TranslationKeys = {
       endTime: "Thời gian KT",
       duration: "Thời gian dừng",
       tableSource: "Bảng: IP_LINE_DAILY_OPERATION_HIST",
+      today: "Hôm nay",
+      rowCount: " dòng",
     },
     analysis: {
       title: "Phân tích tổng hợp",

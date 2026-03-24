@@ -1,10 +1,10 @@
 /**
  * @file src/app/monitoring/equipment-history/hooks/useEquipmentHistory.ts
- * @description 설비점검이력 데이터 조회 훅 — 수동 새로고침 전용
+ * @description 설비점검이력 데이터 조회 훅 — 날짜 구간 지원
  *
  * 초보자 가이드:
  * 1. fetchData() 호출 시 API 1회 조회
- * 2. 자동 갱신 없음 (설비이상 페이지와 동일 방식)
+ * 2. from/to로 구간 조회, 미지정 시 당일
  */
 
 "use client";
@@ -12,7 +12,7 @@
 import { useState, useCallback } from "react";
 import type { EquipmentHistoryResponse } from "../types";
 
-export function useEquipmentHistory(selectedLines: string[]) {
+export function useEquipmentHistory(selectedLines: string[], fromDate: string, toDate: string) {
   const [data, setData] = useState<EquipmentHistoryResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -22,9 +22,9 @@ export function useEquipmentHistory(selectedLines: string[]) {
     setError(null);
     try {
       const params = new URLSearchParams();
-      if (selectedLines.length > 0) {
-        params.set("lines", selectedLines.join(","));
-      }
+      if (selectedLines.length > 0) params.set("lines", selectedLines.join(","));
+      if (fromDate) params.set("from", fromDate);
+      if (toDate) params.set("to", toDate);
       const res = await fetch(`/api/ctq/equipment-history?${params.toString()}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: EquipmentHistoryResponse = await res.json();
@@ -34,7 +34,7 @@ export function useEquipmentHistory(selectedLines: string[]) {
     } finally {
       setLoading(false);
     }
-  }, [selectedLines]);
+  }, [selectedLines, fromDate, toDate]);
 
   return { data, error, loading, fetchData };
 }

@@ -20,6 +20,8 @@ const en: TranslationKeys = {
     noActiveLines: "No active lines.",
     noMatchingData: "No defect data matching the current criteria.",
     refresh: "Updated",
+    fullscreen: "Fullscreen",
+    exitFullscreen: "Exit Fullscreen",
     line: "Line",
   },
 
@@ -308,6 +310,8 @@ const en: TranslationKeys = {
       endTime: "End Time",
       duration: "Duration",
       tableSource: "Table: IP_LINE_DAILY_OPERATION_HIST",
+      today: "Today",
+      rowCount: " rows",
     },
     analysis: {
       title: "Comprehensive Analysis",

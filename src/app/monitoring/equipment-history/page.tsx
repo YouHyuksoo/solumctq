@@ -1,16 +1,16 @@
 /**
  * @file src/app/monitoring/equipment-history/page.tsx
- * @description 설비점검이력 페이지 — IP_LINE_DAILY_OPERATION_HIST 개별 이력 조회
+ * @description 설비점검이력 페이지 — 날짜 구간 선택 + 이력 테이블
  *
  * 초보자 가이드:
- * 1. 당일 설비 가동/정지 이력을 개별 레코드로 표시
- * 2. 수동 새로고침 (자동 갱신 없음)
+ * 1. 기본 당일, 시작일~종료일 구간 조회 가능
+ * 2. 수동 새로고침
  * 3. h-screen flex 레이아웃 — 테이블만 스크롤
  */
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLineFilter } from "../contexts/LineFilterContext";
 import { useEquipmentHistory } from "./hooks/useEquipmentHistory";
 import EquipmentHistoryTable from "./components/EquipmentHistoryTable";
@@ -20,14 +20,27 @@ import LineSelectButton from "../components/LineSelectButton";
 import LanguageSelector from "@/app/components/LanguageSelector";
 import { useLocale } from "@/i18n";
 
+function getToday(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export default function EquipmentHistoryPage() {
   const { t, dateLocale } = useLocale();
   const { selectedLines, isInitialized } = useLineFilter();
-  const { data, error, loading, fetchData } = useEquipmentHistory(selectedLines);
+  const [fromDate, setFromDate] = useState(getToday());
+  const [toDate, setToDate] = useState(getToday());
+  const { data, error, loading, fetchData } = useEquipmentHistory(selectedLines, fromDate, toDate);
 
   useEffect(() => {
     if (isInitialized) fetchData();
   }, [fetchData, isInitialized]);
+
+  const setToday = () => {
+    const today = getToday();
+    setFromDate(today);
+    setToDate(today);
+  };
 
   return (
     <div className="h-screen flex flex-col bg-gray-950 text-white overflow-hidden">
@@ -57,7 +70,28 @@ export default function EquipmentHistoryPage() {
           <div className="flex items-center gap-4">
             <MonitoringNav />
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={fromDate}
+              max={toDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="px-2 py-1 rounded bg-gray-900 border border-gray-600 text-sm text-gray-200 focus:border-blue-500 focus:outline-none"
+            />
+            <span className="text-gray-500 text-sm">~</span>
+            <input
+              type="date"
+              value={toDate}
+              min={fromDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="px-2 py-1 rounded bg-gray-900 border border-gray-600 text-sm text-gray-200 focus:border-blue-500 focus:outline-none"
+            />
+            <button
+              onClick={setToday}
+              className="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-xs text-gray-300 transition-colors"
+            >
+              {t("pages.equipmentHistory.today") as string}
+            </button>
             <button
               onClick={fetchData}
               disabled={loading}
@@ -96,7 +130,7 @@ export default function EquipmentHistoryPage() {
                 {t("pages.equipmentHistory.title") as string}
               </h2>
               <p className="text-gray-400 text-base leading-relaxed">
-                {t("pages.equipmentHistory.noData") as string}
+                {fromDate} ~ {toDate} — {t("pages.equipmentHistory.noData") as string}
               </p>
             </div>
           </div>
@@ -112,6 +146,7 @@ export default function EquipmentHistoryPage() {
             <span>{loading ? (t("common.dataLoading") as string) : (t("common.statusNormal") as string)}</span>
           </div>
           <div className="flex items-center gap-4 text-xs text-gray-500">
+            <span>{fromDate} ~ {toDate} ({data?.rows.length ?? 0}{t("pages.equipmentHistory.rowCount") as string})</span>
             {data && (
               <span>{t("common.refresh") as string}: {new Date(data.lastUpdated).toLocaleTimeString(dateLocale)}</span>
             )}

@@ -42,7 +42,7 @@ export default function MaterialLineCard({ line, compact = false }: { line: Mate
   const [modal, setModal] = useState<{ defectItem: string } | null>(null);
 
   return (
-    <div className={`rounded-lg border-2 ${style.card} p-0 overflow-hidden`}>
+    <div className={`rounded-lg border-2 ${style.card} p-0 overflow-hidden min-h-[180px] flex flex-col`}>
       <div className={`flex items-center justify-between bg-black/40 ${compact ? "px-4 py-2" : "px-4 py-2"}`}>
         <div>
           <span className={`text-gray-400 ${compact ? "text-xs" : "text-sm"}`}>Line: </span>
@@ -54,7 +54,7 @@ export default function MaterialLineCard({ line, compact = false }: { line: Mate
         </span>
       </div>
 
-      <table className={`w-full ${compact ? "text-xs" : "text-sm"}`}>
+      <table className={`w-full flex-1 ${compact ? "text-xs" : "text-sm"}`}>
         <thead>
           <tr className={`bg-black/30 text-gray-400 ${compact ? "text-[10px]" : "text-xs"}`}>
             <th className={`text-left ${compact ? "px-3 py-1.5" : "px-3 py-1.5"}`}>{t("table.component") as string}</th>

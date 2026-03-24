@@ -30,6 +30,19 @@ export async function GET(request: NextRequest) {
   try {
     const lines = parseLines(request);
     const lineFilter = buildLineInClause(lines, "B", "ln");
+    const fromDate = request.nextUrl.searchParams.get("from");
+    const toDate = request.nextUrl.searchParams.get("to");
+
+    /* from/to 없으면 당일, 있으면 구간 조회 */
+    let dateCondition: string;
+    const dateParams: Record<string, string> = {};
+    if (fromDate && toDate) {
+      dateCondition = `B.ACTUAL_DATE >= TO_DATE(:fromDate, 'YYYY-MM-DD') AND B.ACTUAL_DATE <= TO_DATE(:toDate, 'YYYY-MM-DD')`;
+      dateParams.fromDate = fromDate;
+      dateParams.toDate = toDate;
+    } else {
+      dateCondition = `B.ACTUAL_DATE = F_GET_WORK_ACTUAL_DATE(SYSDATE, 'A')`;
+    }
 
     const sql = `
       SELECT B.LINE_CODE,
@@ -40,12 +53,13 @@ export async function GET(request: NextRequest) {
              TO_CHAR(B.END_DATE, 'YYYY-MM-DD HH24:MI:SS') AS END_DATE,
              ROUND((B.END_DATE - B.START_DATE) * 24 * 60, 1) AS STOP_MINUTES
       FROM IP_LINE_DAILY_OPERATION_HIST B
-      WHERE B.ACTUAL_DATE = F_GET_WORK_ACTUAL_DATE(SYSDATE, 'A')
+      WHERE ${dateCondition}
         ${lineFilter.clause}
       ORDER BY B.START_DATE DESC
     `;
 
     const rows = await executeQuery<HistRow>(sql, {
+      ...dateParams,
       ...lineFilter.params,
     });
 

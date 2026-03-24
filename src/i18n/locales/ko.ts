@@ -19,6 +19,8 @@ const ko = {
     noActiveLines: "활성 라인이 없습니다.",
     noMatchingData: "현재 조건에 해당하는 불량 데이터가 없습니다.",
     refresh: "갱신",
+    fullscreen: "전체화면",
+    exitFullscreen: "전체화면 해제",
     line: "Line",
   },
 
@@ -312,6 +314,8 @@ const ko = {
       endTime: "종료시간",
       duration: "정지시간",
       tableSource: "테이블: IP_LINE_DAILY_OPERATION_HIST",
+      today: "오늘",
+      rowCount: "건",
     },
     analysis: {
       title: "종합분석",
