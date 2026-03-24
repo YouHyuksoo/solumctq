@@ -22,12 +22,12 @@ import LineSelectButton from "../components/LineSelectButton";
 import LanguageSelector from "@/app/components/LanguageSelector";
 import { useLocale } from "@/i18n";
 
-const ITEMS_PER_PAGE = 9;
+const ITEMS_PER_PAGE = 12;
 
 export default function OpenShortPage() {
-  const [monitorInterval, setMonitorInterval] = usePersistedState("ctq-monitor-interval", 30000);
-  const [rollingInterval, setRollingInterval] = usePersistedState("ctq-rolling-interval", 10000);
-  const [rollingEnabled, setRollingEnabled] = usePersistedState("ctq-rolling-enabled", true);
+  const [monitorInterval, setMonitorInterval] = usePersistedState("ctq-open-short-monitor-interval", 30000);
+  const [rollingInterval, setRollingInterval] = usePersistedState("ctq-open-short-rolling-interval", 10000);
+  const [rollingEnabled, setRollingEnabled] = usePersistedState("ctq-open-short-rolling-enabled", true);
 
   const { t, dateLocale } = useLocale();
   const { selectedLines, isInitialized } = useLineFilter();
@@ -42,7 +42,7 @@ export default function OpenShortPage() {
       enabled: rollingEnabled,
     });
 
-  const sortedLines = [...(data?.lines ?? [])].sort((a, b) => a.lineName.localeCompare(b.lineName));
+  const sortedLines = [...(data?.lines ?? [])].sort((a, b) => a.lineCode.localeCompare(b.lineCode));
   const visibleLines = sortedLines.slice(startIdx, endIdx);
   const bCount = data?.lines.filter((l) => l.overallGrade === "B").length ?? 0;
 

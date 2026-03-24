@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
       `, bp),
       executeQuery<CountRow>(`
         SELECT NVL(t.DEFECT_ITEM_CODE, '-') AS NAME, COUNT(*) AS CNT
-        FROM IP_PRODUCT_WORK_QC t WHERE ${baseWhere} AND t.DEFECT_ITEM_CODE IS NOT NULL
+        FROM IP_PRODUCT_WORK_QC t WHERE ${baseWhere} AND t.DEFECT_ITEM_CODE IS NOT NULL AND t.DEFECT_ITEM_CODE <> '*'
         GROUP BY t.DEFECT_ITEM_CODE ORDER BY CNT DESC FETCH FIRST 10 ROWS ONLY
       `, bp),
       executeQuery<CountRow>(`

@@ -27,9 +27,9 @@ import { useLocale } from "@/i18n";
 const ITEMS_PER_PAGE = 12;
 
 export default function AccidentPage() {
-  const [monitorInterval, setMonitorInterval] = usePersistedState("ctq-monitor-interval", 30000);
-  const [rollingInterval, setRollingInterval] = usePersistedState("ctq-rolling-interval", 10000);
-  const [rollingEnabled, setRollingEnabled] = usePersistedState("ctq-rolling-enabled", true);
+  const [monitorInterval, setMonitorInterval] = usePersistedState("ctq-accident-monitor-interval", 30000);
+  const [rollingInterval, setRollingInterval] = usePersistedState("ctq-accident-rolling-interval", 10000);
+  const [rollingEnabled, setRollingEnabled] = usePersistedState("ctq-accident-rolling-enabled", true);
 
   const { t, dateLocale } = useLocale();
   const { selectedLines, isInitialized } = useLineFilter();

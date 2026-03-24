@@ -15,6 +15,8 @@ import { useEffect } from "react";
 import { useLineFilter } from "../contexts/LineFilterContext";
 import { useEquipment } from "./hooks/useEquipment";
 import EquipmentTable from "./components/EquipmentTable";
+import EquipmentWeeklyChart from "./components/EquipmentWeeklyChart";
+import EquipmentPieChart from "./components/EquipmentPieChart";
 import MonitoringNav from "../components/MonitoringNav";
 import HeaderActions from "../components/HeaderActions";
 import LineSelectButton from "../components/LineSelectButton";
@@ -78,42 +80,42 @@ export default function EquipmentPage() {
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 max-w-[1920px] w-full mx-auto">
+      <main className="flex-1 min-h-0 max-w-[1920px] w-full mx-auto flex flex-col">
         {error && (
-          <div className="mx-6 mt-4 p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm">
+          <div className="mx-6 mt-2 p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm shrink-0">
             {t("common.dataError") as string}: {error}
           </div>
         )}
         {loading && !data && (
-          <div className="flex flex-col items-center justify-center h-64 text-gray-500 gap-3">
+          <div className="flex flex-col items-center justify-center flex-1 text-gray-500 gap-3">
             <span className="w-8 h-8 border-4 border-gray-700 border-t-blue-400 rounded-full animate-spin" />
             {t("common.dataLoading") as string}
           </div>
         )}
-        {data && data.lines.length === 0 && (
-          <div className="flex items-center justify-center" style={{ minHeight: "calc(100vh - 200px)" }}>
-            <div className="text-center p-12 bg-gray-900/60 border border-gray-700 rounded-2xl max-w-lg">
-              <div className="text-6xl mb-5">🔧</div>
-              <h2 className="text-2xl font-bold text-gray-200 mb-4">
-                {t("pages.equipment.title") as string}
-              </h2>
-              <p className="text-gray-400 text-base leading-relaxed mb-6">
-                {t("pages.equipment.noData") as string}
-              </p>
-              <div className="text-sm text-gray-400 space-y-3 text-left bg-gray-800/50 rounded-lg p-6">
-                <div className="font-bold text-gray-200 text-base mb-2">{t("navTooltip.criteria") as string}</div>
-                <p>· <span className="text-purple-400 font-bold">{t("grade.c") as string}</span>: {t("pages.equipment.gradeDesc") as string}</p>
-                <div className="border-t border-gray-700 pt-3 mt-3 text-gray-500">
-                  <p>· {t("table.process") as string}: ICT, Hi-Pot, FT, Burn-In, ATE</p>
-                  <p>· {t("pages.equipment.tableDesc") as string}</p>
-                  <p>· {t("pages.equipment.periodDesc") as string}</p>
-                </div>
+        {data && (
+          <div className="flex-1 min-h-0 overflow-auto">
+            <EquipmentTable lines={data.lines} />
+          </div>
+        )}
+        {isInitialized && (
+          <div className="shrink-0 px-4 py-2 border-t border-gray-800 flex gap-4" style={{ height: "260px" }}>
+            <div className="flex-[2] min-w-0 flex flex-col">
+              <h3 className="text-sm font-bold text-gray-300 mb-1">
+                7{t("pages.indicator.thisWeekDays") as string} {t("pages.equipment.title") as string}
+              </h3>
+              <div className="flex-1 min-h-0 bg-gray-900 border border-gray-800 rounded-lg p-2">
+                <EquipmentWeeklyChart selectedLines={selectedLines} />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0 flex flex-col">
+              <h3 className="text-sm font-bold text-gray-300 mb-1">
+                {t("table.process") as string}
+              </h3>
+              <div className="flex-1 min-h-0 bg-gray-900 border border-gray-800 rounded-lg p-2">
+                <EquipmentPieChart selectedLines={selectedLines} />
               </div>
             </div>
           </div>
-        )}
-        {data && data.lines.length > 0 && (
-          <EquipmentTable lines={data.lines} />
         )}
       </main>
       <footer className="shrink-0 bg-gray-900 border-t border-gray-700 px-6 py-1.5">

@@ -24,3 +24,18 @@ export interface EquipmentResponse {
   lines: EquipmentLineData[];
   lastUpdated: string;
 }
+
+/** 1주일 공정별 일별 정지시간 (차트용) */
+export interface EquipmentWeeklyPoint {
+  date: string;
+  ICT: number;
+  HIPOT: number;
+  FT: number;
+  BURNIN: number;
+  ATE: number;
+}
+
+export interface EquipmentWeeklyResponse {
+  data: EquipmentWeeklyPoint[];
+  lastUpdated: string;
+}

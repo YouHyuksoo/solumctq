@@ -82,11 +82,32 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    /* 총 정지시간 내림차순 정렬 */
+    /* 선택된 라인은 데이터 0건이어도 포함 */
+    if (lines.length > 0) {
+      const missingLines = lines.filter((lc) => !lineMap.has(lc));
+      if (missingLines.length > 0) {
+        const placeholders = missingLines.map((_, i) => `:ml${i}`).join(",");
+        const nameRows = await executeQuery<{ LINE_CODE: string; LINE_NAME: string }>(
+          `SELECT LINE_CODE, LINE_NAME FROM IP_PRODUCT_LINE WHERE LINE_CODE IN (${placeholders})`,
+          Object.fromEntries(missingLines.map((lc, i) => [`ml${i}`, lc]))
+        );
+        const nameMap = new Map(nameRows.map((r) => [r.LINE_CODE, r.LINE_NAME]));
+        for (const lc of missingLines) {
+          lineMap.set(lc, {
+            lineCode: lc,
+            lineName: nameMap.get(lc) || lc,
+            processes: {},
+          });
+        }
+      }
+    }
+
+    /* 라인코드 정렬 (정지시간 있는 라인 우선, 그 안에서 코드순) */
     const lineList = [...lineMap.values()].sort((a, b) => {
       const sumA = Object.values(a.processes).reduce((s, p) => s + (p?.stopMinutes ?? 0), 0);
       const sumB = Object.values(b.processes).reduce((s, p) => s + (p?.stopMinutes ?? 0), 0);
-      return sumB - sumA;
+      if (sumA !== sumB) return sumB - sumA;
+      return a.lineCode.localeCompare(b.lineCode);
     });
 
     return NextResponse.json({

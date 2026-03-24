@@ -7,32 +7,47 @@
  * 2. **판정 기준**: 동일 부품 기준
  *    - A급: 일 3건+ NG
  *    - C급: 90일 누적 3건+ NG → 불량개선
- * 3. 수동 새로고침 (자동 갱신 없음)
+ * 3. 자동 갱신 (30초 기본, 설정 가능)
  */
 
 "use client";
 
-import { useEffect } from "react";
 import { useLineFilter } from "../contexts/LineFilterContext";
+import { usePersistedState } from "../hooks/usePersistedState";
+import { useAutoRolling } from "../hooks/useAutoRolling";
 import { useMaterial } from "./hooks/useMaterial";
 import MaterialLineCard from "./components/MaterialLineCard";
+import SettingsPanel from "../components/SettingsPanel";
 import MonitoringNav from "../components/MonitoringNav";
 import HeaderActions from "../components/HeaderActions";
 import LineSelectButton from "../components/LineSelectButton";
 import LanguageSelector from "@/app/components/LanguageSelector";
 import { useLocale } from "@/i18n";
 
+const ITEMS_PER_PAGE = 12;
+
 export default function MaterialPage() {
+  const [monitorInterval, setMonitorInterval] = usePersistedState("ctq-material-monitor-interval", 600000);
+  const [rollingInterval, setRollingInterval] = usePersistedState("ctq-material-rolling-interval", 10000);
+  const [rollingEnabled, setRollingEnabled] = usePersistedState("ctq-material-rolling-enabled", true);
+
   const { t, dateLocale } = useLocale();
   const { selectedLines, isInitialized } = useLineFilter();
-  const { data, error, loading, fetchData } = useMaterial(selectedLines);
+  const { data, error, loading } = useMaterial(monitorInterval, selectedLines, isInitialized);
 
-  useEffect(() => {
-    if (isInitialized) fetchData();
-  }, [fetchData, isInitialized]);
+  const totalItems = data?.lines.length ?? 0;
+  const { currentPage, totalPages, startIdx, endIdx, progress, setCurrentPage } =
+    useAutoRolling({
+      totalItems,
+      itemsPerPage: ITEMS_PER_PAGE,
+      intervalMs: rollingInterval,
+      enabled: rollingEnabled,
+    });
 
   const aCount = data?.lines.filter((l) => l.overallGrade === "A").length ?? 0;
   const cCount = data?.lines.filter((l) => l.overallGrade === "C").length ?? 0;
+  const sortedLines = [...(data?.lines ?? [])].sort((a, b) => a.lineCode.localeCompare(b.lineCode));
+  const visibleLines = sortedLines.slice(startIdx, endIdx);
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -47,6 +62,14 @@ export default function MaterialPage() {
             </h1>
             <LineSelectButton />
             <LanguageSelector />
+            <SettingsPanel
+              monitorInterval={monitorInterval}
+              rollingInterval={rollingInterval}
+              rollingEnabled={rollingEnabled}
+              onMonitorIntervalChange={setMonitorInterval}
+              onRollingIntervalChange={setRollingInterval}
+              onRollingEnabledChange={setRollingEnabled}
+            />
             <HeaderActions />
           </div>
           <div className="flex flex-col items-end gap-1">
@@ -71,22 +94,18 @@ export default function MaterialPage() {
                 <SummaryBadge label={t("pages.material.gradeCLabel") as string} count={cCount} color="bg-purple-600" />
               </>
             )}
-            <button
-              onClick={fetchData}
-              disabled={loading}
-              className="px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-sm text-gray-300 hover:text-white transition-colors disabled:opacity-50"
-            >
-              {loading ? (
-                <span className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 border-2 border-gray-500 border-t-white rounded-full animate-spin" />
-                  {t("common.dataLoading") as string}
-                </span>
-              ) : (
-                t("pages.indicator.refreshBtn") as string
-              )}
-            </button>
           </div>
         </div>
+        {rollingEnabled && totalPages > 1 && (
+          <div className="max-w-[1920px] mx-auto mt-2">
+            <div className="h-0.5 bg-gray-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-500 transition-all duration-100"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="max-w-[1920px] mx-auto px-4 py-2">
@@ -125,11 +144,29 @@ export default function MaterialPage() {
           </div>
         )}
         {data && data.lines.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
-            {data.lines.map((line) => (
-              <MaterialLineCard key={line.lineCode} line={line} compact />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+              {visibleLines.map((line) => (
+                <MaterialLineCard key={line.lineCode} line={line} compact />
+              ))}
+            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-6">
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i)}
+                    className={`w-2.5 h-2.5 rounded-full transition-colors ${
+                      i === currentPage ? "bg-blue-500" : "bg-gray-700 hover:bg-gray-600"
+                    }`}
+                  />
+                ))}
+                <span className="ml-2 text-xs text-gray-500">
+                  {currentPage + 1} / {totalPages}
+                </span>
+              </div>
+            )}
+          </>
         )}
       </main>
 

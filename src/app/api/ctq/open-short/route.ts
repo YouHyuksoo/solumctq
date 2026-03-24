@@ -114,7 +114,9 @@ export async function GET(request: NextRequest) {
       WHERE t.QC_DATE >= TO_DATE(:dayStart, 'YYYY/MM/DD HH24:MI:SS')
         AND t.BAD_REASON_CODE IN ('B2020', 'B2030')
         AND t.LINE_CODE IS NOT NULL
+        AND t.LINE_CODE <> '*'
         AND t.DEFECT_ITEM_CODE IS NOT NULL
+        AND t.DEFECT_ITEM_CODE <> '*'
         AND ${buildIncludeOpenShortClause("t")}
         ${lineFilter.clause}
       GROUP BY t.LINE_CODE, t.BAD_REASON_CODE
@@ -145,7 +147,9 @@ export async function GET(request: NextRequest) {
         WHERE t.QC_DATE >= TO_DATE(:dayStart, 'YYYY/MM/DD HH24:MI:SS')
           AND t.BAD_REASON_CODE IN ('B2020', 'B2030')
           AND t.LINE_CODE IS NOT NULL
+          AND t.LINE_CODE <> '*'
           AND t.DEFECT_ITEM_CODE IS NOT NULL
+          AND t.DEFECT_ITEM_CODE <> '*'
           AND ${buildIncludeOpenShortClause("t")}
           ${lineFilter.clause}
       ) WHERE RN <= 5

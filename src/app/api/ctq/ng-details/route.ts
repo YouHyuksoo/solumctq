@@ -89,7 +89,9 @@ export async function GET(request: NextRequest) {
         WHERE t.QC_DATE >= TO_DATE(:tsStart, 'YYYY/MM/DD HH24:MI:SS')
           AND t.QC_DATE < TO_DATE(:tsEnd, 'YYYY/MM/DD HH24:MI:SS')
           AND t.LINE_CODE = :lineCode
+          AND t.LINE_CODE <> '*'
           AND t.DEFECT_ITEM_CODE = :defectItem
+          AND t.DEFECT_ITEM_CODE <> '*'
         ORDER BY t.QC_DATE DESC
         FETCH FIRST 200 ROWS ONLY
       `;
@@ -117,6 +119,7 @@ export async function GET(request: NextRequest) {
         WHERE t.QC_DATE >= TO_DATE(:tsStart, 'YYYY/MM/DD HH24:MI:SS')
           AND t.BAD_REASON_CODE = :badReasonCode
           AND t.LINE_CODE = :lineCode
+          AND t.LINE_CODE <> '*'
         ORDER BY t.QC_DATE DESC
         FETCH FIRST 200 ROWS ONLY
       `;

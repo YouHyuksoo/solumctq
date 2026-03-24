@@ -47,52 +47,59 @@ export default function EquipmentTable({ lines }: Props) {
 
   return (
     <div className="overflow-auto h-full">
-      <table className="w-full text-sm border-separate border-spacing-0">
+      <table className="w-full text-base border-separate border-spacing-0">
         <thead className="sticky top-0 z-20" style={{ boxShadow: "0 2px 0 0 #1f2937" }}>
           <tr className="bg-gray-800">
-            <th className="text-left px-3 py-2 border border-gray-700 bg-gray-800 sticky left-0 z-30">
+            <th className="text-left px-4 py-1.5 border border-gray-700 bg-gray-800 sticky left-0 z-30 text-lg">
               {t("common.line") as string}
             </th>
             {PROCESS_KEYS.map((key) => (
               <th
                 key={key}
-                className="text-center px-4 py-2 border border-gray-700 bg-gray-800 font-bold"
+                className="text-center px-6 py-1.5 border border-gray-700 bg-gray-800 font-bold text-lg"
               >
                 {PROCESS_LABELS[key]}
               </th>
             ))}
-            <th className="text-center px-4 py-2 border border-gray-700 bg-gray-800 font-bold">
+            <th className="text-center px-6 py-1.5 border border-gray-700 bg-gray-800 font-bold text-lg">
               {t("table.totalCount") as string}
             </th>
           </tr>
         </thead>
         <tbody>
+          {lines.length === 0 && (
+            <tr>
+              <td colSpan={PROCESS_KEYS.length + 2} className="px-4 py-8 text-center text-gray-500">
+                {t("pages.equipment.noData") as string}
+              </td>
+            </tr>
+          )}
           {lines.map((line) => {
             const totalStop = Object.values(line.processes).reduce(
               (s, p) => s + (p?.stopMinutes ?? 0), 0
             );
             return (
               <tr key={line.lineCode} className="border-t border-gray-800 hover:bg-gray-800/30">
-                <td className="px-3 py-1.5 font-medium text-gray-200 whitespace-nowrap border border-gray-800 sticky left-0 bg-gray-950 z-10">
+                <td className="px-4 py-1 font-medium text-gray-200 whitespace-nowrap border border-gray-800 sticky left-0 bg-gray-950 z-10 text-base">
                   {line.lineName}
-                  <span className="ml-1 text-xs text-gray-500">({line.lineCode})</span>
+                  <span className="ml-1.5 text-sm text-gray-500">({line.lineCode})</span>
                 </td>
                 {PROCESS_KEYS.map((key) => {
                   const d: ProcessStopData = line.processes[key] ?? { stopMinutes: 0 };
                   return (
                     <td
                       key={key}
-                      className={`px-4 py-1.5 text-center border border-gray-800 whitespace-nowrap ${getStopColor(d.stopMinutes)} ${getStopBg(d.stopMinutes)}`}
+                      className={`px-6 py-1 text-center text-lg border border-gray-800 whitespace-nowrap ${getStopColor(d.stopMinutes)} ${getStopBg(d.stopMinutes)}`}
                     >
-                      {d.stopMinutes > 0 ? `${d.stopMinutes}${t("pages.equipment.minuteUnit") as string}` : "0"}
+                      {d.stopMinutes > 0 ? `${d.stopMinutes}${t("pages.equipment.minuteUnit") as string}` : "-"}
                       {d.stopMinutes >= GRADE_C_THRESHOLD && (
-                        <span className="ml-1 text-xs text-red-500">C</span>
+                        <span className="ml-1.5 text-sm text-red-500">C</span>
                       )}
                     </td>
                   );
                 })}
-                <td className={`px-4 py-1.5 text-center border border-gray-800 font-bold ${getStopColor(totalStop)} ${getStopBg(totalStop)}`}>
-                  {totalStop > 0 ? `${totalStop}${t("pages.equipment.minuteUnit") as string}` : "0"}
+                <td className={`px-6 py-1 text-center text-lg border border-gray-800 font-bold ${getStopColor(totalStop)} ${getStopBg(totalStop)}`}>
+                  {totalStop > 0 ? `${totalStop}${t("pages.equipment.minuteUnit") as string}` : "-"}
                 </td>
               </tr>
             );
