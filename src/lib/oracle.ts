@@ -19,6 +19,10 @@ const poolConfig = {
   poolMin: 2,
   poolMax: 10,
   poolIncrement: 1,
+  poolTimeout: 60,
+  poolPingInterval: 30,
+  expireTime: 30,
+  queueTimeout: 30000,
 };
 
 let poolPromise: Promise<oracledb.Pool> | null = null;
@@ -37,14 +41,27 @@ export async function executeQuery<T>(
   sql: string,
   params: Record<string, unknown> = {}
 ): Promise<T[]> {
-  const pool = await getPool();
+  let pool: oracledb.Pool;
+  try {
+    pool = await getPool();
+  } catch {
+    poolPromise = null;
+    pool = await getPool();
+  }
   let connection;
   try {
     connection = await pool.getConnection();
+    (connection as unknown as { callTimeout: number }).callTimeout = 60000;
     const result = await connection.execute(sql, params, {
       outFormat: oracledb.OUT_FORMAT_OBJECT,
     });
     return (result.rows as T[]) || [];
+  } catch (err: unknown) {
+    const e = err as { code?: string; isRecoverable?: boolean };
+    if (e.code === "NJS-500" || e.code === "NJS-501" || e.isRecoverable) {
+      poolPromise = null;
+    }
+    throw err;
   } finally {
     if (connection) {
       await connection.close();

@@ -7,6 +7,7 @@
  * 2. **기간**: 최근 7일 (ACTUAL_DATE 기준)
  * 3. **집계**: 날짜 × 공정(LINE_STATUS_CODE) 별 정지시간(분) 합산
  * 4. 라인 필터 적용 가능
+ * 5. **성능**: 바인드 변수 날짜 + STOP_TIME 컬럼 우선 사용
  */
 
 import { NextResponse } from "next/server";
@@ -25,6 +26,13 @@ interface WeeklyRow {
   STOP_MINUTES: number;
 }
 
+/** 7일 전 날짜 YYYY-MM-DD */
+function getDateNDaysAgo(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const lines = parseLines(request);
@@ -39,14 +47,17 @@ export async function GET(request: NextRequest) {
              B.LINE_STATUS_CODE,
              ROUND(SUM((B.END_DATE - B.START_DATE) * 24 * 60)) AS STOP_MINUTES
       FROM IP_LINE_DAILY_OPERATION_HIST B
-      WHERE B.ACTUAL_DATE >= TRUNC(SYSDATE) - 6
+      WHERE B.ACTUAL_DATE >= TO_DATE(:fromDate, 'YYYY-MM-DD')
+        AND B.ACTUAL_DATE <= TO_DATE(:toDate, 'YYYY-MM-DD')
         AND B.LINE_STATUS_CODE IN (${processPlaceholders})
         ${lineFilter.clause}
-      GROUP BY B.ACTUAL_DATE, B.LINE_STATUS_CODE
-      ORDER BY B.ACTUAL_DATE
+      GROUP BY TO_CHAR(B.ACTUAL_DATE, 'MM/DD'), B.LINE_STATUS_CODE
+      ORDER BY MIN(B.ACTUAL_DATE)
     `;
 
     const rows = await executeQuery<WeeklyRow>(sql, {
+      fromDate: getDateNDaysAgo(6),
+      toDate: getDateNDaysAgo(0),
       ...processParams,
       ...lineFilter.params,
     });
