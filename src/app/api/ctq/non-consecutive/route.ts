@@ -156,11 +156,17 @@ async function getNonConsecutiveLocations(
           AND t.LINE_CODE IS NOT NULL
           ${lineFilter.clause}
       ) base
-      JOIN IP_PRODUCT_WORK_QC r
-        ON r.SERIAL_NO = base.PID_VAL
-        AND r.RECEIPT_DEFICIT = '2'
-        AND r.LOCATION_CODE IS NOT NULL
-        AND r.LOCATION_CODE <> '*'
+      JOIN (
+        SELECT SERIAL_NO, LOCATION_CODE
+        FROM (
+          SELECT rr.SERIAL_NO, rr.LOCATION_CODE,
+                 ROW_NUMBER() OVER (PARTITION BY rr.SERIAL_NO ORDER BY rr.QC_DATE DESC) AS RN
+          FROM IP_PRODUCT_WORK_QC rr
+          WHERE rr.RECEIPT_DEFICIT = '2'
+            AND rr.LOCATION_CODE IS NOT NULL
+            AND rr.LOCATION_CODE <> '*'
+        ) WHERE RN = 1
+      ) r ON r.SERIAL_NO = base.PID_VAL
       GROUP BY base.LINE_CODE, base.MODEL_NAME, r.LOCATION_CODE
       HAVING COUNT(*) >= 2
     ) total_loc
@@ -189,11 +195,17 @@ async function getNonConsecutiveLocations(
             AND t2.LINE_CODE IS NOT NULL
             ${lineFilter.clause.replace(/t\./g, "t2.")}
         ) base2
-        JOIN IP_PRODUCT_WORK_QC r2
-          ON r2.SERIAL_NO = base2.PID_VAL
-          AND r2.RECEIPT_DEFICIT = '2'
-          AND r2.LOCATION_CODE IS NOT NULL
-          AND r2.LOCATION_CODE <> '*'
+        JOIN (
+          SELECT SERIAL_NO, LOCATION_CODE
+          FROM (
+            SELECT rr2.SERIAL_NO, rr2.LOCATION_CODE,
+                   ROW_NUMBER() OVER (PARTITION BY rr2.SERIAL_NO ORDER BY rr2.QC_DATE DESC) AS RN2
+            FROM IP_PRODUCT_WORK_QC rr2
+            WHERE rr2.RECEIPT_DEFICIT = '2'
+              AND rr2.LOCATION_CODE IS NOT NULL
+              AND rr2.LOCATION_CODE <> '*'
+          ) WHERE RN2 = 1
+        ) r2 ON r2.SERIAL_NO = base2.PID_VAL
       )
       WHERE LOCATION_CODE = PREV_LOC
     )

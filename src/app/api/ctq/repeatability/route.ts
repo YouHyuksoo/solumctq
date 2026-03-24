@@ -179,11 +179,17 @@ async function getRepeatLocations(
       AND t.LINE_CODE IS NOT NULL
             ${lineFilter.clause}
         ) base
-        JOIN IP_PRODUCT_WORK_QC r
-          ON r.SERIAL_NO = base.PID_VAL
-          AND r.RECEIPT_DEFICIT = '2'
-          AND r.LOCATION_CODE IS NOT NULL
-          AND r.LOCATION_CODE <> '*'
+        JOIN (
+          SELECT SERIAL_NO, LOCATION_CODE
+          FROM (
+            SELECT rr.SERIAL_NO, rr.LOCATION_CODE,
+                   ROW_NUMBER() OVER (PARTITION BY rr.SERIAL_NO ORDER BY rr.QC_DATE DESC) AS RN
+            FROM IP_PRODUCT_WORK_QC rr
+            WHERE rr.RECEIPT_DEFICIT = '2'
+              AND rr.LOCATION_CODE IS NOT NULL
+              AND rr.LOCATION_CODE <> '*'
+          ) WHERE RN = 1
+        ) r ON r.SERIAL_NO = base.PID_VAL
       )
       WHERE LOCATION_CODE = PREV_LOC
     )

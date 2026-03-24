@@ -387,6 +387,8 @@ const vi: TranslationKeys = {
     sec30: "30 giây",
     sec60: "60 giây",
     sec120: "120 giây",
+    min5: "5 phút",
+    min10: "10 phút",
     sec5: "5 giây",
     sec15: "15 giây",
   },

@@ -387,6 +387,8 @@ const en: TranslationKeys = {
     sec30: "30s",
     sec60: "60s",
     sec120: "120s",
+    min5: "5min",
+    min10: "10min",
     sec5: "5s",
     sec15: "15s",
   },

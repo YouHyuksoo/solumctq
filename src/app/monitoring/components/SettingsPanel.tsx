@@ -39,6 +39,8 @@ export default function SettingsPanel({
     { label: t("settings.sec30") as string, value: 30000 },
     { label: t("settings.sec60") as string, value: 60000 },
     { label: t("settings.sec120") as string, value: 120000 },
+    { label: t("settings.min5") as string, value: 300000 },
+    { label: t("settings.min10") as string, value: 600000 },
   ];
   const rollingOptions = [
     { label: t("settings.sec5") as string, value: 5000 },
