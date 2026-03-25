@@ -37,6 +37,41 @@ function getPool(): Promise<oracledb.Pool> {
   return poolPromise;
 }
 
+/** BLOB 컬럼 포함 쿼리 실행 (이미지 등 바이너리 데이터 조회용) */
+export async function executeBlobQuery<T>(
+  sql: string,
+  params: Record<string, unknown> = {}
+): Promise<T[]> {
+  let pool: oracledb.Pool;
+  try {
+    pool = await getPool();
+  } catch {
+    poolPromise = null;
+    pool = await getPool();
+  }
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    (connection as unknown as { callTimeout: number }).callTimeout = 60000;
+    const result = await connection.execute(sql, params, {
+      outFormat: oracledb.OUT_FORMAT_OBJECT,
+      autoCommit: true,
+      fetchInfo: { BLOB_DATA: { type: oracledb.BUFFER } },
+    });
+    return (result.rows as T[]) || [];
+  } catch (err: unknown) {
+    const e = err as { code?: string; isRecoverable?: boolean };
+    if (e.code === "NJS-500" || e.code === "NJS-501" || e.isRecoverable) {
+      poolPromise = null;
+    }
+    throw err;
+  } finally {
+    if (connection) {
+      await connection.close();
+    }
+  }
+}
+
 export async function executeQuery<T>(
   sql: string,
   params: Record<string, unknown> = {}

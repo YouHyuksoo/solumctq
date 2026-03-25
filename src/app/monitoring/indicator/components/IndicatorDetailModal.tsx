@@ -42,6 +42,12 @@ interface NotifyRecord {
   comments: string;
   qcComments: string;
   lineStatusNotify: string;
+  actionDateRaw: string;
+  notifySequence: number;
+  organizationId: number;
+  inspectImageFileName: string;
+  documentImageFileName: string;
+  ngImageFileName: string;
 }
 
 interface Props {
@@ -251,6 +257,8 @@ export default function IndicatorDetailModal({
                     </div>
                   </div>
                 </div>
+                {/* 첨부 이미지 */}
+                <ImageSection record={r} />
               </div>
             ))
           )}
@@ -263,5 +271,73 @@ export default function IndicatorDetailModal({
       </div>
     </div>,
     document.body
+  );
+}
+
+/** 이미지 URL 빌더 */
+function buildImageUrl(r: NotifyRecord, type: string): string {
+  return `/api/ctq/indicator/image?actionDate=${encodeURIComponent(r.actionDateRaw)}&seq=${r.notifySequence}&orgId=${r.organizationId}&type=${type}`;
+}
+
+/** 첨부 이미지 섹션 */
+function ImageSection({ record: r }: { record: NotifyRecord }) {
+  const [viewImg, setViewImg] = useState<string | null>(null);
+
+  const images = [
+    { type: "inspect", label: "검사 이미지", fileName: r.inspectImageFileName },
+    { type: "document", label: "문서 이미지", fileName: r.documentImageFileName },
+    { type: "ng", label: "불량 이미지", fileName: r.ngImageFileName },
+  ].filter((img) => img.fileName !== "-" && img.fileName !== "*" && img.fileName !== "");
+
+  if (images.length === 0) return null;
+
+  return (
+    <>
+      <div className="mt-3 pt-3 border-t border-gray-700">
+        <span className="text-gray-500 text-xs">첨부 이미지</span>
+        <div className="flex gap-3 mt-2">
+          {images.map((img) => {
+            const url = buildImageUrl(r, img.type);
+            const isImage = /\.(jpg|jpeg|png|gif|bmp)$/i.test(img.fileName);
+            return (
+              <div key={img.type} className="text-center">
+                {isImage ? (
+                  <button
+                    onClick={() => setViewImg(url)}
+                    className="block w-24 h-24 rounded border border-gray-600 overflow-hidden bg-gray-900 hover:border-blue-500 transition-colors"
+                  >
+                    <img src={url} alt={img.label} className="w-full h-full object-cover" />
+                  </button>
+                ) : (
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center w-24 h-24 rounded border border-gray-600 bg-gray-900 hover:border-blue-500 text-gray-400 hover:text-blue-400 transition-colors"
+                  >
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                    </svg>
+                  </a>
+                )}
+                <span className="text-[10px] text-gray-500 mt-1 block truncate w-24" title={img.fileName}>
+                  {img.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {/* 이미지 확대 뷰어 */}
+      {viewImg && createPortal(
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 cursor-pointer"
+          onClick={() => setViewImg(null)}
+        >
+          <img src={viewImg} alt="확대" className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl" />
+        </div>,
+        document.body
+      )}
+    </>
   );
 }

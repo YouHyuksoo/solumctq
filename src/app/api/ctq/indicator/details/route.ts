@@ -42,6 +42,12 @@ interface NotifyRow {
   COMMENTS: string;
   QC_COMMENTS: string;
   LINE_STATUS_NOTIFY: string;
+  ACTION_DATE_RAW: string;
+  NOTIFY_SEQUENCE: number;
+  ORGANIZATION_ID: number;
+  INSPECT_IMAGE_FILE_NAME: string;
+  DOCUMENT_IMAGE_FILE_NAME: string;
+  NG_IMAGE_FILE_NAME: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -81,7 +87,13 @@ export async function GET(request: NextRequest) {
              NVL(t.COUNTERMEASURE, '-') AS COUNTERMEASURE,
              NVL(t.COMMENTS, '-') AS COMMENTS,
              NVL(t.QC_COMMENTS, '-') AS QC_COMMENTS,
-             NVL(t.LINE_STATUS_NOTIFY, '-') AS LINE_STATUS_NOTIFY
+             NVL(t.LINE_STATUS_NOTIFY, '-') AS LINE_STATUS_NOTIFY,
+             TO_CHAR(t.ACTION_DATE, 'YYYY/MM/DD') AS ACTION_DATE_RAW,
+             t.NOTIFY_SEQUENCE,
+             t.ORGANIZATION_ID,
+             NVL(t.INSPECT_IMAGE_FILE_NAME, '-') AS INSPECT_IMAGE_FILE_NAME,
+             NVL(t.DOCUMENT_IMAGE_FILE_NAME, '-') AS DOCUMENT_IMAGE_FILE_NAME,
+             NVL(t.NG_IMAGE_FILE_NAME, '-') AS NG_IMAGE_FILE_NAME
       FROM IQ_DAILY_NOTIFY t
       WHERE t.COUNTERMEASURE = :countermeasure
       ORDER BY t.ACTION_DATE DESC, t.START_TIME DESC
@@ -122,6 +134,12 @@ export async function GET(request: NextRequest) {
         comments: r.COMMENTS,
         qcComments: r.QC_COMMENTS,
         lineStatusNotify: r.LINE_STATUS_NOTIFY,
+        actionDateRaw: r.ACTION_DATE_RAW,
+        notifySequence: r.NOTIFY_SEQUENCE,
+        organizationId: r.ORGANIZATION_ID,
+        inspectImageFileName: r.INSPECT_IMAGE_FILE_NAME,
+        documentImageFileName: r.DOCUMENT_IMAGE_FILE_NAME,
+        ngImageFileName: r.NG_IMAGE_FILE_NAME,
       })),
       total: rows.length,
     });
