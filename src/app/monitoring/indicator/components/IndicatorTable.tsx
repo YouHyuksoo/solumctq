@@ -13,6 +13,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocale } from "@/i18n";
 import type {
   IndicatorModelData,
@@ -80,9 +81,26 @@ interface Props {
 
 export default function IndicatorTable({ models, monthBefore, lastMonth, onRegister }: Props) {
   const { t } = useLocale();
+  const [modal, setModal] = useState<{
+    targetMonth: string;
+    itemCode: string;
+    processCode: string;
+    processLabel: string;
+  } | null>(null);
 
   return (
     <div className="overflow-auto h-full">
+      <CountermeasureModal
+        open={modal !== null}
+        itemCode={modal?.itemCode ?? ""}
+        processLabel={modal?.processLabel ?? ""}
+        onSubmit={async (countermeasureNo) => {
+          if (!modal) return;
+          await onRegister(modal.targetMonth, modal.itemCode, modal.processCode, countermeasureNo);
+          setModal(null);
+        }}
+        onClose={() => setModal(null)}
+      />
       <table className="w-full text-sm border-separate border-spacing-0">
         {/* 2단 헤더 */}
         <thead className="sticky top-0 z-20" style={{ boxShadow: "0 2px 0 0 #1f2937" }}>
@@ -122,7 +140,14 @@ export default function IndicatorTable({ models, monthBefore, lastMonth, onRegis
               key={model.itemCode}
               model={model}
               lastMonthKey={lastMonth.month}
-              onRegister={onRegister}
+              onOpenModal={(processKey) =>
+                setModal({
+                  targetMonth: lastMonth.month,
+                  itemCode: model.itemCode,
+                  processCode: processKey,
+                  processLabel: PROCESS_LABELS[processKey],
+                })
+              }
             />
           ))}
         </tbody>
@@ -157,11 +182,11 @@ function SubHeaders({
 function ModelRow({
   model,
   lastMonthKey,
-  onRegister,
+  onOpenModal,
 }: {
   model: IndicatorModelData;
   lastMonthKey: string;
-  onRegister: Props["onRegister"];
+  onOpenModal: (processKey: IndicatorProcessKey) => void;
 }) {
   return (
     <tr className="border-t border-gray-800 hover:bg-gray-800/30">
@@ -172,85 +197,45 @@ function ModelRow({
         <ProcessCells
           key={key}
           processKey={key}
-          itemCode={model.itemCode}
           prev={model.monthBefore[key]}
           curr={model.lastMonth[key]}
-          lastMonthKey={lastMonthKey}
-          onRegister={onRegister}
+          onOpenModal={() => onOpenModal(key)}
         />
       ))}
     </tr>
   );
 }
 
-/** 공정별 2셀 (전전월/전월) + 대책서 등록 */
+/** 공정별 2셀 (전전월/전월) + 대책서 등록 버튼 */
 function ProcessCells({
   processKey,
-  itemCode,
   prev,
   curr,
-  lastMonthKey,
-  onRegister,
+  onOpenModal,
 }: {
   processKey: IndicatorProcessKey;
-  itemCode: string;
   prev?: MonthlyProcessData;
   curr?: MonthlyProcessData;
-  lastMonthKey: string;
-  onRegister: Props["onRegister"];
+  onOpenModal: () => void;
 }) {
-  const [editing, setEditing] = useState(false);
-  const [inputVal, setInputVal] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
   const prevPpm = prev?.ppm ?? 0;
   const currPpm = curr?.ppm ?? 0;
   const color = getRatioColor(prevPpm, currPpm);
   const needsAction = isOver200(prevPpm, currPpm);
   const hasCountermeasure = !!curr?.countermeasureNo;
-
-  /** 등록 제출 */
-  const handleSubmit = async () => {
-    const val = inputVal.trim();
-    if (!val) return;
-    setSubmitting(true);
-    try {
-      await onRegister(lastMonthKey, itemCode, processKey, val);
-      setEditing(false);
-      setInputVal("");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  /** 등록 취소 */
-  const handleCancel = () => {
-    setEditing(false);
-    setInputVal("");
-  };
-
   const baseCellClass = "px-2 py-1.5 text-center border border-gray-800";
 
   return (
     <>
-      {/* 전전월: 기준값 */}
-      <td
-        className={`${baseCellClass} ${GROUP_BORDER} ${
-          prevPpm > 0 ? "text-gray-300" : "text-gray-600"
-        }`}
-      >
+      <td className={`${baseCellClass} ${GROUP_BORDER} ${prevPpm > 0 ? "text-gray-300" : "text-gray-600"}`}>
         {formatPpm(prevPpm)}
       </td>
-      {/* 전월: indigo 배경 + 비율 + 대책서 */}
-      <td
-        className={`${baseCellClass} whitespace-nowrap bg-indigo-950/60 ${color}`}
-      >
+      <td className={`${baseCellClass} whitespace-nowrap bg-indigo-950/60 ${color}`}>
         <div className="flex items-center justify-center gap-1">
           <span>{getRatioText(prevPpm, currPpm)}</span>
-          {/* 200% 초과 시 대책서 상태 표시 */}
-          {needsAction && !hasCountermeasure && !editing && (
+          {needsAction && !hasCountermeasure && (
             <button
-              onClick={() => setEditing(true)}
+              onClick={onOpenModal}
               className="ml-1 px-1.5 py-0.5 text-[10px] rounded bg-red-600 hover:bg-red-500 text-white font-medium"
             >
               등록
@@ -265,31 +250,82 @@ function ProcessCells({
             </span>
           )}
         </div>
-        {/* 인라인 입력 */}
-        {editing && (
-          <div className="flex items-center gap-1 mt-1">
-            <input
-              autoFocus
-              value={inputVal}
-              onChange={(e) => setInputVal(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleSubmit();
-                if (e.key === "Escape") handleCancel();
-              }}
-              placeholder="대책서 번호"
-              disabled={submitting}
-              className="w-20 px-1 py-0.5 text-[11px] rounded bg-gray-900 border border-gray-600 text-gray-200 focus:outline-none focus:border-blue-500"
-            />
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="px-1.5 py-0.5 text-[10px] rounded bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50"
-            >
-              OK
-            </button>
-          </div>
-        )}
       </td>
     </>
+  );
+}
+
+/** 대책서번호 등록 모달 */
+function CountermeasureModal({
+  open, itemCode, processLabel, onSubmit, onClose,
+}: {
+  open: boolean;
+  itemCode: string;
+  processLabel: string;
+  onSubmit: (countermeasureNo: string) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [inputVal, setInputVal] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  if (!open) return null;
+
+  const handleSubmit = async () => {
+    const val = inputVal.trim();
+    if (!val) return;
+    setSubmitting(true);
+    try {
+      await onSubmit(val);
+      setInputVal("");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-xl shadow-2xl p-6">
+        <h3 className="text-lg font-bold text-white mb-1">대책서 등록</h3>
+        <p className="text-sm text-gray-400 mb-4">
+          <span className="text-gray-200 font-medium">{itemCode}</span>
+          <span className="mx-2 text-gray-600">|</span>
+          <span className="text-cyan-400">{processLabel}</span>
+          <span className="mx-2 text-gray-600">|</span>
+          <span className="text-red-400">200% 초과</span>
+        </p>
+        <label className="block text-xs text-gray-400 mb-1.5">대책서번호</label>
+        <input
+          autoFocus
+          value={inputVal}
+          onChange={(e) => setInputVal(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSubmit();
+            if (e.key === "Escape") onClose();
+          }}
+          placeholder="대책서번호를 입력하세요"
+          disabled={submitting}
+          className="w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-600 text-sm text-gray-200 focus:outline-none focus:border-blue-500 disabled:opacity-50"
+        />
+        <div className="flex justify-end gap-2 mt-4">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700"
+          >
+            취소
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={submitting || !inputVal.trim()}
+            className="px-4 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium disabled:opacity-50"
+          >
+            {submitting ? "등록 중..." : "등록"}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }
