@@ -202,37 +202,6 @@ async function getRepeatLocations(
   });
 }
 
-/** 공정별 LINE 마지막 검사 시간 (NG 여부 무관) */
-async function getLastInspectTime(
-  config: ProcessConfig,
-  timeRange: { startStr: string; endStr: string },
-  lineFilter: { clause: string; params: Record<string, string> }
-): Promise<Map<string, string>> {
-  const { condition } = buildDateCondition(config, "t");
-  const lastExpr =
-    config.dateType === "date"
-      ? `TO_CHAR(MAX(t.${config.dateCol}), 'YYYY/MM/DD HH24:MI:SS')`
-      : `MAX(t.${config.dateCol})`;
-
-  const sql = `
-    SELECT t.LINE_CODE, ${lastExpr} AS LAST_INSPECT
-    FROM ${config.table} t
-    WHERE ${condition}
-      ${config.extraWhere ?? ""}
-      AND t.LINE_CODE IS NOT NULL
-      ${lineFilter.clause}
-    GROUP BY t.LINE_CODE
-  `;
-  const rows = await executeQuery<{ LINE_CODE: string; LAST_INSPECT: string }>(sql, {
-    tsStart: timeRange.startStr,
-    tsEnd: timeRange.endStr,
-    ...lineFilter.params,
-  });
-  const map = new Map<string, string>();
-  rows.forEach((r) => map.set(r.LINE_CODE, r.LAST_INSPECT));
-  return map;
-}
-
 /** LINE_CODE 이름 조회 */
 async function getLineNames(lineCodes: string[]): Promise<Map<string, string>> {
   if (lineCodes.length === 0) return new Map();
@@ -258,19 +227,16 @@ export async function GET(request: NextRequest) {
     const lineFilter = buildLineInClause(lines, "t", "ln");
     const timeRange = getVietnamTimeRange();
 
-    /* 1. 2공정 × 3쿼리 = 6개 쿼리 병렬 실행 (요약 + 반복Location + 마지막검사) */
-    const [summaries, repeatLocs, lastInspects] = await Promise.all([
+    /* 1. 2공정 × 2쿼리 = 4개 쿼리 병렬 실행 (요약 + 반복Location) */
+    const [summaries, repeatLocs] = await Promise.all([
       Promise.all(PROCESS_TYPES.map((pt) => getLineSummary(PROCESS_CONFIG[pt], timeRange, lineFilter))),
       Promise.all(PROCESS_TYPES.map((pt) => getRepeatLocations(PROCESS_CONFIG[pt], timeRange, lineFilter))),
-      Promise.all(PROCESS_TYPES.map((pt) => getLastInspectTime(PROCESS_CONFIG[pt], timeRange, lineFilter))),
     ]);
 
     /* 2. 공정별 요약 및 반복Location → Map 변환 */
     const summaryByProcess = new Map<RepeatProcessType, Map<string, LineSummaryRow>>();
     const repeatByProcess = new Map<RepeatProcessType, Map<string, RepeatLocationRow>>();
     const allLineCodes = new Set<string>();
-
-    const lastInspectByProcess = new Map<RepeatProcessType, Map<string, string>>();
 
     PROCESS_TYPES.forEach((pt, i) => {
       const sMap = new Map<string, LineSummaryRow>();
@@ -279,9 +245,6 @@ export async function GET(request: NextRequest) {
         allLineCodes.add(row.LINE_CODE);
       }
       summaryByProcess.set(pt, sMap);
-
-      lastInspectByProcess.set(pt, lastInspects[i]);
-      for (const lc of lastInspects[i].keys()) allLineCodes.add(lc);
 
       const rMap = new Map<string, RepeatLocationRow>();
       for (const row of repeatLocs[i]) {
@@ -309,7 +272,6 @@ export async function GET(request: NextRequest) {
       for (const pt of PROCESS_TYPES) {
         const summary = summaryByProcess.get(pt)?.get(lineCode);
         const repeat = repeatByProcess.get(pt)?.get(lineCode);
-        const lastTime = lastInspectByProcess.get(pt)?.get(lineCode) ?? null;
         const grade: RepeatGrade = repeat ? "A" : "OK";
 
         processes.push({
@@ -320,7 +282,7 @@ export async function GET(request: NextRequest) {
           locationCode: repeat?.LOCATION_CODE ?? null,
           modelName: repeat?.MODEL_NAME ?? null,
           detail: repeat ? `consecutive:${repeat.LOC_COUNT}(${repeat.LOCATION_CODE})` : null,
-          lastInspectDate: lastTime,
+          lastInspectDate: summary?.LAST_INSPECT ?? null,
           pendingCount: summary?.PENDING_COUNT ?? 0,
         });
 

@@ -170,6 +170,7 @@ const en: TranslationKeys = {
     process: "Process",
     status: "Status",
     lastInspect: "Last Inspect",
+    lastNgInspect: "Last NG",
     ngCount: "NG",
     pending: "Pending",
     gradeCol: "Grade",

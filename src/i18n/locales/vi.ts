@@ -170,6 +170,7 @@ const vi: TranslationKeys = {
     process: "Công đoạn",
     status: "Trạng thái",
     lastInspect: "Kiểm tra gần nhất",
+    lastNgInspect: "NG gần nhất",
     ngCount: "NG",
     pending: "Chờ xử lý",
     gradeCol: "Cấp",

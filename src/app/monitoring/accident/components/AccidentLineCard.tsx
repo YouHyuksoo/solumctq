@@ -71,7 +71,7 @@ export default function AccidentLineCard({ line, compact = false }: { line: Acci
           <tr className={`bg-gray-600/50 text-gray-400 ${compact ? "text-[10px]" : "text-xs"}`}>
             <th className={`text-left w-24 ${compact ? "px-3 py-1.5" : "px-4 py-2"}`}>{t("table.process") as string}</th>
             <th className={`text-left w-32 ${compact ? "px-3 py-1.5" : "px-4 py-2"}`}>{t("table.status") as string}</th>
-            <th className={`text-left w-28 ${compact ? "px-3 py-1.5" : "px-4 py-2"}`}>{t("table.lastInspect") as string}</th>
+            <th className={`text-left w-28 ${compact ? "px-3 py-1.5" : "px-4 py-2"}`}>{t("table.lastNgInspect") as string}</th>
             <th className={`text-center w-14 ${compact ? "px-3 py-1.5" : "px-4 py-2"}`}>NG</th>
             <th className={`text-center w-20 ${compact ? "px-3 py-1.5" : "px-4 py-2"}`}>{t("table.gradeCol") as string}</th>
           </tr>

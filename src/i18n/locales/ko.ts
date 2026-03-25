@@ -173,6 +173,7 @@ const ko = {
     process: "공정",
     status: "상태",
     lastInspect: "최근 검사",
+    lastNgInspect: "최근 불량",
     ngCount: "NG",
     pending: "대기",
     gradeCol: "등급",
