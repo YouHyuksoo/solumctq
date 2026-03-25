@@ -21,6 +21,7 @@ import type {
   MonthlyProcessData,
   MonthRange,
 } from "../types";
+import IndicatorDetailModal from "./IndicatorDetailModal";
 
 /** 대상 공정 목록 */
 const PROCESS_KEYS: IndicatorProcessKey[] = ["ICT", "HIPOT", "FT", "BURNIN", "ATE"];
@@ -87,9 +88,23 @@ export default function IndicatorTable({ models, monthBefore, lastMonth, onRegis
     processCode: string;
     processLabel: string;
   } | null>(null);
+  const [detailModal, setDetailModal] = useState<{
+    month: string;
+    itemCode: string;
+    processLabel: string;
+    countermeasureNo: string;
+  } | null>(null);
 
   return (
     <div className="overflow-auto h-full">
+      <IndicatorDetailModal
+        open={detailModal !== null}
+        month={detailModal?.month ?? ""}
+        itemCode={detailModal?.itemCode ?? ""}
+        processLabel={detailModal?.processLabel ?? ""}
+        countermeasureNo={detailModal?.countermeasureNo ?? ""}
+        onClose={() => setDetailModal(null)}
+      />
       <CountermeasureModal
         open={modal !== null}
         itemCode={modal?.itemCode ?? ""}
@@ -148,6 +163,14 @@ export default function IndicatorTable({ models, monthBefore, lastMonth, onRegis
                   processLabel: PROCESS_LABELS[processKey],
                 })
               }
+              onOpenDetail={(processKey, countermeasureNo) =>
+                setDetailModal({
+                  month: lastMonth.month,
+                  itemCode: model.itemCode,
+                  processLabel: PROCESS_LABELS[processKey],
+                  countermeasureNo,
+                })
+              }
             />
           ))}
         </tbody>
@@ -183,10 +206,12 @@ function ModelRow({
   model,
   lastMonthKey,
   onOpenModal,
+  onOpenDetail,
 }: {
   model: IndicatorModelData;
   lastMonthKey: string;
   onOpenModal: (processKey: IndicatorProcessKey) => void;
+  onOpenDetail: (processKey: IndicatorProcessKey, countermeasureNo: string) => void;
 }) {
   return (
     <tr className="border-t border-gray-800 hover:bg-gray-800/30">
@@ -200,6 +225,10 @@ function ModelRow({
           prev={model.monthBefore[key]}
           curr={model.lastMonth[key]}
           onOpenModal={() => onOpenModal(key)}
+          onOpenDetail={() => {
+            const cm = model.lastMonth[key]?.countermeasureNo;
+            if (cm) onOpenDetail(key, cm);
+          }}
         />
       ))}
     </tr>
@@ -212,11 +241,13 @@ function ProcessCells({
   prev,
   curr,
   onOpenModal,
+  onOpenDetail,
 }: {
   processKey: IndicatorProcessKey;
   prev?: MonthlyProcessData;
   curr?: MonthlyProcessData;
   onOpenModal: () => void;
+  onOpenDetail: () => void;
 }) {
   const prevPpm = prev?.ppm ?? 0;
   const currPpm = curr?.ppm ?? 0;
@@ -242,12 +273,13 @@ function ProcessCells({
             </button>
           )}
           {needsAction && hasCountermeasure && (
-            <span
-              className="ml-1 px-1.5 py-0.5 text-[10px] rounded bg-green-700 text-green-100 font-medium"
-              title={curr!.countermeasureNo!}
+            <button
+              onClick={onOpenDetail}
+              className="ml-1 px-1.5 py-0.5 text-[10px] rounded bg-green-700 hover:bg-green-600 text-green-100 font-medium cursor-pointer"
+              title={`대책서: ${curr!.countermeasureNo!} (클릭하여 상세 조회)`}
             >
               OK
-            </span>
+            </button>
           )}
         </div>
       </td>
