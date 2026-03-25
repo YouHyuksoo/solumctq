@@ -54,6 +54,7 @@ export async function executeQuery<T>(
     (connection as unknown as { callTimeout: number }).callTimeout = 60000;
     const result = await connection.execute(sql, params, {
       outFormat: oracledb.OUT_FORMAT_OBJECT,
+      autoCommit: true,
     });
     return (result.rows as T[]) || [];
   } catch (err: unknown) {
