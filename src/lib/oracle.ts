@@ -53,10 +53,12 @@ export async function executeBlobQuery<T>(
   try {
     connection = await pool.getConnection();
     (connection as unknown as { callTimeout: number }).callTimeout = 60000;
+    /* BLOB → Buffer 자동 변환 (연결 레벨) */
+    (connection as unknown as { oracleServerVersion: number }).oracleServerVersion;
+    oracledb.fetchAsBuffer = [oracledb.BLOB];
     const result = await connection.execute(sql, params, {
       outFormat: oracledb.OUT_FORMAT_OBJECT,
       autoCommit: true,
-      fetchInfo: { BLOB_DATA: { type: oracledb.BUFFER } },
     });
     return (result.rows as T[]) || [];
   } catch (err: unknown) {
@@ -66,6 +68,7 @@ export async function executeBlobQuery<T>(
     }
     throw err;
   } finally {
+    oracledb.fetchAsBuffer = [];
     if (connection) {
       await connection.close();
     }
