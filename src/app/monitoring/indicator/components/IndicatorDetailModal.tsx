@@ -80,17 +80,15 @@ export default function IndicatorDetailModal({
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!open || !month || !itemCode) return;
+    if (!open || !countermeasureNo) return;
     setLoading(true);
     setError(null);
-    const params = new URLSearchParams({ month, itemCode });
-    if (processCode) params.set("processCode", processCode);
-    fetch(`/api/ctq/indicator/details?${params}`)
+    fetch(`/api/ctq/indicator/details?countermeasure=${encodeURIComponent(countermeasureNo)}`)
       .then((res) => res.json())
       .then((data) => { setRecords(data.records ?? []); setTotal(data.total ?? 0); })
       .catch((err) => setError(String(err)))
       .finally(() => setLoading(false));
-  }, [open, month, itemCode, processCode]);
+  }, [open, countermeasureNo]);
 
   const handleBackdrop = useCallback(
     (e: React.MouseEvent) => { if (e.target === e.currentTarget) onClose(); },

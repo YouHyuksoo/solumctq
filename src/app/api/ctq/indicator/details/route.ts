@@ -47,23 +47,11 @@ interface NotifyRow {
 export async function GET(request: NextRequest) {
   try {
     const url = request.nextUrl;
-    const month = url.searchParams.get("month") ?? "";
-    const itemCode = url.searchParams.get("itemCode") ?? "";
-    const processCode = url.searchParams.get("processCode") ?? "";
+    const countermeasure = url.searchParams.get("countermeasure") ?? "";
 
-    if (!month || !itemCode) {
-      return NextResponse.json({ error: "month, itemCode 필수" }, { status: 400 });
+    if (!countermeasure) {
+      return NextResponse.json({ error: "countermeasure 필수" }, { status: 400 });
     }
-
-    const [yy, mm] = month.split("/").map(Number);
-    const start = new Date(yy, mm - 1, 1);
-    const end = new Date(yy, mm, 1);
-    const fmt = (d: Date) =>
-      `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")} 00:00:00`;
-
-    const processFilter = processCode
-      ? "AND t.WORKSTAGE_CODE = :processCode"
-      : "";
 
     const sql = `
       SELECT TO_CHAR(t.ACTION_DATE, 'YYYY/MM/DD') AS ACTION_DATE,
@@ -95,20 +83,12 @@ export async function GET(request: NextRequest) {
              NVL(t.QC_COMMENTS, '-') AS QC_COMMENTS,
              NVL(t.LINE_STATUS_NOTIFY, '-') AS LINE_STATUS_NOTIFY
       FROM IQ_DAILY_NOTIFY t
-      WHERE t.ACTION_DATE >= TO_DATE(:startStr, 'YYYY/MM/DD HH24:MI:SS')
-        AND t.ACTION_DATE < TO_DATE(:endStr, 'YYYY/MM/DD HH24:MI:SS')
-        AND t.ITEM_CODE = :itemCode
-        ${processFilter}
+      WHERE t.COUNTERMEASURE = :countermeasure
       ORDER BY t.ACTION_DATE DESC, t.START_TIME DESC
       FETCH FIRST 100 ROWS ONLY
     `;
 
-    const params: Record<string, unknown> = {
-      startStr: fmt(start),
-      endStr: fmt(end),
-      itemCode,
-    };
-    if (processCode) params.processCode = processCode;
+    const params: Record<string, unknown> = { countermeasure };
 
     const rows = await executeQuery<NotifyRow>(sql, params);
 
