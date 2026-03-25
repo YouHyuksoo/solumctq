@@ -109,27 +109,26 @@ export default function IndicatorDetailModal({
       onClick={handleBackdrop}
     >
       <div className="w-full max-w-5xl max-h-[85vh] bg-gray-900 border border-gray-700 rounded-xl shadow-2xl flex flex-col">
-        {/* 헤더 */}
-        <div className="px-6 py-5 border-b border-gray-700 shrink-0">
+        {/* 헤더 — 2줄 구성 */}
+        <div className="px-6 py-4 border-b border-gray-700 shrink-0">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white">불량 상세 이력</h2>
+            <div className="flex items-center gap-4">
+              <h2 className="text-xl font-bold text-white">불량 상세 이력</h2>
+              <span className="text-white font-bold text-lg">{itemCode}</span>
+              <span className="text-gray-600">|</span>
+              <span className="text-cyan-400 font-semibold text-lg">{processLabel}</span>
+              <span className="text-gray-600">|</span>
+              <span className="text-gray-300">{month}</span>
+              <span className="text-gray-600">|</span>
+              <span className="text-sm text-gray-400">{loading ? "조회 중..." : `${total}건`}</span>
+            </div>
             <button onClick={onClose} className="p-1 rounded hover:bg-gray-800 text-gray-400 hover:text-white">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
-          <div className="flex items-center gap-4 mt-2 text-lg">
-            <span className="text-white font-bold">{itemCode}</span>
-            <span className="text-gray-600">|</span>
-            <span className="text-cyan-400 font-semibold">{processLabel}</span>
-            <span className="text-gray-600">|</span>
-            <span className="text-gray-300">{month}</span>
-            <span className="text-gray-600">|</span>
-            <span className="text-sm text-gray-400">{loading ? "조회 중..." : `${total}건`}</span>
-          </div>
-          {/* 대책서 관리 */}
-          <div className="flex items-center gap-3 mt-3">
+          <div className="flex items-center gap-3 mt-2">
             {!editing ? (
               <>
                 <span className="text-sm text-green-400 font-medium">대책서: {countermeasureNo}</span>
@@ -255,10 +254,10 @@ export default function IndicatorDetailModal({
                         {r.qcComments === "-" ? "" : r.qcComments}
                       </div>
                     </div>
+                    {/* 첨부 이미지 — 품질의견 아래 */}
+                    <ImageSection record={r} />
                   </div>
                 </div>
-                {/* 첨부 이미지 */}
-                <ImageSection record={r} />
               </div>
             ))
           )}
