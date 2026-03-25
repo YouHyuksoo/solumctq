@@ -95,23 +95,27 @@ export default function IndicatorDetailModal({
     >
       <div className="w-full max-w-6xl max-h-[80vh] bg-gray-900 border border-gray-700 rounded-xl shadow-2xl flex flex-col">
         {/* 헤더 */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 shrink-0">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-700 shrink-0">
           <div>
-            <h2 className="text-lg font-bold text-white">불량 상세 이력</h2>
-            <p className="text-xs text-gray-400 mt-0.5">
-              <span className="text-gray-200 font-medium">{itemCode}</span>
-              <span className="mx-2 text-gray-600">|</span>
-              <span className="text-cyan-400">{processLabel}</span>
-              <span className="mx-2 text-gray-600">|</span>
-              <span className="text-gray-300">{month}</span>
-            </p>
-            <div className="flex items-center gap-2 mt-1.5">
+            <h2 className="text-xl font-bold text-white mb-2">불량 상세 이력</h2>
+            <div className="flex items-center gap-3 text-base">
+              <span className="text-white font-bold text-lg">{itemCode}</span>
+              <span className="text-gray-600">|</span>
+              <span className="text-cyan-400 font-semibold text-lg">{processLabel}</span>
+              <span className="text-gray-600">|</span>
+              <span className="text-gray-300 font-medium">{month}</span>
+              <span className="text-gray-600">|</span>
+              <span className="text-sm text-gray-400">
+                {loading ? "조회 중..." : `${total}건`}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 mt-3">
               {!editing ? (
                 <>
-                  <span className="text-xs text-green-400">대책서: {countermeasureNo}</span>
+                  <span className="text-sm text-green-400 font-medium">대책서: {countermeasureNo}</span>
                   <button
                     onClick={() => { setEditing(true); setEditVal(countermeasureNo); }}
-                    className="px-1.5 py-0.5 text-[10px] rounded bg-gray-700 hover:bg-gray-600 text-gray-300"
+                    className="px-2.5 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600 text-gray-300"
                   >
                     수정
                   </button>
@@ -122,7 +126,7 @@ export default function IndicatorDetailModal({
                       try { await onDelete(); } finally { setSubmitting(false); }
                     }}
                     disabled={submitting}
-                    className="px-1.5 py-0.5 text-[10px] rounded bg-red-800 hover:bg-red-700 text-red-200 disabled:opacity-50"
+                    className="px-2.5 py-1 text-xs rounded bg-red-800 hover:bg-red-700 text-red-200 disabled:opacity-50"
                   >
                     삭제
                   </button>
@@ -141,7 +145,7 @@ export default function IndicatorDetailModal({
                       if (e.key === "Escape") setEditing(false);
                     }}
                     disabled={submitting}
-                    className="px-2 py-0.5 text-xs rounded bg-gray-800 border border-gray-600 text-gray-200 focus:outline-none focus:border-blue-500 w-40"
+                    className="px-3 py-1 text-sm rounded bg-gray-800 border border-gray-600 text-gray-200 focus:outline-none focus:border-blue-500 w-48"
                   />
                   <button
                     onClick={async () => {
@@ -150,22 +154,19 @@ export default function IndicatorDetailModal({
                       try { await onUpdate(editVal.trim()); } finally { setSubmitting(false); setEditing(false); }
                     }}
                     disabled={submitting || !editVal.trim()}
-                    className="px-2 py-0.5 text-[10px] rounded bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50"
+                    className="px-3 py-1 text-xs rounded bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50"
                   >
                     저장
                   </button>
                   <button
                     onClick={() => setEditing(false)}
-                    className="px-2 py-0.5 text-[10px] rounded bg-gray-700 hover:bg-gray-600 text-gray-300"
+                    className="px-3 py-1 text-xs rounded bg-gray-700 hover:bg-gray-600 text-gray-300"
                   >
                     취소
                   </button>
                 </>
               )}
             </div>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {loading ? "조회 중..." : `총 ${total}건`}
-            </p>
           </div>
           <button
             onClick={onClose}
