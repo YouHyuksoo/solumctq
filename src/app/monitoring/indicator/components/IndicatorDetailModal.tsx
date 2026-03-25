@@ -32,18 +32,24 @@ interface Props {
   open: boolean;
   month: string;
   itemCode: string;
+  processCode: string;
   processLabel: string;
   countermeasureNo: string;
   onClose: () => void;
+  onUpdate: (countermeasureNo: string) => Promise<void>;
+  onDelete: () => Promise<void>;
 }
 
 export default function IndicatorDetailModal({
-  open, month, itemCode, processLabel, countermeasureNo, onClose,
+  open, month, itemCode, processCode, processLabel, countermeasureNo, onClose, onUpdate, onDelete,
 }: Props) {
   const [records, setRecords] = useState<DetailRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [editVal, setEditVal] = useState(countermeasureNo);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open || !month || !itemCode) return;
@@ -98,9 +104,65 @@ export default function IndicatorDetailModal({
               <span className="text-cyan-400">{processLabel}</span>
               <span className="mx-2 text-gray-600">|</span>
               <span className="text-gray-300">{month}</span>
-              <span className="mx-2 text-gray-600">|</span>
-              <span className="text-green-400">대책서: {countermeasureNo}</span>
             </p>
+            <div className="flex items-center gap-2 mt-1.5">
+              {!editing ? (
+                <>
+                  <span className="text-xs text-green-400">대책서: {countermeasureNo}</span>
+                  <button
+                    onClick={() => { setEditing(true); setEditVal(countermeasureNo); }}
+                    className="px-1.5 py-0.5 text-[10px] rounded bg-gray-700 hover:bg-gray-600 text-gray-300"
+                  >
+                    수정
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!confirm("대책서번호를 삭제하시겠습니까?")) return;
+                      setSubmitting(true);
+                      try { await onDelete(); } finally { setSubmitting(false); }
+                    }}
+                    disabled={submitting}
+                    className="px-1.5 py-0.5 text-[10px] rounded bg-red-800 hover:bg-red-700 text-red-200 disabled:opacity-50"
+                  >
+                    삭제
+                  </button>
+                </>
+              ) : (
+                <>
+                  <input
+                    autoFocus
+                    value={editVal}
+                    onChange={(e) => setEditVal(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && editVal.trim()) {
+                        setSubmitting(true);
+                        onUpdate(editVal.trim()).finally(() => { setSubmitting(false); setEditing(false); });
+                      }
+                      if (e.key === "Escape") setEditing(false);
+                    }}
+                    disabled={submitting}
+                    className="px-2 py-0.5 text-xs rounded bg-gray-800 border border-gray-600 text-gray-200 focus:outline-none focus:border-blue-500 w-40"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!editVal.trim()) return;
+                      setSubmitting(true);
+                      try { await onUpdate(editVal.trim()); } finally { setSubmitting(false); setEditing(false); }
+                    }}
+                    disabled={submitting || !editVal.trim()}
+                    className="px-2 py-0.5 text-[10px] rounded bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50"
+                  >
+                    저장
+                  </button>
+                  <button
+                    onClick={() => setEditing(false)}
+                    className="px-2 py-0.5 text-[10px] rounded bg-gray-700 hover:bg-gray-600 text-gray-300"
+                  >
+                    취소
+                  </button>
+                </>
+              )}
+            </div>
             <p className="text-xs text-gray-500 mt-0.5">
               {loading ? "조회 중..." : `총 ${total}건`}
             </p>

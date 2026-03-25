@@ -91,6 +91,7 @@ export default function IndicatorTable({ models, monthBefore, lastMonth, onRegis
   const [detailModal, setDetailModal] = useState<{
     month: string;
     itemCode: string;
+    processCode: string;
     processLabel: string;
     countermeasureNo: string;
   } | null>(null);
@@ -101,9 +102,20 @@ export default function IndicatorTable({ models, monthBefore, lastMonth, onRegis
         open={detailModal !== null}
         month={detailModal?.month ?? ""}
         itemCode={detailModal?.itemCode ?? ""}
+        processCode={detailModal?.processCode ?? ""}
         processLabel={detailModal?.processLabel ?? ""}
         countermeasureNo={detailModal?.countermeasureNo ?? ""}
         onClose={() => setDetailModal(null)}
+        onUpdate={async (newNo) => {
+          if (!detailModal) return;
+          await onRegister(detailModal.month, detailModal.itemCode, detailModal.processCode, newNo);
+          setDetailModal(null);
+        }}
+        onDelete={async () => {
+          if (!detailModal) return;
+          await onRegister(detailModal.month, detailModal.itemCode, detailModal.processCode, "");
+          setDetailModal(null);
+        }}
       />
       <CountermeasureModal
         open={modal !== null}
@@ -167,6 +179,7 @@ export default function IndicatorTable({ models, monthBefore, lastMonth, onRegis
                 setDetailModal({
                   month: lastMonth.month,
                   itemCode: model.itemCode,
+                  processCode: processKey,
                   processLabel: PROCESS_LABELS[processKey],
                   countermeasureNo,
                 })

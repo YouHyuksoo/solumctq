@@ -303,9 +303,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { targetMonth, itemCode, processCode, countermeasureNo } = body;
 
-    if (!targetMonth || !itemCode || !processCode || !countermeasureNo) {
+    if (!targetMonth || !itemCode || !processCode) {
       return NextResponse.json(
-        { error: "필수 파라미터 누락 (targetMonth, itemCode, processCode, countermeasureNo)" },
+        { error: "필수 파라미터 누락 (targetMonth, itemCode, processCode)" },
         { status: 400 }
       );
     }
@@ -314,7 +314,7 @@ export async function POST(request: NextRequest) {
       `UPDATE IQ_INDICATOR_MONTHLY
        SET COUNTERMEASURE_NO = :cn, UPDATED_DATE = SYSDATE
        WHERE TARGET_MONTH = :tm AND ITEM_CODE = :ic AND PROCESS_CODE = :pc`,
-      { cn: countermeasureNo, tm: targetMonth, ic: itemCode, pc: processCode }
+      { cn: countermeasureNo || null, tm: targetMonth, ic: itemCode, pc: processCode }
     );
 
     return NextResponse.json({ success: true });
