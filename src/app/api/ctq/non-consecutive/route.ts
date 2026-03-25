@@ -181,9 +181,13 @@ async function getNonConsecutiveLocations(
         SELECT base2.LINE_CODE,
                base2.MODEL_NAME,
                r2.LOCATION_CODE,
+               base2.SORT_DATE,
                LAG(r2.LOCATION_CODE) OVER (
                  PARTITION BY base2.LINE_CODE, base2.MODEL_NAME ORDER BY base2.SORT_DATE
-               ) AS PREV_LOC
+               ) AS PREV_LOC,
+               LAG(base2.SORT_DATE) OVER (
+                 PARTITION BY base2.LINE_CODE, base2.MODEL_NAME ORDER BY base2.SORT_DATE
+               ) AS PREV_SORT_DATE
         FROM (
           SELECT t2.LINE_CODE,
                  t2.${config.pidCol} AS PID_VAL,
@@ -212,8 +216,16 @@ async function getNonConsecutiveLocations(
               AND rr2.LOCATION_CODE <> '*'
           ) WHERE RN2 = 1
         ) r2 ON r2.SERIAL_NO = base2.PID_VAL
-      )
-      WHERE LOCATION_CODE = PREV_LOC
+      ) sub2
+      WHERE sub2.LOCATION_CODE = sub2.PREV_LOC
+        AND NOT EXISTS (
+          SELECT 1 FROM ${config.table} t_chk
+          WHERE t_chk.LINE_CODE = sub2.LINE_CODE
+            AND t_chk.${config.dateCol} > sub2.PREV_SORT_DATE
+            AND t_chk.${config.dateCol} < sub2.SORT_DATE
+            AND t_chk.${config.resultCol} IN ('PASS', 'GOOD', 'OK', 'Y')
+            ${(config.extraWhere ?? "").replace(/t\./g, "t_chk.")}
+        )
     )
   `;
   return executeQuery<RepeatLocationRow>(sql, {

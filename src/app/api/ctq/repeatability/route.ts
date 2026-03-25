@@ -164,9 +164,13 @@ async function getRepeatLocations(
         SELECT base.LINE_CODE,
                base.MODEL_NAME,
                r.LOCATION_CODE,
+               base.SORT_DATE,
                LAG(r.LOCATION_CODE) OVER (
                  PARTITION BY base.LINE_CODE, base.MODEL_NAME ORDER BY base.SORT_DATE
-               ) AS PREV_LOC
+               ) AS PREV_LOC,
+               LAG(base.SORT_DATE) OVER (
+                 PARTITION BY base.LINE_CODE, base.MODEL_NAME ORDER BY base.SORT_DATE
+               ) AS PREV_SORT_DATE
         FROM (
           SELECT t.LINE_CODE,
                  t.${config.pidCol} AS PID_VAL,
@@ -195,8 +199,16 @@ async function getRepeatLocations(
               AND rr.LOCATION_CODE <> '*'
           ) WHERE RN = 1
         ) r ON r.SERIAL_NO = base.PID_VAL
-      )
-      WHERE LOCATION_CODE = PREV_LOC
+      ) sub
+      WHERE sub.LOCATION_CODE = sub.PREV_LOC
+        AND NOT EXISTS (
+          SELECT 1 FROM ${config.table} t_chk
+          WHERE t_chk.LINE_CODE = sub.LINE_CODE
+            AND t_chk.${config.dateCol} > sub.PREV_SORT_DATE
+            AND t_chk.${config.dateCol} < sub.SORT_DATE
+            AND t_chk.${config.resultCol} IN ('PASS', 'GOOD', 'OK', 'Y')
+            ${(config.extraWhere ?? "").replace(/t\./g, "t_chk.")}
+        )
     )
     GROUP BY LINE_CODE, MODEL_NAME, LOCATION_CODE
   `;
