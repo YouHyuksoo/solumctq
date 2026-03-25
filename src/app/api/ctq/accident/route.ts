@@ -131,12 +131,17 @@ async function getLineSummary(
     LEFT JOIN IP_PRODUCT_WORK_QC r
       ON r.SERIAL_NO = t.${config.pidCol}
       AND r.RECEIPT_DEFICIT = '2'
+      AND (r.QC_RESULT IS NULL OR r.QC_RESULT != 'O')
     WHERE ${condition}
       AND (t.${config.pidCol} LIKE 'VN07%' OR t.${config.pidCol} LIKE 'VNL1%' OR t.${config.pidCol} LIKE 'VNA2%')
       AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
       AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN <> 'Y')
       AND t.LAST_FLAG = 'Y'
       AND t.LINE_CODE IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM IP_PRODUCT_WORK_QC q
+        WHERE q.SERIAL_NO = t.${config.pidCol} AND q.RECEIPT_DEFICIT = '2' AND q.QC_RESULT = 'O'
+      )
       ${lineFilter.clause}
     GROUP BY t.LINE_CODE
   `;
@@ -176,12 +181,17 @@ async function getNgDetails(
       LEFT JOIN IP_PRODUCT_WORK_QC r
         ON r.SERIAL_NO = t.${config.pidCol}
         AND r.RECEIPT_DEFICIT = '2'
+        AND (r.QC_RESULT IS NULL OR r.QC_RESULT != 'O')
       WHERE ${condition}
         AND (t.${config.pidCol} LIKE 'VN07%' OR t.${config.pidCol} LIKE 'VNL1%' OR t.${config.pidCol} LIKE 'VNA2%')
         AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
         AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN <> 'Y')
         AND t.LAST_FLAG = 'Y'
-      AND t.LINE_CODE IS NOT NULL
+        AND t.LINE_CODE IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM IP_PRODUCT_WORK_QC q
+          WHERE q.SERIAL_NO = t.${config.pidCol} AND q.RECEIPT_DEFICIT = '2' AND q.QC_RESULT = 'O'
+        )
         ${lineFilter.clause}
     ) WHERE RN <= 5
   `;

@@ -129,6 +129,10 @@ async function getLineSummary(
       AND (t.QC_CONFIRM_YN IS NULL OR t.QC_CONFIRM_YN != 'Y')
       ${config.extraWhere ?? ""}
       AND t.LINE_CODE IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM IP_PRODUCT_WORK_QC q
+        WHERE q.SERIAL_NO = t.${config.pidCol} AND q.RECEIPT_DEFICIT = '2' AND q.QC_RESULT = 'O'
+      )
       ${lineFilter.clause}
     GROUP BY t.LINE_CODE
   `;
@@ -186,6 +190,7 @@ async function getRepeatLocations(
                    ROW_NUMBER() OVER (PARTITION BY rr.SERIAL_NO ORDER BY rr.QC_DATE DESC) AS RN
             FROM IP_PRODUCT_WORK_QC rr
             WHERE rr.RECEIPT_DEFICIT = '2'
+              AND rr.QC_RESULT != 'O'
               AND rr.LOCATION_CODE IS NOT NULL
               AND rr.LOCATION_CODE <> '*'
           ) WHERE RN = 1
