@@ -1,28 +1,27 @@
 /**
  * @file src/app/monitoring/indicator/hooks/useIndicator.ts
- * @description 지표 데이터 fetch 훅 — 수동 새로고침만 지원 (자동 갱신 없음)
+ * @description 지표 데이터 fetch 훅 — 월간 전용, 재생성/대책서 등록 지원
  *
  * 초보자 가이드:
- * 1. fetchData()를 호출하면 /api/ctq/indicator에서 데이터 조회
- * 2. selectedLines 변경 시 자동 재조회하지 않음 (페이지에서 useEffect로 처리)
- * 3. period 파라미터로 주간/월간 전환 가능
+ * 1. fetchData()로 /api/ctq/indicator에서 캐시 데이터 조회
+ * 2. fetchData(true)로 RAW 테이블에서 재생성
+ * 3. registerCountermeasure()로 대책서번호 등록
  */
 
 import { useState, useCallback } from "react";
-import type { IndicatorResponse, PeriodType } from "../types";
+import type { IndicatorResponse } from "../types";
 
-export function useIndicator(selectedLines: string[] = [], period: PeriodType = "weekly", minVolume: number = 200) {
+export function useIndicator(minVolume: number = 200) {
   const [data, setData] = useState<IndicatorResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (regenerate = false) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (selectedLines.length > 0) params.set("lines", selectedLines.join(","));
-      if (period === "monthly") params.set("period", "monthly");
       if (minVolume !== 200) params.set("minVolume", String(minVolume));
+      if (regenerate) params.set("regenerate", "true");
       const qs = params.toString();
       const res = await fetch(`/api/ctq/indicator${qs ? `?${qs}` : ""}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -34,7 +33,22 @@ export function useIndicator(selectedLines: string[] = [], period: PeriodType = 
     } finally {
       setLoading(false);
     }
-  }, [selectedLines, period, minVolume]);
+  }, [minVolume]);
 
-  return { data, error, loading, fetchData };
+  const registerCountermeasure = useCallback(async (
+    targetMonth: string,
+    itemCode: string,
+    processCode: string,
+    countermeasureNo: string
+  ) => {
+    const res = await fetch("/api/ctq/indicator", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetMonth, itemCode, processCode, countermeasureNo }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    await fetchData();
+  }, [fetchData]);
+
+  return { data, error, loading, fetchData, registerCountermeasure };
 }

@@ -1,19 +1,23 @@
 /**
  * @file src/app/api/ctq/indicator/route.ts
- * @description CTQ 지표 API — 모델(ITEM_CODE)별 × 공정별 주간/월간 불량 PPM 비교
+ * @description CTQ 지표 API — IQ_INDICATOR_MONTHLY 캐시 테이블 기반 월간 PPM 조회
  *
  * 초보자 가이드:
- * 1. 7개 RAW 테이블에서 NG 건수 및 전체 검사 건수를 병렬 조회 → PPM 변환
- * 2. RAW.PID → IP_PRODUCT_2D_BARCODE JOIN으로 ITEM_CODE(모델) 취득
- * 3. 전전주/전주/금주 또는 전전월/전월/당월 3기간 CASE WHEN 분류 집계
- * 4. period=weekly: 월요일 시작 주간, period=monthly: 매월 1일~말일
+ * 1. GET: 전전월/전월 캐시 데이터 조회. 없으면 RAW 테이블에서 집계 후 INSERT
+ * 2. GET ?regenerate=true: 기존 캐시 삭제 후 RAW에서 재집계
+ * 3. POST: 대책서번호(COUNTERMEASURE_NO) 등록/수정
+ * 4. 5개 공정(ICT/HIPOT/FT/BURNIN/ATE) × 모델(ITEM_CODE)별 집계
  */
 
 import { NextResponse } from "next/server";
 import { type NextRequest } from "next/server";
 import { executeQuery } from "@/lib/oracle";
-import { parseLines, buildLineInClause } from "@/lib/line-filter";
-import type { IndicatorProcessKey, IndicatorModelData, PeriodType } from "@/app/monitoring/indicator/types";
+import type {
+  IndicatorProcessKey,
+  IndicatorModelData,
+  MonthlyProcessData,
+  IndicatorResponse,
+} from "@/app/monitoring/indicator/types";
 
 export const dynamic = "force-dynamic";
 
@@ -24,292 +28,316 @@ interface ProcessConfig {
   dateCol: string;
   pidCol: string;
   resultCol: string;
-  dateType: "varchar" | "date";
-  /** 추가 WHERE 조건 (예: LAST_FLAG = 'Y') */
-  extraWhere?: string;
+  extraWhere: string;
 }
 
 const PROCESS_CONFIG: Record<IndicatorProcessKey, ProcessConfig> = {
-  ICT:    { table: "IQ_MACHINE_ICT_SERVER_DATA_RAW",    dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", extraWhere: "AND t.LAST_FLAG = 'Y'" },
-  HIPOT:  { table: "IQ_MACHINE_HIPOT_POWER_DATA_RAW",   dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", extraWhere: "AND t.LAST_FLAG = 'Y'" },
-  FT:     { table: "IQ_MACHINE_FT1_SMPS_DATA_RAW",      dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", extraWhere: "AND t.LAST_FLAG = 'Y'" },
-  BURNIN: { table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW",   dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", extraWhere: "AND t.LAST_FLAG = 'Y'" },
-  ATE:    { table: "IQ_MACHINE_ATE_SERVER_DATA_RAW",     dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", dateType: "varchar", extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  ICT:    { table: "IQ_MACHINE_ICT_SERVER_DATA_RAW",    dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  HIPOT:  { table: "IQ_MACHINE_HIPOT_POWER_DATA_RAW",   dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  FT:     { table: "IQ_MACHINE_FT1_SMPS_DATA_RAW",      dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  BURNIN: { table: "IQ_MACHINE_BURNIN_SMPS_DATA_RAW",   dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", extraWhere: "AND t.LAST_FLAG = 'Y'" },
+  ATE:    { table: "IQ_MACHINE_ATE_SERVER_DATA_RAW",     dateCol: "INSPECT_DATE", pidCol: "PID", resultCol: "INSPECT_RESULT", extraWhere: "AND t.LAST_FLAG = 'Y'" },
 };
 
 const PROCESS_KEYS: IndicatorProcessKey[] = ["ICT", "HIPOT", "FT", "BURNIN", "ATE"];
 
-/* ── 주간 범위 계산 (월요일 시작) ── */
+/* ── 월 범위 계산 ── */
 
-function formatOracleDate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${y}/${m}/${dd} 00:00:00`;
-}
-
-function formatDisplayDate(d: Date): string {
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${m}/${dd}`;
-}
-
-function getWeekRanges() {
-  const now = new Date();
-  const day = now.getDay(); // 0=일, 1=월, ..., 6=토
-  const diffToMonday = day === 0 ? 6 : day - 1;
-
-  const thisMonday = new Date(now);
-  thisMonday.setDate(now.getDate() - diffToMonday);
-  thisMonday.setHours(0, 0, 0, 0);
-
-  const lastMonday = new Date(thisMonday);
-  lastMonday.setDate(thisMonday.getDate() - 7);
-
-  const weekBeforeMonday = new Date(thisMonday);
-  weekBeforeMonday.setDate(thisMonday.getDate() - 14);
-
-  const nextMonday = new Date(thisMonday);
-  nextMonday.setDate(thisMonday.getDate() + 7);
-
-  // 금주 종료 = 현재 시각 (아직 안 끝난 주)
-  const thisWeekEnd = new Date(now);
-  thisWeekEnd.setHours(23, 59, 59, 999);
-
-  const thisWeekDays = diffToMonday + 1; // 월=1, 화=2, ..., 일=7
-
-  return {
-    weekBefore: {
-      start: formatOracleDate(weekBeforeMonday),
-      end: formatOracleDate(lastMonday),
-      displayStart: formatDisplayDate(weekBeforeMonday),
-      displayEnd: formatDisplayDate(new Date(lastMonday.getTime() - 86400000)),
-    },
-    lastWeek: {
-      start: formatOracleDate(lastMonday),
-      end: formatOracleDate(thisMonday),
-      displayStart: formatDisplayDate(lastMonday),
-      displayEnd: formatDisplayDate(new Date(thisMonday.getTime() - 86400000)),
-    },
-    thisWeek: {
-      start: formatOracleDate(thisMonday),
-      end: formatOracleDate(nextMonday),
-      displayStart: formatDisplayDate(thisMonday),
-      displayEnd: formatDisplayDate(now),
-    },
-    thisWeekDays,
-  };
-}
-
-/* ── 월간 범위 계산 (매월 1일~말일) ── */
-
-function getMonthRanges() {
+/** 전전월/전월 TARGET_MONTH 문자열 ("YYYY/MM") 계산 */
+function getMonthTargets(): { monthBefore: string; lastMonth: string } {
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth(); // 0-based
 
-  // 당월 1일
-  const thisMonthStart = new Date(y, m, 1);
-  // 전월 1일
-  const lastMonthStart = new Date(y, m - 1, 1);
-  // 전전월 1일
-  const monthBeforeStart = new Date(y, m - 2, 1);
-  // 익월 1일 (당월 종료 경계)
-  const nextMonthStart = new Date(y, m + 1, 1);
+  const mb = new Date(y, m - 2, 1);
+  const lm = new Date(y, m - 1, 1);
 
-  // 당월 경과 일수
-  const thisMonthDays = now.getDate();
+  const fmt = (d: Date) =>
+    `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}`;
 
-  return {
-    weekBefore: {
-      start: formatOracleDate(monthBeforeStart),
-      end: formatOracleDate(lastMonthStart),
-      displayStart: formatDisplayDate(monthBeforeStart),
-      displayEnd: formatDisplayDate(new Date(lastMonthStart.getTime() - 86400000)),
-    },
-    lastWeek: {
-      start: formatOracleDate(lastMonthStart),
-      end: formatOracleDate(thisMonthStart),
-      displayStart: formatDisplayDate(lastMonthStart),
-      displayEnd: formatDisplayDate(new Date(thisMonthStart.getTime() - 86400000)),
-    },
-    thisWeek: {
-      start: formatOracleDate(thisMonthStart),
-      end: formatOracleDate(nextMonthStart),
-      displayStart: formatDisplayDate(thisMonthStart),
-      displayEnd: formatDisplayDate(now),
-    },
-    thisWeekDays: thisMonthDays,
+  return { monthBefore: fmt(mb), lastMonth: fmt(lm) };
+}
+
+/** TARGET_MONTH("YYYY/MM") → Oracle 날짜 범위 start/end 문자열 */
+function monthToRange(tm: string): { startStr: string; endStr: string } {
+  const [yy, mm] = tm.split("/").map(Number);
+  const start = new Date(yy, mm - 1, 1);
+  const end = new Date(yy, mm, 1); // 익월 1일
+  const fmt = (d: Date) => {
+    const y2 = d.getFullYear();
+    const m2 = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${y2}/${m2}/${dd} 00:00:00`;
   };
+  return { startStr: fmt(start), endStr: fmt(end) };
 }
 
-/* ── 공정별 NG 집계 쿼리 ── */
+/** 표시 라벨 생성 (예: "2026년 1월") */
+function monthDisplayLabel(tm: string): string {
+  const [yy, mm] = tm.split("/");
+  return `${yy}년 ${Number(mm)}월`;
+}
 
-interface WeeklyRow {
+/* ── 캐시 테이블 조회 ── */
+
+interface CacheRow {
+  TARGET_MONTH: string;
   ITEM_CODE: string;
-  WB_NG: number;
-  WB_TOTAL: number;
-  LW_NG: number;
-  LW_TOTAL: number;
-  TW_NG: number;
-  TW_TOTAL: number;
+  PROCESS_CODE: string;
+  NG_COUNT: number;
+  TOTAL_COUNT: number;
+  PPM: number;
+  COUNTERMEASURE_NO: string | null;
 }
 
-/** dateType에 따라 CASE WHEN 비교식 생성 */
-function buildCaseWhen(col: string, startParam: string, endParam: string, dateType: "varchar" | "date"): string {
-  if (dateType === "varchar") {
-    return `CASE WHEN ${col} >= ${startParam} AND ${col} < ${endParam} THEN 1 ELSE 0 END`;
-  }
-  return `CASE WHEN ${col} >= TO_DATE(${startParam}, 'YYYY/MM/DD HH24:MI:SS') AND ${col} < TO_DATE(${endParam}, 'YYYY/MM/DD HH24:MI:SS') THEN 1 ELSE 0 END`;
+/** 특정 월의 캐시 데이터 존재 여부 확인 */
+async function hasCacheData(targetMonth: string): Promise<boolean> {
+  const rows = await executeQuery<{ CNT: number }>(
+    `SELECT COUNT(*) AS CNT FROM IQ_INDICATOR_MONTHLY WHERE TARGET_MONTH = :tm`,
+    { tm: targetMonth }
+  );
+  return (rows[0]?.CNT ?? 0) > 0;
 }
 
-function buildWhereDate(col: string, startParam: string, endParam: string, dateType: "varchar" | "date"): string {
-  if (dateType === "varchar") {
-    return `${col} >= ${startParam} AND ${col} < ${endParam}`;
-  }
-  return `${col} >= TO_DATE(${startParam}, 'YYYY/MM/DD HH24:MI:SS') AND ${col} < TO_DATE(${endParam}, 'YYYY/MM/DD HH24:MI:SS')`;
+/** 특정 월의 캐시 데이터 조회 */
+async function getCacheData(targetMonth: string): Promise<CacheRow[]> {
+  return executeQuery<CacheRow>(
+    `SELECT TARGET_MONTH, ITEM_CODE, PROCESS_CODE, NG_COUNT, TOTAL_COUNT, PPM, COUNTERMEASURE_NO
+     FROM IQ_INDICATOR_MONTHLY
+     WHERE TARGET_MONTH = :tm`,
+    { tm: targetMonth }
+  );
 }
 
-/**
- * 공정별 NG + 전체 건수 동시 집계 (CASE문 한 쿼리)
- * - WHERE: 날짜 범위 + LINE_CODE → IDX(INSPECT_DATE, LINE_CODE) 레인지 스캔
- * - CASE: NG 여부를 SELECT에서 분기하여 전체/NG를 한 번의 스캔으로 집계
- */
-async function queryProcess(
-  config: ProcessConfig,
-  ranges: ReturnType<typeof getWeekRanges>,
-  lineFilter: { clause: string; params: Record<string, string> }
-): Promise<WeeklyRow[]> {
-  const col = `t.${config.dateCol}`;
-  const dt = config.dateType;
-  const isNg = `CASE WHEN t.${config.resultCol} NOT IN ('PASS','GOOD','OK','Y') THEN 1 ELSE 0 END`;
+/** 특정 월의 캐시 데이터 삭제 */
+async function deleteCacheData(targetMonth: string): Promise<void> {
+  await executeQuery(
+    `DELETE FROM IQ_INDICATOR_MONTHLY WHERE TARGET_MONTH = :tm`,
+    { tm: targetMonth }
+  );
+}
+
+/* ── RAW 테이블에서 집계 ── */
+
+interface RawAggRow {
+  ITEM_CODE: string;
+  NG_COUNT: number;
+  TOTAL_COUNT: number;
+}
+
+/** 단일 공정 + 단일 월 RAW 집계 */
+async function queryProcessMonth(
+  processKey: IndicatorProcessKey,
+  targetMonth: string
+): Promise<RawAggRow[]> {
+  const config = PROCESS_CONFIG[processKey];
+  const { startStr, endStr } = monthToRange(targetMonth);
 
   const sql = `
     SELECT b.ITEM_CODE,
-           SUM(CASE WHEN ${col} >= ${dt === "varchar" ? ":wbStart" : "TO_DATE(:wbStart, 'YYYY/MM/DD HH24:MI:SS')"}
-                     AND ${col} <  ${dt === "varchar" ? ":wbEnd"   : "TO_DATE(:wbEnd, 'YYYY/MM/DD HH24:MI:SS')"}
-                     AND ${isNg} = 1 THEN 1 ELSE 0 END) AS WB_NG,
-           SUM(CASE WHEN ${col} >= ${dt === "varchar" ? ":wbStart" : "TO_DATE(:wbStart, 'YYYY/MM/DD HH24:MI:SS')"}
-                     AND ${col} <  ${dt === "varchar" ? ":wbEnd"   : "TO_DATE(:wbEnd, 'YYYY/MM/DD HH24:MI:SS')"}
-                    THEN 1 ELSE 0 END) AS WB_TOTAL,
-           SUM(CASE WHEN ${col} >= ${dt === "varchar" ? ":lwStart" : "TO_DATE(:lwStart, 'YYYY/MM/DD HH24:MI:SS')"}
-                     AND ${col} <  ${dt === "varchar" ? ":lwEnd"   : "TO_DATE(:lwEnd, 'YYYY/MM/DD HH24:MI:SS')"}
-                     AND ${isNg} = 1 THEN 1 ELSE 0 END) AS LW_NG,
-           SUM(CASE WHEN ${col} >= ${dt === "varchar" ? ":lwStart" : "TO_DATE(:lwStart, 'YYYY/MM/DD HH24:MI:SS')"}
-                     AND ${col} <  ${dt === "varchar" ? ":lwEnd"   : "TO_DATE(:lwEnd, 'YYYY/MM/DD HH24:MI:SS')"}
-                    THEN 1 ELSE 0 END) AS LW_TOTAL,
-           0 AS TW_NG,
-           0 AS TW_TOTAL
+           SUM(CASE WHEN t.${config.resultCol} NOT IN ('PASS','GOOD','OK','Y') THEN 1 ELSE 0 END) AS NG_COUNT,
+           COUNT(*) AS TOTAL_COUNT
     FROM ${config.table} t
     JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
-    WHERE ${buildWhereDate(col, ":wbStart", ":lwEnd", dt)}
+    WHERE t.${config.dateCol} >= :startStr AND t.${config.dateCol} < :endStr
       AND (t.${config.pidCol} LIKE 'VN07%' OR t.${config.pidCol} LIKE 'VNL1%' OR t.${config.pidCol} LIKE 'VNA2%')
       AND t.LINE_CODE IS NOT NULL
       AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
-      ${config.extraWhere ?? ""}
-      ${lineFilter.clause}
+      ${config.extraWhere}
     GROUP BY b.ITEM_CODE
   `;
 
-  return executeQuery<WeeklyRow>(sql, {
-    wbStart: ranges.weekBefore.start,
-    wbEnd: ranges.weekBefore.end,
-    lwStart: ranges.lastWeek.start,
-    lwEnd: ranges.lastWeek.end,
-    ...lineFilter.params,
+  return executeQuery<RawAggRow>(sql, { startStr, endStr });
+}
+
+/** 특정 월의 모든 공정을 병렬 집계 후 캐시 INSERT */
+async function calculateAndInsert(targetMonth: string): Promise<void> {
+  /* 5개 공정 병렬 조회 */
+  const results = await Promise.all(
+    PROCESS_KEYS.map((key) => queryProcessMonth(key, targetMonth))
+  );
+
+  /* 개별 INSERT */
+  for (let i = 0; i < PROCESS_KEYS.length; i++) {
+    const processCode = PROCESS_KEYS[i];
+    for (const row of results[i]) {
+      const ppm =
+        row.TOTAL_COUNT > 0
+          ? Math.round((row.NG_COUNT / row.TOTAL_COUNT) * 1_000_000)
+          : 0;
+      await executeQuery(
+        `INSERT INTO IQ_INDICATOR_MONTHLY
+           (TARGET_MONTH, ITEM_CODE, PROCESS_CODE, NG_COUNT, TOTAL_COUNT, PPM, CREATED_DATE, UPDATED_DATE)
+         VALUES (:tm, :ic, :pc, :ng, :tot, :ppm, SYSDATE, SYSDATE)`,
+        {
+          tm: targetMonth,
+          ic: row.ITEM_CODE,
+          pc: processCode,
+          ng: row.NG_COUNT,
+          tot: row.TOTAL_COUNT,
+          ppm,
+        }
+      );
+    }
+  }
+}
+
+/* ── 응답 빌드 ── */
+
+/** PPM 계산 헬퍼 */
+const toPpm = (ng: number, total: number): number =>
+  total > 0 ? Math.round((ng / total) * 1_000_000) : 0;
+
+/** 캐시 행 → IndicatorModelData[] 피벗 + 필터링 */
+function buildResponse(
+  mbRows: CacheRow[],
+  lmRows: CacheRow[],
+  mbMonth: string,
+  lmMonth: string,
+  minVolume: number
+): IndicatorResponse {
+  const modelMap = new Map<string, IndicatorModelData>();
+
+  const ensure = (ic: string) => {
+    if (!modelMap.has(ic)) {
+      modelMap.set(ic, { itemCode: ic, monthBefore: {}, lastMonth: {} });
+    }
+    return modelMap.get(ic)!;
+  };
+
+  /* 전전월 데이터 피벗 */
+  for (const r of mbRows) {
+    const m = ensure(r.ITEM_CODE);
+    const key = r.PROCESS_CODE as IndicatorProcessKey;
+    m.monthBefore[key] = {
+      ngCount: r.NG_COUNT,
+      totalCount: r.TOTAL_COUNT,
+      ppm: toPpm(r.NG_COUNT, r.TOTAL_COUNT),
+      countermeasureNo: r.COUNTERMEASURE_NO ?? null,
+    };
+  }
+
+  /* 전월 데이터 피벗 */
+  for (const r of lmRows) {
+    const m = ensure(r.ITEM_CODE);
+    const key = r.PROCESS_CODE as IndicatorProcessKey;
+    m.lastMonth[key] = {
+      ngCount: r.NG_COUNT,
+      totalCount: r.TOTAL_COUNT,
+      ppm: toPpm(r.NG_COUNT, r.TOTAL_COUNT),
+      countermeasureNo: r.COUNTERMEASURE_NO ?? null,
+    };
+  }
+
+  /* 필터링 */
+  const filtered = [...modelMap.values()].filter((model) => {
+    const mbProcs = Object.values(model.monthBefore) as MonthlyProcessData[];
+    const lmProcs = Object.values(model.lastMonth) as MonthlyProcessData[];
+
+    const mbPpmSum = mbProcs.reduce((s, p) => s + p.ppm, 0);
+    const lmPpmSum = lmProcs.reduce((s, p) => s + p.ppm, 0);
+
+    /* PPM 합계 모두 0 → 제외 */
+    if (mbPpmSum === 0 && lmPpmSum === 0) return false;
+
+    const mbTotal = mbProcs.reduce((s, p) => s + p.totalCount, 0);
+    const lmTotal = lmProcs.reduce((s, p) => s + p.totalCount, 0);
+
+    /* 어느 한 월이라도 검사 수량 부족 → 제외 */
+    if (mbTotal < minVolume || lmTotal < minVolume) return false;
+
+    return true;
   });
+
+  /* PPM 합계 내림차순 정렬 */
+  const models = filtered.sort((a, b) => {
+    const sumPpm = (m: IndicatorModelData) => {
+      const mb = Object.values(m.monthBefore) as MonthlyProcessData[];
+      const lm = Object.values(m.lastMonth) as MonthlyProcessData[];
+      return (
+        mb.reduce((s, p) => s + p.ppm, 0) + lm.reduce((s, p) => s + p.ppm, 0)
+      );
+    };
+    return sumPpm(b) - sumPpm(a);
+  });
+
+  return {
+    models,
+    monthBefore: { month: mbMonth, displayLabel: monthDisplayLabel(mbMonth) },
+    lastMonth: { month: lmMonth, displayLabel: monthDisplayLabel(lmMonth) },
+    lastUpdated: new Date().toISOString(),
+  };
 }
 
 /* ── GET 핸들러 ── */
 
 export async function GET(request: NextRequest) {
   try {
-    const lines = parseLines(request);
-    const lineFilter = buildLineInClause(lines, "t", "ln");
-    const periodParam = request.nextUrl.searchParams.get("period");
-    const period: PeriodType = periodParam === "monthly" ? "monthly" : "weekly";
-    const ranges = period === "monthly" ? getMonthRanges() : getWeekRanges();
-
-    /* 7개 공정 병렬 조회 (CASE문으로 NG+전체 한 쿼리) */
-    const results = await Promise.all(
-      PROCESS_KEYS.map((key) => queryProcess(PROCESS_CONFIG[key], ranges, lineFilter))
-    );
-
-    /* ITEM_CODE별 merge — PPM 계산 */
-    const modelMap = new Map<string, IndicatorModelData>();
-
-    /** NG/TOTAL → PPM 변환 (TOTAL=0이면 0) */
-    const toPpm = (ng: number, total: number): number =>
-      total > 0 ? Math.round((ng / total) * 1_000_000) : 0;
-
-    PROCESS_KEYS.forEach((key, i) => {
-      for (const row of results[i]) {
-        if (!modelMap.has(row.ITEM_CODE)) {
-          modelMap.set(row.ITEM_CODE, { itemCode: row.ITEM_CODE, processes: {} });
-        }
-        const model = modelMap.get(row.ITEM_CODE)!;
-        model.processes[key] = {
-          weekBefore: toPpm(row.WB_NG, row.WB_TOTAL),
-          lastWeek: toPpm(row.LW_NG, row.LW_TOTAL),
-          thisWeek: toPpm(row.TW_NG, row.TW_TOTAL),
-          weekBeforeTotal: row.WB_TOTAL,
-          lastWeekTotal: row.LW_TOTAL,
-          thisWeekTotal: row.TW_TOTAL,
-        };
-      }
-    });
-
-    /* ── 모델 필터링 ── */
-    /** 소량 모수 기준 (전전기/전기 검사 수량이 이 값 미만이면 제외) */
+    const { monthBefore, lastMonth } = getMonthTargets();
+    const regenerate = request.nextUrl.searchParams.get("regenerate") === "true";
     const minVolumeParam = Number(request.nextUrl.searchParams.get("minVolume"));
-    const MIN_VOLUME = minVolumeParam > 0 ? minVolumeParam : 200;
+    const minVolume = minVolumeParam > 0 ? minVolumeParam : 200;
 
-    const filtered = [...modelMap.values()].filter((model) => {
-      const procs = Object.values(model.processes);
+    /* 재생성 요청 시 기존 캐시 삭제 */
+    if (regenerate) {
+      await Promise.all([
+        deleteCacheData(monthBefore),
+        deleteCacheData(lastMonth),
+      ]);
+    }
 
-      /* 전전기/전기 PPM 합계 */
-      const wbPpmSum = procs.reduce((s, p) => s + (p?.weekBefore ?? 0), 0);
-      const lwPpmSum = procs.reduce((s, p) => s + (p?.lastWeek ?? 0), 0);
+    /* 캐시 존재 여부 확인 → 없으면 RAW에서 집계 후 INSERT */
+    const [hasMb, hasLm] = await Promise.all([
+      hasCacheData(monthBefore),
+      hasCacheData(lastMonth),
+    ]);
 
-      /* 전전기/전기 검사 총량 */
-      const wbTotal = procs.reduce((s, p) => s + (p?.weekBeforeTotal ?? 0), 0);
-      const lwTotal = procs.reduce((s, p) => s + (p?.lastWeekTotal ?? 0), 0);
+    if (!hasMb) await calculateAndInsert(monthBefore);
+    if (!hasLm) await calculateAndInsert(lastMonth);
 
-      /* 1. 전전기 & 전기 PPM 모두 0 → 제외 (불량 없는 모델) */
-      if (wbPpmSum === 0 && lwPpmSum === 0) return false;
+    /* 캐시 데이터 조회 */
+    const [mbRows, lmRows] = await Promise.all([
+      getCacheData(monthBefore),
+      getCacheData(lastMonth),
+    ]);
 
-      /* 2. 전전기 or 전기 검사 수량 MIN_VOLUME 미만 → 제외 (소량 모수) */
-      if (wbTotal < MIN_VOLUME || lwTotal < MIN_VOLUME) return false;
-
-      return true;
-    });
-
-    /* 총 불량 건수 내림차순 정렬 */
-    const models = filtered.sort((a, b) => {
-      const sumA = Object.values(a.processes).reduce(
-        (s, p) => s + (p?.weekBefore ?? 0) + (p?.lastWeek ?? 0) + (p?.thisWeek ?? 0), 0
-      );
-      const sumB = Object.values(b.processes).reduce(
-        (s, p) => s + (p?.weekBefore ?? 0) + (p?.lastWeek ?? 0) + (p?.thisWeek ?? 0), 0
-      );
-      return sumB - sumA;
-    });
-
-    return NextResponse.json({
-      models,
-      weekRanges: {
-        weekBefore: { start: ranges.weekBefore.displayStart, end: ranges.weekBefore.displayEnd },
-        lastWeek: { start: ranges.lastWeek.displayStart, end: ranges.lastWeek.displayEnd },
-        thisWeek: { start: ranges.thisWeek.displayStart, end: ranges.thisWeek.displayEnd },
-      },
-      period,
-      thisWeekDays: ranges.thisWeekDays,
-      lastUpdated: new Date().toISOString(),
-    });
+    const response = buildResponse(mbRows, lmRows, monthBefore, lastMonth, minVolume);
+    return NextResponse.json(response);
   } catch (error) {
     console.error("Indicator API error:", error);
     return NextResponse.json(
       { error: "데이터 조회 실패", detail: String(error) },
+      { status: 500 }
+    );
+  }
+}
+
+/* ── POST 핸들러 — 대책서번호 등록 ── */
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { targetMonth, itemCode, processCode, countermeasureNo } = body;
+
+    if (!targetMonth || !itemCode || !processCode || !countermeasureNo) {
+      return NextResponse.json(
+        { error: "필수 파라미터 누락 (targetMonth, itemCode, processCode, countermeasureNo)" },
+        { status: 400 }
+      );
+    }
+
+    await executeQuery(
+      `UPDATE IQ_INDICATOR_MONTHLY
+       SET COUNTERMEASURE_NO = :cn, UPDATED_DATE = SYSDATE
+       WHERE TARGET_MONTH = :tm AND ITEM_CODE = :ic AND PROCESS_CODE = :pc`,
+      { cn: countermeasureNo, tm: targetMonth, ic: itemCode, pc: processCode }
+    );
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Indicator POST error:", error);
+    return NextResponse.json(
+      { error: "대책서번호 등록 실패", detail: String(error) },
       { status: 500 }
     );
   }
