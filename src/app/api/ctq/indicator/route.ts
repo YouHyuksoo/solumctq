@@ -117,26 +117,29 @@ async function deleteCacheData(targetMonth: string): Promise<void> {
   );
 }
 
-/* ── RAW 테이블에서 집계 ── */
+/* ── RAW 테이블에서 집계 → 캐시 INSERT ── */
 
-interface RawAggRow {
-  ITEM_CODE: string;
-  NG_COUNT: number;
-  TOTAL_COUNT: number;
-}
-
-/** 단일 공정 + 단일 월 RAW 집계 */
-async function queryProcessMonth(
+/** 특정 월의 단일 공정을 INSERT INTO ... SELECT 로 한방 집계+저장 */
+async function insertProcessMonth(
   processKey: IndicatorProcessKey,
   targetMonth: string
-): Promise<RawAggRow[]> {
+): Promise<void> {
   const config = PROCESS_CONFIG[processKey];
   const { startStr, endStr } = monthToRange(targetMonth);
 
   const sql = `
-    SELECT b.ITEM_CODE,
-           SUM(CASE WHEN t.${config.resultCol} NOT IN ('PASS','GOOD','OK','Y') THEN 1 ELSE 0 END) AS NG_COUNT,
-           COUNT(*) AS TOTAL_COUNT
+    INSERT INTO IQ_INDICATOR_MONTHLY
+      (TARGET_MONTH, ITEM_CODE, PROCESS_CODE, NG_COUNT, TOTAL_COUNT, PPM, CREATED_DATE, UPDATED_DATE)
+    SELECT :tm,
+           b.ITEM_CODE,
+           :pc,
+           SUM(CASE WHEN t.${config.resultCol} NOT IN ('PASS','GOOD','OK','Y') THEN 1 ELSE 0 END),
+           COUNT(*),
+           CASE WHEN COUNT(*) > 0
+                THEN ROUND(SUM(CASE WHEN t.${config.resultCol} NOT IN ('PASS','GOOD','OK','Y') THEN 1 ELSE 0 END) / COUNT(*) * 1000000)
+                ELSE 0 END,
+           SYSDATE,
+           SYSDATE
     FROM ${config.table} t
     JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
     WHERE t.${config.dateCol} >= :startStr AND t.${config.dateCol} < :endStr
@@ -147,39 +150,15 @@ async function queryProcessMonth(
     GROUP BY b.ITEM_CODE
   `;
 
-  return executeQuery<RawAggRow>(sql, { startStr, endStr });
+  await executeQuery(sql, { tm: targetMonth, pc: processKey, startStr, endStr });
 }
 
-/** 특정 월의 모든 공정을 병렬 집계 후 캐시 INSERT */
+/** 특정 월의 모든 공정을 병렬 집계+저장 (INSERT INTO SELECT 방식) */
 async function calculateAndInsert(targetMonth: string): Promise<void> {
-  /* 5개 공정 병렬 조회 */
-  const results = await Promise.all(
-    PROCESS_KEYS.map((key) => queryProcessMonth(key, targetMonth))
+  await deleteCacheData(targetMonth);
+  await Promise.all(
+    PROCESS_KEYS.map((key) => insertProcessMonth(key, targetMonth))
   );
-
-  /* 개별 INSERT */
-  for (let i = 0; i < PROCESS_KEYS.length; i++) {
-    const processCode = PROCESS_KEYS[i];
-    for (const row of results[i]) {
-      const ppm =
-        row.TOTAL_COUNT > 0
-          ? Math.round((row.NG_COUNT / row.TOTAL_COUNT) * 1_000_000)
-          : 0;
-      await executeQuery(
-        `INSERT INTO IQ_INDICATOR_MONTHLY
-           (TARGET_MONTH, ITEM_CODE, PROCESS_CODE, NG_COUNT, TOTAL_COUNT, PPM, CREATED_DATE, UPDATED_DATE)
-         VALUES (:tm, :ic, :pc, :ng, :tot, :ppm, SYSDATE, SYSDATE)`,
-        {
-          tm: targetMonth,
-          ic: row.ITEM_CODE,
-          pc: processCode,
-          ng: row.NG_COUNT,
-          tot: row.TOTAL_COUNT,
-          ppm,
-        }
-      );
-    }
-  }
 }
 
 /* ── 응답 빌드 ── */
