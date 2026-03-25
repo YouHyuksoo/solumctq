@@ -203,6 +203,7 @@ const vi: TranslationKeys = {
     handling: "Xử lý",
     badReason: "Mã lỗi",
     inspectResult: "Kết quả",
+    badPhenomenon: "Hiện tượng lỗi",
     receipt: "Nhập kho",
     repairLabel: "Sửa chữa",
     ofTotal: " trong",

@@ -203,6 +203,7 @@ const en: TranslationKeys = {
     handling: "Handling",
     badReason: "Defect Code",
     inspectResult: "Result",
+    badPhenomenon: "Phenomenon",
     receipt: "Receipt",
     repairLabel: "Repair",
     ofTotal: " of",

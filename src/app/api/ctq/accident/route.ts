@@ -8,8 +8,10 @@
  *    - HIPOT: 판정완료 1건+ → A급 (사고성 높음)
  *    - BURNIN/ATE: 판정완료 2건+ → A급, 1건 → B급
  *    - 수리등록 후 미판정 건은 NG로만 표시 (등급 미반영)
- * 3. **매일 08:00 ~ 다음날 08:00** 하루치만 대상
- * 4. **QC_CONFIRM_YN='Y' 제외** (이미 확인된 건 제외)
+ * 3. **BURNIN 특수 처리**: 검사이력(RAW) 대신 IP_PRODUCT_WORK_QC 테이블에서
+ *    RECEIPT_DEFICIT='1'(수리실 등록) 건을 PID별 마지막 이력 기준으로 불량 집계
+ * 4. **매일 08:00 ~ 다음날 08:00** 하루치만 대상
+ * 5. **QC_CONFIRM_YN='Y' 제외** (이미 확인된 건 제외)
  */
 
 import { NextResponse } from "next/server";
@@ -33,6 +35,8 @@ interface ProcessConfig {
   dateType: "varchar";
   aThreshold: number;
   bThreshold: number;
+  /** IP_PRODUCT_WORK_QC JOIN 시 추가 조건 (예: ATE의 BAD_PHENOMENON 필터) */
+  qcJoinExtra?: string;
 }
 
 const PROCESS_CONFIG: Record<AccidentProcessType, ProcessConfig> = {
@@ -62,6 +66,7 @@ const PROCESS_CONFIG: Record<AccidentProcessType, ProcessConfig> = {
     dateType: "varchar",
     aThreshold: 2,
     bThreshold: 1,
+    qcJoinExtra: "AND r.BAD_PHENOMENON = 'P1000'",
   },
 };
 
@@ -132,6 +137,7 @@ async function getLineSummary(
       ON r.SERIAL_NO = t.${config.pidCol}
       AND r.RECEIPT_DEFICIT = '2'
       AND (r.QC_RESULT IS NULL OR r.QC_RESULT != 'O')
+      ${config.qcJoinExtra ?? ""}
     WHERE ${condition}
       AND (t.${config.pidCol} LIKE 'VN07%' OR t.${config.pidCol} LIKE 'VNL1%' OR t.${config.pidCol} LIKE 'VNA2%')
       AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
@@ -146,6 +152,90 @@ async function getLineSummary(
     GROUP BY t.LINE_CODE
   `;
   return executeQuery<LineSummaryRow>(sql, {
+    tsStart: timeRange.startStr,
+    tsEnd: timeRange.endStr,
+    ...lineFilter.params,
+  });
+}
+
+/**
+ * BURNIN 전용 — IP_PRODUCT_WORK_QC 에서 RECEIPT_DEFICIT='1'(수리실 등록) 건 집계
+ * 검사이력(RAW) 대신 QC 테이블을 직접 조회하며, PID별 마지막 이력만 대상
+ */
+async function getBurninLineSummary(
+  timeRange: { startStr: string; endStr: string },
+  lineFilter: { clause: string; params: Record<string, string> }
+): Promise<LineSummaryRow[]> {
+  const sql = `
+    SELECT LINE_CODE,
+           COUNT(*) AS NG_COUNT,
+           COUNT(CASE WHEN REPAIR_RESULT_CODE IS NOT NULL
+                       AND REPAIR_RESULT_CODE <> '-'
+                      THEN 1 END) AS JUDGED_COUNT,
+           COUNT(CASE WHEN REPAIR_RESULT_CODE IS NULL
+                        OR REPAIR_RESULT_CODE = '-'
+                      THEN 1 END) AS PENDING_COUNT,
+           MAX(QC_DATE_STR) AS LAST_INSPECT
+    FROM (
+      SELECT t.LINE_CODE,
+             TO_CHAR(t.QC_DATE, 'YYYYMMDDHH24MISS') AS QC_DATE_STR,
+             t.REPAIR_RESULT_CODE,
+             ROW_NUMBER() OVER (PARTITION BY t.SERIAL_NO ORDER BY t.QC_DATE DESC) AS RN
+      FROM IP_PRODUCT_WORK_QC t
+      WHERE t.QC_DATE >= TO_DATE(:tsStart, 'YYYY/MM/DD HH24:MI:SS')
+        AND t.QC_DATE < TO_DATE(:tsEnd, 'YYYY/MM/DD HH24:MI:SS')
+        AND (t.SERIAL_NO LIKE 'VN07%' OR t.SERIAL_NO LIKE 'VNL1%' OR t.SERIAL_NO LIKE 'VNA2%')
+        AND t.RECEIPT_DEFICIT = '1'
+        AND t.WORKSTAGE_CODE = 'W500'
+        AND t.LINE_CODE IS NOT NULL
+        AND (t.QC_RESULT IS NULL OR t.QC_RESULT != 'O')
+        ${lineFilter.clause}
+    ) WHERE RN = 1
+    GROUP BY LINE_CODE
+  `;
+  return executeQuery<LineSummaryRow>(sql, {
+    tsStart: timeRange.startStr,
+    tsEnd: timeRange.endStr,
+    ...lineFilter.params,
+  });
+}
+
+/** BURNIN 전용 — NG 상세 (PID별 마지막 이력, 라인별 최근 5건) */
+async function getBurninNgDetails(
+  timeRange: { startStr: string; endStr: string },
+  lineFilter: { clause: string; params: Record<string, string> }
+): Promise<NgDetailRow[]> {
+  const sql = `
+    SELECT LINE_CODE, INSPECT_TIME, PID, MODEL_NAME,
+           RECEIPT_DEFICIT, LOCATION_CODE, REPAIR_RESULT_CODE,
+           QC_INSPECT_HANDLING, DEFECT_ITEM_CODE
+    FROM (
+      SELECT sub.*,
+             ROW_NUMBER() OVER (PARTITION BY sub.LINE_CODE ORDER BY sub.INSPECT_TIME DESC) AS RN2
+      FROM (
+        SELECT t.LINE_CODE,
+               TO_CHAR(t.QC_DATE, 'YYYYMMDDHH24MISS') AS INSPECT_TIME,
+               t.SERIAL_NO AS PID,
+               NVL(t.MODEL_NAME, '-') AS MODEL_NAME,
+               NVL(t.RECEIPT_DEFICIT, '-') AS RECEIPT_DEFICIT,
+               NVL(t.LOCATION_CODE, '-') AS LOCATION_CODE,
+               NVL(t.REPAIR_RESULT_CODE, '-') AS REPAIR_RESULT_CODE,
+               NVL(t.QC_INSPECT_HANDLING, '-') AS QC_INSPECT_HANDLING,
+               NVL(t.DEFECT_ITEM_CODE, '-') AS DEFECT_ITEM_CODE,
+               ROW_NUMBER() OVER (PARTITION BY t.SERIAL_NO ORDER BY t.QC_DATE DESC) AS RN
+        FROM IP_PRODUCT_WORK_QC t
+        WHERE t.QC_DATE >= TO_DATE(:tsStart, 'YYYY/MM/DD HH24:MI:SS')
+          AND t.QC_DATE < TO_DATE(:tsEnd, 'YYYY/MM/DD HH24:MI:SS')
+          AND (t.SERIAL_NO LIKE 'VN07%' OR t.SERIAL_NO LIKE 'VNL1%' OR t.SERIAL_NO LIKE 'VNA2%')
+          AND t.RECEIPT_DEFICIT = '1'
+          AND t.WORKSTAGE_CODE = 'W500'
+          AND t.LINE_CODE IS NOT NULL
+          AND (t.QC_RESULT IS NULL OR t.QC_RESULT != 'O')
+          ${lineFilter.clause}
+      ) sub WHERE sub.RN = 1
+    ) WHERE RN2 <= 5
+  `;
+  return executeQuery<NgDetailRow>(sql, {
     tsStart: timeRange.startStr,
     tsEnd: timeRange.endStr,
     ...lineFilter.params,
@@ -182,6 +272,7 @@ async function getNgDetails(
         ON r.SERIAL_NO = t.${config.pidCol}
         AND r.RECEIPT_DEFICIT = '2'
         AND (r.QC_RESULT IS NULL OR r.QC_RESULT != 'O')
+        ${config.qcJoinExtra ?? ""}
       WHERE ${condition}
         AND (t.${config.pidCol} LIKE 'VN07%' OR t.${config.pidCol} LIKE 'VNL1%' OR t.${config.pidCol} LIKE 'VNA2%')
         AND t.${config.resultCol} NOT IN ('PASS', 'GOOD', 'OK', 'Y')
@@ -236,8 +327,16 @@ export async function GET(request: NextRequest) {
 
     /* 1. 3공정 병렬 쿼리 */
     const [summaries, ngDetails] = await Promise.all([
-      Promise.all(PROCESS_TYPES.map((pt) => getLineSummary(PROCESS_CONFIG[pt], timeRange, lineFilter))),
-      Promise.all(PROCESS_TYPES.map((pt) => getNgDetails(PROCESS_CONFIG[pt], timeRange, lineFilter))),
+      Promise.all(PROCESS_TYPES.map((pt) =>
+        pt === "BURNIN"
+          ? getBurninLineSummary(timeRange, lineFilter)
+          : getLineSummary(PROCESS_CONFIG[pt], timeRange, lineFilter)
+      )),
+      Promise.all(PROCESS_TYPES.map((pt) =>
+        pt === "BURNIN"
+          ? getBurninNgDetails(timeRange, lineFilter)
+          : getNgDetails(PROCESS_CONFIG[pt], timeRange, lineFilter)
+      )),
     ]);
 
     /* 2. Map 변환 */

@@ -206,6 +206,7 @@ const ko = {
     handling: "처리",
     badReason: "불량코드",
     inspectResult: "검사결과",
+    badPhenomenon: "불량현상",
     receipt: "입고",
     repairLabel: "수리",
     ofTotal: "건 중",

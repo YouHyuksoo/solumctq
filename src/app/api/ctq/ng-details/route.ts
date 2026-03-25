@@ -43,6 +43,8 @@ interface NgRow {
   INSPECT_RESULT: string;
   BAD_REASON_CODE: string;
   BAD_REASON_NAME: string;
+  WORKSTAGE_NAME: string;
+  BAD_PHENOMENON: string;
 }
 
 function getTimeRanges90() {
@@ -84,7 +86,9 @@ export async function GET(request: NextRequest) {
                NVL(t.DEFECT_ITEM_CODE, '-') AS DEFECT_ITEM_CODE,
                '-' AS INSPECT_RESULT,
                NVL(t.BAD_REASON_CODE, '-') AS BAD_REASON_CODE,
-               NVL(F_GET_CODE_MASTER('WQC BAD REASON CODE', t.BAD_REASON_CODE, 'C', 1), '-') AS BAD_REASON_NAME
+               NVL(F_GET_CODE_MASTER('WQC BAD REASON CODE', t.BAD_REASON_CODE, 'C', 1), '-') AS BAD_REASON_NAME,
+               NVL(F_GET_WORKSTAGE_NAME(t.WORKSTAGE_CODE), NVL(t.WORKSTAGE_CODE, '-')) AS WORKSTAGE_NAME,
+               NVL(t.BAD_PHENOMENON, '-') AS BAD_PHENOMENON
         FROM IP_PRODUCT_WORK_QC t
         WHERE t.QC_DATE >= TO_DATE(:tsStart, 'YYYY/MM/DD HH24:MI:SS')
           AND t.QC_DATE < TO_DATE(:tsEnd, 'YYYY/MM/DD HH24:MI:SS')
@@ -114,7 +118,9 @@ export async function GET(request: NextRequest) {
                NVL(t.DEFECT_ITEM_CODE, '-') AS DEFECT_ITEM_CODE,
                '-' AS INSPECT_RESULT,
                NVL(t.BAD_REASON_CODE, '-') AS BAD_REASON_CODE,
-               NVL(F_GET_CODE_MASTER('WQC BAD REASON CODE', t.BAD_REASON_CODE, 'C', 1), '-') AS BAD_REASON_NAME
+               NVL(F_GET_CODE_MASTER('WQC BAD REASON CODE', t.BAD_REASON_CODE, 'C', 1), '-') AS BAD_REASON_NAME,
+               NVL(F_GET_WORKSTAGE_NAME(t.WORKSTAGE_CODE), NVL(t.WORKSTAGE_CODE, '-')) AS WORKSTAGE_NAME,
+               NVL(t.BAD_PHENOMENON, '-') AS BAD_PHENOMENON
         FROM IP_PRODUCT_WORK_QC t
         WHERE t.QC_DATE >= TO_DATE(:tsStart, 'YYYY/MM/DD HH24:MI:SS')
           AND t.BAD_REASON_CODE = :badReasonCode
@@ -152,7 +158,9 @@ export async function GET(request: NextRequest) {
                NVL(r.DEFECT_ITEM_CODE, '-') AS DEFECT_ITEM_CODE,
                t.${config.resultCol} AS INSPECT_RESULT,
                NVL(r.BAD_REASON_CODE, '-') AS BAD_REASON_CODE,
-               NVL(F_GET_CODE_MASTER('WQC BAD REASON CODE', r.BAD_REASON_CODE, 'C', 1), '-') AS BAD_REASON_NAME
+               NVL(F_GET_CODE_MASTER('WQC BAD REASON CODE', r.BAD_REASON_CODE, 'C', 1), '-') AS BAD_REASON_NAME,
+               NVL(F_GET_WORKSTAGE_NAME(r.WORKSTAGE_CODE), NVL(r.WORKSTAGE_CODE, '-')) AS WORKSTAGE_NAME,
+               NVL(r.BAD_PHENOMENON, '-') AS BAD_PHENOMENON
         FROM ${config.table} t
         JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
           AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
@@ -192,6 +200,8 @@ export async function GET(request: NextRequest) {
         inspectResult: r.INSPECT_RESULT,
         badReasonCode: r.BAD_REASON_CODE,
         badReasonName: r.BAD_REASON_NAME,
+        workstageName: r.WORKSTAGE_NAME,
+        badPhenomenon: r.BAD_PHENOMENON,
       })),
       total: rows.length,
     });

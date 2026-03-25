@@ -26,6 +26,8 @@ interface NgRecord {
   inspectResult: string;
   badReasonCode: string;
   badReasonName: string;
+  workstageName?: string;
+  badPhenomenon?: string;
 }
 
 interface NgDetailModalProps {
@@ -116,6 +118,7 @@ export default function NgDetailModal({ open, title, fetchUrl, onClose }: NgDeta
                 <tr className="text-gray-400 border-b border-gray-700">
                   <th className="text-left pb-2 pr-2 w-8">#</th>
                   <th className="text-left pb-2 pr-2">{t("table.time") as string}</th>
+                  <th className="text-left pb-2 pr-2">{t("table.process") as string}</th>
                   <th className="text-left pb-2 pr-2">{t("table.model") as string}</th>
                   <th className="text-left pb-2 pr-2">PID</th>
                   <th className="text-left pb-2 pr-2">{t("table.category") as string}</th>
@@ -124,6 +127,7 @@ export default function NgDetailModal({ open, title, fetchUrl, onClose }: NgDeta
                   <th className="text-left pb-2 pr-2">{t("table.repair") as string}</th>
                   <th className="text-left pb-2 pr-2">{t("table.handling") as string}</th>
                   <th className="text-left pb-2 pr-2">{t("table.badReason") as string}</th>
+                  <th className="text-left pb-2 pr-2">{t("table.badPhenomenon") as string}</th>
                   <th className="text-left pb-2">{t("table.inspectResult") as string}</th>
                 </tr>
               </thead>
@@ -134,6 +138,7 @@ export default function NgDetailModal({ open, title, fetchUrl, onClose }: NgDeta
                     <td className="py-1.5 pr-2 font-mono whitespace-nowrap">
                       {r.time?.length > 10 ? r.time.slice(5, 19) : r.time}
                     </td>
+                    <td className="py-1.5 pr-2 whitespace-nowrap text-cyan-300">{r.workstageName || "-"}</td>
                     <td className="py-1.5 pr-2 whitespace-nowrap ">{r.model}</td>
                     <td className="py-1.5 pr-2 font-mono text-gray-400 whitespace-nowrap">{r.pid}</td>
                     <td className="py-1.5 pr-2 whitespace-nowrap">{rdLabel(r.receiptDeficit)}</td>
@@ -144,6 +149,7 @@ export default function NgDetailModal({ open, title, fetchUrl, onClose }: NgDeta
                     <td className="py-1.5 pr-2 whitespace-nowrap ">
                       {r.badReasonName && r.badReasonName !== "-" ? r.badReasonName : r.badReasonCode || "-"}
                     </td>
+                    <td className="py-1.5 pr-2 whitespace-nowrap">{r.badPhenomenon || "-"}</td>
                     <td className="py-1.5 whitespace-nowrap">
                       {r.inspectResult && r.inspectResult !== "-" ? (
                         <span className="text-red-400 font-medium">{r.inspectResult}</span>

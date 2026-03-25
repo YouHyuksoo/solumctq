@@ -113,6 +113,7 @@ export async function GET(request: NextRequest) {
       FROM IP_PRODUCT_WORK_QC t
       WHERE t.QC_DATE >= TO_DATE(:dayStart, 'YYYY/MM/DD HH24:MI:SS')
         AND t.BAD_REASON_CODE IN ('B2020', 'B2030')
+        AND (t.SERIAL_NO LIKE 'VN07%' OR t.SERIAL_NO LIKE 'VNL1%' OR t.SERIAL_NO LIKE 'VNA2%')
         AND t.LINE_CODE IS NOT NULL
         AND t.LINE_CODE <> '*'
         AND t.DEFECT_ITEM_CODE IS NOT NULL
@@ -146,6 +147,7 @@ export async function GET(request: NextRequest) {
         FROM IP_PRODUCT_WORK_QC t
         WHERE t.QC_DATE >= TO_DATE(:dayStart, 'YYYY/MM/DD HH24:MI:SS')
           AND t.BAD_REASON_CODE IN ('B2020', 'B2030')
+          AND (t.SERIAL_NO LIKE 'VN07%' OR t.SERIAL_NO LIKE 'VNL1%' OR t.SERIAL_NO LIKE 'VNA2%')
           AND t.LINE_CODE IS NOT NULL
           AND t.LINE_CODE <> '*'
           AND t.DEFECT_ITEM_CODE IS NOT NULL
