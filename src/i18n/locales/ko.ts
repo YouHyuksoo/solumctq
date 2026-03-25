@@ -282,6 +282,7 @@ const ko = {
       noData: "해당 기간 불량 데이터가 없습니다.",
       newDefect: "신규",
       refreshBtn: "새로고침",
+      regenerateBtn: "재생성",
     },
     fpy: {
       title: "직행율",

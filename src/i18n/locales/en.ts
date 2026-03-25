@@ -278,6 +278,7 @@ const en: TranslationKeys = {
       noData: "No defect data for the period.",
       newDefect: "New",
       refreshBtn: "Refresh",
+      regenerateBtn: "Regenerate",
     },
     fpy: {
       title: "FPY",

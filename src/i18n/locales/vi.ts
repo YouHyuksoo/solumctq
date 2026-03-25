@@ -278,6 +278,7 @@ const vi: TranslationKeys = {
       noData: "Không có dữ liệu lỗi trong kỳ.",
       newDefect: "Mới",
       refreshBtn: "Làm mới",
+      regenerateBtn: "Tạo lại",
     },
     fpy: {
       title: "Tỷ lệ đạt",
