@@ -1,11 +1,10 @@
 /**
  * @file src/app/api/ctq/indicator/details/route.ts
- * @description 지표 상세 조회 API — 특정 월+모델의 IP_PRODUCT_WORK_QC 불량 이력
+ * @description 지표 상세 조회 API — IQ_DAILY_NOTIFY 불량 이력
  *
  * 초보자 가이드:
- * 1. 대책서 OK 클릭 시 해당 모델의 불량 상세 레코드 조회
- * 2. IP_PRODUCT_2D_BARCODE JOIN으로 ITEM_CODE(모델) → SERIAL_NO 매핑
- * 3. F_GET_BASECODE / F_GET_WORKSTAGE_NAME 으로 코드 → 명칭 변환
+ * 1. 대책서 OK 클릭 시 해당 모델+월+공정의 IQ_DAILY_NOTIFY 이력 표시
+ * 2. 코드 컬럼은 F_GET_BASECODE / F_GET_WORKSTAGE_NAME 으로 명칭 변환
  */
 
 import { NextResponse } from "next/server";
@@ -14,19 +13,35 @@ import { executeQuery } from "@/lib/oracle";
 
 export const dynamic = "force-dynamic";
 
-interface DetailRow {
-  QC_DATE: string;
-  SERIAL_NO: string;
-  MODEL_NAME: string;
+interface NotifyRow {
+  ACTION_DATE: string;
+  START_TIME: string;
+  END_TIME: string;
+  LINE_NAME: string;
   WORKSTAGE_NAME: string;
-  RECEIPT_NAME: string;
-  QC_RESULT_NAME: string;
-  REPAIR_RESULT_NAME: string;
-  LOCATION_CODE: string;
-  DEFECT_ITEM_CODE: string;
-  HANDLING_NAME: string;
+  MACHINE_CODE: string;
+  MODEL_NAME: string;
+  ITEM_CODE: string;
+  DETECT_LOCATION: string;
+  LOCATION_INFO: string;
+  SERIAL_NO: string;
+  GRADE: string;
   BAD_REASON_NAME: string;
-  BAD_PHENOMENON: string;
+  BAD_DESCRIPTION: string;
+  MATERIAL_MAKER: string;
+  INSPECT_BAD_QTY: number;
+  INSPECT_QTY: number;
+  RUN_NO: string;
+  NOTIFY_STATUS_NAME: string;
+  COMPLETE_YN: string;
+  COMPLETE_DATE: string;
+  INSPECT_CHARGER: string;
+  INSPECT_MANAGER: string;
+  DEPARTMENT_NAME: string;
+  COUNTERMEASURE: string;
+  COMMENTS: string;
+  QC_COMMENTS: string;
+  LINE_STATUS_NOTIFY: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -34,62 +49,99 @@ export async function GET(request: NextRequest) {
     const url = request.nextUrl;
     const month = url.searchParams.get("month") ?? "";
     const itemCode = url.searchParams.get("itemCode") ?? "";
+    const processCode = url.searchParams.get("processCode") ?? "";
 
     if (!month || !itemCode) {
       return NextResponse.json({ error: "month, itemCode 필수" }, { status: 400 });
     }
 
-    /* 월 → Oracle 날짜 범위 */
     const [yy, mm] = month.split("/").map(Number);
     const start = new Date(yy, mm - 1, 1);
     const end = new Date(yy, mm, 1);
     const fmt = (d: Date) =>
       `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")} 00:00:00`;
 
+    const processFilter = processCode
+      ? "AND t.WORKSTAGE_CODE = :processCode"
+      : "";
+
     const sql = `
-      SELECT TO_CHAR(t.QC_DATE, 'YYYY/MM/DD HH24:MI:SS') AS QC_DATE,
-             t.SERIAL_NO,
-             NVL(t.MODEL_NAME, '-') AS MODEL_NAME,
+      SELECT TO_CHAR(t.ACTION_DATE, 'YYYY/MM/DD') AS ACTION_DATE,
+             NVL(TO_CHAR(t.START_TIME, 'HH24:MI'), '-') AS START_TIME,
+             NVL(TO_CHAR(t.END_TIME, 'HH24:MI'), '-') AS END_TIME,
+             NVL(F_GET_LINE_NAME(t.LINE_CODE, 1), NVL(t.LINE_CODE, '-')) AS LINE_NAME,
              NVL(F_GET_WORKSTAGE_NAME(t.WORKSTAGE_CODE), NVL(t.WORKSTAGE_CODE, '-')) AS WORKSTAGE_NAME,
-             NVL(F_GET_BASECODE('RECEIPT DEFICIT', t.RECEIPT_DEFICIT, 'C', 1), NVL(t.RECEIPT_DEFICIT, '-')) AS RECEIPT_NAME,
-             NVL(F_GET_BASECODE('QC RESULT', t.QC_RESULT, 'C', 1), NVL(t.QC_RESULT, '-')) AS QC_RESULT_NAME,
-             NVL(F_GET_BASECODE('REPAIR RESULT CODE', t.REPAIR_RESULT_CODE, 'C', 1), NVL(t.REPAIR_RESULT_CODE, '-')) AS REPAIR_RESULT_NAME,
-             NVL(t.LOCATION_CODE, '-') AS LOCATION_CODE,
-             NVL(t.DEFECT_ITEM_CODE, '-') AS DEFECT_ITEM_CODE,
-             NVL(F_GET_BASECODE('QC INSPECT HANDLING', t.QC_INSPECT_HANDLING, 'C', 1), NVL(t.QC_INSPECT_HANDLING, '-')) AS HANDLING_NAME,
+             NVL(t.MACHINE_CODE, '-') AS MACHINE_CODE,
+             NVL(t.MODEL_NAME, '-') AS MODEL_NAME,
+             NVL(t.ITEM_CODE, '-') AS ITEM_CODE,
+             NVL(t.DETECT_LOCATION, '-') AS DETECT_LOCATION,
+             NVL(t.LOCATION_INFO, '-') AS LOCATION_INFO,
+             NVL(t.SERIAL_NO, '-') AS SERIAL_NO,
+             NVL(t.GRADE, '-') AS GRADE,
              NVL(F_GET_CODE_MASTER('WQC BAD REASON CODE', t.BAD_REASON_CODE, 'C', 1), NVL(t.BAD_REASON_CODE, '-')) AS BAD_REASON_NAME,
-             NVL(t.BAD_PHENOMENON, '-') AS BAD_PHENOMENON
-      FROM IP_PRODUCT_WORK_QC t
-      WHERE t.QC_DATE >= TO_DATE(:startStr, 'YYYY/MM/DD HH24:MI:SS')
-        AND t.QC_DATE < TO_DATE(:endStr, 'YYYY/MM/DD HH24:MI:SS')
-        AND t.SERIAL_NO IN (
-          SELECT b.SERIAL_NO FROM IP_PRODUCT_2D_BARCODE b
-          WHERE b.ITEM_CODE = :itemCode
-        )
-      ORDER BY t.QC_DATE DESC
-      FETCH FIRST 200 ROWS ONLY
+             NVL(t.BAD_DESCRIPTION, '-') AS BAD_DESCRIPTION,
+             NVL(t.MATERIAL_MAKER, '-') AS MATERIAL_MAKER,
+             NVL(t.INSPECT_BAD_QTY, 0) AS INSPECT_BAD_QTY,
+             NVL(t.INSPECT_QTY, 0) AS INSPECT_QTY,
+             NVL(t.RUN_NO, '-') AS RUN_NO,
+             NVL(F_GET_BASECODE('NOTIFY STATUS', t.NOTIFY_STATUS, 'C', 1), NVL(t.NOTIFY_STATUS, '-')) AS NOTIFY_STATUS_NAME,
+             NVL(t.COMPLETE_YN, 'N') AS COMPLETE_YN,
+             NVL(TO_CHAR(t.COMPLETE_DATE, 'YYYY/MM/DD HH24:MI'), '-') AS COMPLETE_DATE,
+             NVL(t.INSPECT_CHARGER, '-') AS INSPECT_CHARGER,
+             NVL(t.INSPECT_MANAGER, '-') AS INSPECT_MANAGER,
+             NVL(F_GET_BASECODE('DEPARTMENT', t.DEPARTMENT_CODE, 'C', 1), NVL(t.DEPARTMENT_CODE, '-')) AS DEPARTMENT_NAME,
+             NVL(t.COUNTERMEASURE, '-') AS COUNTERMEASURE,
+             NVL(t.COMMENTS, '-') AS COMMENTS,
+             NVL(t.QC_COMMENTS, '-') AS QC_COMMENTS,
+             NVL(t.LINE_STATUS_NOTIFY, '-') AS LINE_STATUS_NOTIFY
+      FROM IQ_DAILY_NOTIFY t
+      WHERE t.ACTION_DATE >= TO_DATE(:startStr, 'YYYY/MM/DD HH24:MI:SS')
+        AND t.ACTION_DATE < TO_DATE(:endStr, 'YYYY/MM/DD HH24:MI:SS')
+        AND t.ITEM_CODE = :itemCode
+        ${processFilter}
+      ORDER BY t.ACTION_DATE DESC, t.START_TIME DESC
+      FETCH FIRST 100 ROWS ONLY
     `;
 
-    const rows = await executeQuery<DetailRow>(sql, {
+    const params: Record<string, unknown> = {
       startStr: fmt(start),
       endStr: fmt(end),
       itemCode,
-    });
+    };
+    if (processCode) params.processCode = processCode;
+
+    const rows = await executeQuery<NotifyRow>(sql, params);
 
     return NextResponse.json({
       records: rows.map((r) => ({
-        qcDate: r.QC_DATE,
-        serialNo: r.SERIAL_NO,
-        modelName: r.MODEL_NAME,
+        actionDate: r.ACTION_DATE,
+        startTime: r.START_TIME,
+        endTime: r.END_TIME,
+        lineName: r.LINE_NAME,
         workstageName: r.WORKSTAGE_NAME,
-        receiptName: r.RECEIPT_NAME,
-        qcResultName: r.QC_RESULT_NAME,
-        repairResultName: r.REPAIR_RESULT_NAME,
-        locationCode: r.LOCATION_CODE,
-        defectItemCode: r.DEFECT_ITEM_CODE,
-        handlingName: r.HANDLING_NAME,
+        machineCode: r.MACHINE_CODE,
+        modelName: r.MODEL_NAME,
+        itemCode: r.ITEM_CODE,
+        detectLocation: r.DETECT_LOCATION,
+        locationInfo: r.LOCATION_INFO,
+        serialNo: r.SERIAL_NO,
+        grade: r.GRADE,
         badReasonName: r.BAD_REASON_NAME,
-        badPhenomenon: r.BAD_PHENOMENON,
+        badDescription: r.BAD_DESCRIPTION,
+        materialMaker: r.MATERIAL_MAKER,
+        inspectBadQty: r.INSPECT_BAD_QTY,
+        inspectQty: r.INSPECT_QTY,
+        runNo: r.RUN_NO,
+        notifyStatusName: r.NOTIFY_STATUS_NAME,
+        completeYn: r.COMPLETE_YN,
+        completeDate: r.COMPLETE_DATE,
+        inspectCharger: r.INSPECT_CHARGER,
+        inspectManager: r.INSPECT_MANAGER,
+        departmentName: r.DEPARTMENT_NAME,
+        countermeasure: r.COUNTERMEASURE,
+        comments: r.COMMENTS,
+        qcComments: r.QC_COMMENTS,
+        lineStatusNotify: r.LINE_STATUS_NOTIFY,
       })),
       total: rows.length,
     });
