@@ -128,26 +128,31 @@ async function insertProcessMonth(
   const { startStr, endStr } = monthToRange(targetMonth);
 
   const sql = `
-    INSERT INTO IQ_INDICATOR_MONTHLY
-      (TARGET_MONTH, ITEM_CODE, PROCESS_CODE, NG_COUNT, TOTAL_COUNT, PPM, CREATED_DATE, UPDATED_DATE)
-    SELECT :tm,
-           b.ITEM_CODE,
-           :pc,
-           SUM(CASE WHEN t.${config.resultCol} NOT IN ('PASS','GOOD','OK','Y') THEN 1 ELSE 0 END),
-           COUNT(*),
-           CASE WHEN COUNT(*) > 0
-                THEN ROUND(SUM(CASE WHEN t.${config.resultCol} NOT IN ('PASS','GOOD','OK','Y') THEN 1 ELSE 0 END) / COUNT(*) * 1000000)
-                ELSE 0 END,
-           SYSDATE,
-           SYSDATE
-    FROM ${config.table} t
-    JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
-    WHERE t.${config.dateCol} >= :startStr AND t.${config.dateCol} < :endStr
-      AND (t.${config.pidCol} LIKE 'VN07%' OR t.${config.pidCol} LIKE 'VNL1%' OR t.${config.pidCol} LIKE 'VNA2%')
-      AND t.LINE_CODE IS NOT NULL
-      AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
-      ${config.extraWhere}
-    GROUP BY b.ITEM_CODE
+    MERGE INTO IQ_INDICATOR_MONTHLY tgt
+    USING (
+      SELECT :tm AS TM,
+             b.ITEM_CODE,
+             :pc AS PC,
+             SUM(CASE WHEN t.${config.resultCol} NOT IN ('PASS','GOOD','OK','Y') THEN 1 ELSE 0 END) AS NG_CNT,
+             COUNT(*) AS TOT_CNT,
+             CASE WHEN COUNT(*) > 0
+                  THEN ROUND(SUM(CASE WHEN t.${config.resultCol} NOT IN ('PASS','GOOD','OK','Y') THEN 1 ELSE 0 END) / COUNT(*) * 1000000)
+                  ELSE 0 END AS PPM_VAL
+      FROM ${config.table} t
+      JOIN IP_PRODUCT_2D_BARCODE b ON b.SERIAL_NO = t.${config.pidCol}
+      WHERE t.${config.dateCol} >= :startStr AND t.${config.dateCol} < :endStr
+        AND (t.${config.pidCol} LIKE 'VN07%' OR t.${config.pidCol} LIKE 'VNL1%' OR t.${config.pidCol} LIKE 'VNA2%')
+        AND t.LINE_CODE IS NOT NULL
+        AND b.ITEM_CODE IS NOT NULL AND b.ITEM_CODE <> '*'
+        ${config.extraWhere}
+      GROUP BY b.ITEM_CODE
+    ) src
+    ON (tgt.TARGET_MONTH = src.TM AND tgt.ITEM_CODE = src.ITEM_CODE AND tgt.PROCESS_CODE = src.PC)
+    WHEN MATCHED THEN
+      UPDATE SET tgt.NG_COUNT = src.NG_CNT, tgt.TOTAL_COUNT = src.TOT_CNT, tgt.PPM = src.PPM_VAL, tgt.UPDATED_DATE = SYSDATE
+    WHEN NOT MATCHED THEN
+      INSERT (TARGET_MONTH, ITEM_CODE, PROCESS_CODE, NG_COUNT, TOTAL_COUNT, PPM, CREATED_DATE, UPDATED_DATE)
+      VALUES (src.TM, src.ITEM_CODE, src.PC, src.NG_CNT, src.TOT_CNT, src.PPM_VAL, SYSDATE, SYSDATE)
   `;
 
   await executeQuery(sql, { tm: targetMonth, pc: processKey, startStr, endStr });
