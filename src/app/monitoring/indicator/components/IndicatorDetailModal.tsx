@@ -197,30 +197,30 @@ export default function IndicatorDetailModal({
                   {/* 좌측 — 기본 정보 */}
                   <div>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-                      <Field label="Action Date" value={r.actionDate} />
-                      <Field label="Start Time" value={r.startTime} />
-                      <Field label="Line Code" value={r.lineName} />
-                      <Field label="End Time" value={r.endTime} />
-                      <Field label="Workstage" value={r.workstageName} highlight />
-                      <Field label="Item Code" value={r.itemCode} />
-                      <Field label="Machine" value={r.machineCode} />
-                      <Field label="Run No" value={r.runNo} />
-                      <Field label="Model Name" value={r.modelName} />
-                      <Field label="Detect Location" value={r.detectLocation} />
+                      <Field label="발생일자" value={r.actionDate} />
+                      <Field label="시작시간" value={r.startTime} />
+                      <Field label="라인" value={r.lineName} />
+                      <Field label="종료시간" value={r.endTime} />
+                      <Field label="공정" value={r.workstageName} highlight />
+                      <Field label="품목코드" value={r.itemCode} />
+                      <Field label="설비" value={r.machineCode} />
+                      <Field label="런번호" value={r.runNo} />
+                      <Field label="모델명" value={r.modelName} />
+                      <Field label="검출위치" value={r.detectLocation} />
                     </div>
-                    <div className="mt-1.5"><Field label="Location Info" value={r.locationInfo} /></div>
-                    <div className="mt-1.5"><Field label="Serial No" value={r.serialNo} highlight /></div>
+                    <div className="mt-1.5"><Field label="위치정보" value={r.locationInfo} /></div>
+                    <div className="mt-1.5"><Field label="PID번호" value={r.serialNo} highlight /></div>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-2">
-                      <Field label="Grade" value={r.grade} />
-                      <Field label="Bad Reason" value={r.badReasonName} />
-                      <Field label="Bad Qty" value={r.inspectBadQty} />
-                      <Field label="BAD Desc" value={r.badDescription} />
-                      <Field label="Inspect Qty" value={r.inspectQty} />
-                      <Field label="Material Maker" value={r.materialMaker} />
+                      <Field label="등급" value={r.grade} />
+                      <Field label="불량원인" value={r.badReasonName} />
+                      <Field label="불량수량" value={r.inspectBadQty} />
+                      <Field label="불량내용" value={r.badDescription} />
+                      <Field label="검사수량" value={r.inspectQty} />
+                      <Field label="원자재메이커" value={r.materialMaker} />
                     </div>
                     {/* 이상발생내역 (좌측 하단) */}
                     <div className="mt-3">
-                      <span className="text-gray-500 text-xs">Line Status Notify</span>
+                      <span className="text-gray-500 text-xs">이상발생내역</span>
                       <div className="mt-1 p-2 rounded bg-gray-900 border border-gray-700 min-h-[50px] text-sm text-gray-200 whitespace-pre-wrap">
                         {r.lineStatusNotify === "-" ? "" : r.lineStatusNotify}
                       </div>
@@ -228,29 +228,23 @@ export default function IndicatorDetailModal({
                   </div>
                   {/* 중간 — 상태 */}
                   <div className="space-y-1.5">
-                    <Field label="Notify Status" value={r.notifyStatusName} />
-                    <Field label="Complete Yn" value={r.completeYn === "Y" ? "완료" : "미완료"} />
-                    <Field label="Complete Date" value={r.completeDate} />
-                    <Field label="Inspect Charger" value={r.inspectCharger} />
-                    <Field label="Inspect Manager" value={r.inspectManager} />
-                    <Field label="Department" value={r.departmentName} />
+                    <Field label="통보상태" value={r.notifyStatusName} />
+                    <Field label="처리완료" value={r.completeYn === "Y" ? "완료" : "미완료"} />
+                    <Field label="완료일자" value={r.completeDate} />
+                    <Field label="검사담당" value={r.inspectCharger} />
+                    <Field label="품질관리자" value={r.inspectManager} />
+                    <Field label="책임부서" value={r.departmentName} />
                   </div>
                   {/* 우측 — 조치내역 + 품질의견 */}
                   <div className="space-y-3">
                     <div>
-                      <span className="text-gray-500 text-xs">Measures (조치내역)</span>
+                      <span className="text-gray-500 text-xs">조치내역</span>
                       <div className="mt-1 p-2 rounded bg-gray-900 border border-gray-700 min-h-[60px] text-sm text-gray-200 whitespace-pre-wrap">
-                        {r.countermeasure === "-" ? "" : r.countermeasure}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 text-xs">Comments</span>
-                      <div className="mt-1 p-2 rounded bg-gray-900 border border-gray-700 min-h-[50px] text-sm text-gray-200 whitespace-pre-wrap">
                         {r.comments === "-" ? "" : r.comments}
                       </div>
                     </div>
                     <div>
-                      <span className="text-gray-500 text-xs">QC Comments (품질의견)</span>
+                      <span className="text-gray-500 text-xs">품질의견</span>
                       <div className="mt-1 p-2 rounded bg-gray-900 border border-gray-700 min-h-[60px] text-sm text-gray-200 whitespace-pre-wrap">
                         {r.qcComments === "-" ? "" : r.qcComments}
                       </div>
