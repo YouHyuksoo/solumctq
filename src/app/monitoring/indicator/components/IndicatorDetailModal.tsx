@@ -192,56 +192,82 @@ export default function IndicatorDetailModal({
                     {r.completeYn === "Y" ? "완료" : "진행중"}
                   </span>
                 </div>
-                <div className="grid grid-cols-4 gap-x-6 gap-y-2">
-                  <Field label="일자" value={r.actionDate} />
-                  <Field label="시작시간" value={r.startTime} />
-                  <Field label="종료시간" value={r.endTime} />
-                  <Field label="통보상태" value={r.notifyStatusName} />
-
-                  <Field label="라인" value={r.lineName} />
-                  <Field label="공정" value={r.workstageName} highlight />
-                  <Field label="설비" value={r.machineCode} />
-                  <Field label="완료일" value={r.completeDate} />
-
-                  <Field label="모델" value={r.modelName} />
-                  <Field label="Item Code" value={r.itemCode} />
-                  <Field label="Run No" value={r.runNo} />
-                  <Field label="검사담당" value={r.inspectCharger} />
-
-                  <Field label="검출위치" value={r.detectLocation} />
-                  <Field label="위치정보" value={r.locationInfo} />
-                  <Field label="등급" value={r.grade} />
-                  <Field label="검사관리자" value={r.inspectManager} />
-
-                  <Field label="불량코드" value={r.badReasonName} />
-                  <Field label="불량설명" value={r.badDescription} />
-                  <Field label="불량수량" value={r.inspectBadQty} />
-                  <Field label="담당부서" value={r.departmentName} />
-
-                  <Field label="자재업체" value={r.materialMaker} />
-                  <Field label="검사수량" value={r.inspectQty} />
+                {/* 좌측: 기본 정보 / 우측: 상태+조치 */}
+                <div className="grid grid-cols-[1fr_1fr] gap-6">
+                  {/* 좌측 */}
+                  <div className="space-y-0">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                      <Field label="발생일자" value={r.actionDate} />
+                      <Field label="시작시간" value={r.startTime} />
+                      <Field label="라인코드" value={r.lineName} />
+                      <Field label="종료시간" value={r.endTime} />
+                      <Field label="공정명" value={r.workstageName} highlight />
+                      <Field label="품목코드" value={r.itemCode} />
+                      <Field label="설비코드" value={r.machineCode} />
+                      <Field label="런번호" value={r.runNo} />
+                      <Field label="모델명" value={r.modelName} />
+                      <Field label="발생위치" value={r.detectLocation} />
+                    </div>
+                    <div className="mt-2">
+                      <Field label="로케이션" value={r.locationInfo} />
+                    </div>
+                    <div className="mt-1">
+                      <Field label="PID번호" value={r.serialNo} highlight />
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-2">
+                      <Field label="등급" value={r.grade} />
+                      <Field label="불량원인" value={r.badReasonName} />
+                      <Field label="불량수량" value={r.inspectBadQty} />
+                      <Field label="불량내용" value={r.badDescription} />
+                      <Field label="검사수량" value={r.inspectQty} />
+                      <Field label="원자재메이커" value={r.materialMaker} />
+                    </div>
+                  </div>
+                  {/* 우측 */}
+                  <div className="space-y-0">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                      <Field label="상태" value={r.notifyStatusName} />
+                      <div />
+                      <Field label="처리완료유무" value={r.completeYn === "Y" ? "완료" : "미완료"} />
+                      <div />
+                      <Field label="완료일자" value={r.completeDate} />
+                      <div />
+                      <Field label="검사담당" value={r.inspectCharger} />
+                      <div />
+                      <Field label="품질관리자" value={r.inspectManager} />
+                      <div />
+                      <Field label="책임부서" value={r.departmentName} />
+                    </div>
+                    {/* 조치내역 */}
+                    <div className="mt-3">
+                      <span className="text-gray-500 text-xs">조치내역</span>
+                      <div className="mt-1 p-2 rounded bg-gray-900 border border-gray-700 min-h-[60px] text-sm text-gray-200 whitespace-pre-wrap">
+                        {r.countermeasure === "-" ? "" : r.countermeasure}
+                      </div>
+                    </div>
+                    {/* 품질의견 */}
+                    <div className="mt-2">
+                      <span className="text-gray-500 text-xs">품질의견</span>
+                      <div className="mt-1 p-2 rounded bg-gray-900 border border-gray-700 min-h-[60px] text-sm text-gray-200 whitespace-pre-wrap">
+                        {r.qcComments === "-" ? "" : r.qcComments}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                {/* 텍스트 영역 */}
-                {(r.countermeasure !== "-" || r.comments !== "-" || r.qcComments !== "-") && (
-                  <div className="mt-3 pt-3 border-t border-gray-700 space-y-2">
-                    {r.countermeasure !== "-" && (
-                      <div>
-                        <span className="text-xs text-gray-500">대책서</span>
-                        <p className="text-sm text-gray-200 mt-0.5">{r.countermeasure}</p>
-                      </div>
-                    )}
-                    {r.comments !== "-" && (
-                      <div>
-                        <span className="text-xs text-gray-500">Comments</span>
-                        <p className="text-sm text-gray-200 mt-0.5">{r.comments}</p>
-                      </div>
-                    )}
-                    {r.qcComments !== "-" && (
-                      <div>
-                        <span className="text-xs text-gray-500">QC Comments</span>
-                        <p className="text-sm text-gray-200 mt-0.5">{r.qcComments}</p>
-                      </div>
-                    )}
+                {/* 이상발생내역 (전체 너비) */}
+                <div className="mt-3">
+                  <span className="text-gray-500 text-xs">이상발생내역</span>
+                  <div className="mt-1 p-2 rounded bg-gray-900 border border-gray-700 min-h-[60px] text-sm text-gray-200 whitespace-pre-wrap">
+                    {r.lineStatusNotify === "-" ? "" : r.lineStatusNotify}
+                  </div>
+                </div>
+                {/* Comments */}
+                {r.comments !== "-" && (
+                  <div className="mt-2">
+                    <span className="text-gray-500 text-xs">Comments</span>
+                    <div className="mt-1 p-2 rounded bg-gray-900 border border-gray-700 min-h-[40px] text-sm text-gray-200 whitespace-pre-wrap">
+                      {r.comments}
+                    </div>
                   </div>
                 )}
               </div>
